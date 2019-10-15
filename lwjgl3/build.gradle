@@ -1,0 +1,45 @@
+apply plugin: 'application'
+
+sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
+mainClassName = 'org.snowjak.hivemind.lwjgl3.Lwjgl3Launcher'
+eclipse.project.name = appName + '-lwjgl3'
+sourceCompatibility = 1.8
+
+dependencies {
+  api project(':core')
+  api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+}
+
+import org.gradle.internal.os.OperatingSystem
+
+run {
+	workingDir = rootProject.file('assets').path
+	setIgnoreExitValue(true)
+	
+	if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
+		// Required to run LWJGL3 Java apps on MacOS
+		jvmArgs += "-XstartOnFirstThread"
+	}
+	
+	if (System.getProperty('DEBUG', 'false') == 'true') {
+        jvmArgs '-Xdebug', '-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9099'
+    }
+}
+jar {
+	archiveFileName = "${appName}-${version}.jar"
+	from files(sourceSets.main.output.classesDirs)
+	from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } } 
+	manifest {
+		attributes 'Main-Class': project.mainClassName
+	}
+}
+distributions {
+	main {
+		contents {
+			from rootProject.file('assets/config').path, { into 'config' }
+			from rootProject.file('assets/behavior').path, { into 'behavior' }
+		}
+	}
+}
