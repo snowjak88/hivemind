@@ -26,6 +26,12 @@ public class App extends ApplicationAdapter {
 	
 	public static final String PREFERENCE_WINDOW_WIDTH = "window.width", PREFERENCE_WINDOW_HEIGHT = "window.height",
 			PREFERENCE_WINDOW_MIN_WIDTH = "window.min-width", PREFERENCE_WINDOW_MIN_HEIGHT = "window.min-height";
+	{
+		Config.get().register(PREFERENCE_WINDOW_WIDTH, "Game window width (in pixels)", 800, true);
+		Config.get().register(PREFERENCE_WINDOW_HEIGHT, "Game window height (in pixels)", 600, true);
+		Config.get().register(PREFERENCE_WINDOW_MIN_WIDTH, "Game window width (in pixels)", 800, true);
+		Config.get().register(PREFERENCE_WINDOW_MIN_HEIGHT, "Game window height (in pixels)", 600, true);
+	}
 	
 	private Instant lastFrame = null;
 	

@@ -34,6 +34,10 @@ public class Json {
 	
 	private static final Logger LOG = Logger.getLogger(Json.class.getName());
 	public static final String PREFRENCE_PRETTY_PRINTING = "json.pretty-print";
+	{
+		Config.get().register(PREFRENCE_PRETTY_PRINTING, "Enable \"pretty-printing\" when serializing JSON files",
+				false, true);
+	}
 	
 	private static Json __INSTANCE = null;
 	

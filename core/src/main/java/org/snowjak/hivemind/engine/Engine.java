@@ -121,7 +121,7 @@ public class Engine {
 			final String saveFilename = PREFAB_FILE_NAME.apply(id);
 			final FileHandle saveFile = Gdx.files.external(saveFilename);
 			if (!saveFile.exists())
-				throw new FileNotFoundException("Prefab '" + saveFilename + "' not found.");
+				throw new FileNotFoundException("PrefabBitmapFonts '" + saveFilename + "' not found.");
 			
 			clear();
 			

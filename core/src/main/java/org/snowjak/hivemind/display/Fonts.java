@@ -29,7 +29,7 @@ import squidpony.squidgrid.gui.gdx.DefaultResources;
  * 
  * &lt;font-file-descriptor&gt; := file( &lt;font-file&gt; {, &lt;PNG-file&gt; } )
  * 
- * &lt;prefab-font&gt; :=
+ * &lt;prefab-font&gt; := {@link PrefabBitmapFonts}
  * </pre>
  * </p>
  * 
@@ -39,9 +39,17 @@ import squidpony.squidgrid.gui.gdx.DefaultResources;
 public class Fonts {
 	
 	public static final String FONT_MAP = "fonts.map", FONT_HEADING = "fonts.heading", FONT_NORMAL = "fonts.normal";
+	{
+		Config.get().register(FONT_MAP, "Font used to draw the game-world", "SQUARE", true);
+		Config.get().register(FONT_HEADING, "Font used to draw UI header-text", "LARGE", true);
+		Config.get().register(FONT_NORMAL, "Font used to draw normal UI text", "SMOOTH", true);
+	}
 	
 	private static Fonts __INSTANCE = null;
 	
+	/**
+	 * @return the singleton {@link Fonts} instance
+	 */
 	public static Fonts get() {
 		
 		if (__INSTANCE == null)
@@ -57,9 +65,9 @@ public class Fonts {
 	
 	private Fonts() {
 		
-		namesToDescriptors.put(FONT_HEADING, Config.get().getString(FONT_HEADING).trim().toLowerCase());
-		namesToDescriptors.put(FONT_NORMAL, Config.get().getString(FONT_NORMAL).trim().toLowerCase());
-		namesToDescriptors.put(FONT_MAP, Config.get().getString(FONT_MAP).trim().toLowerCase());
+		namesToDescriptors.put(FONT_HEADING, Config.get().get(FONT_HEADING).trim().toLowerCase());
+		namesToDescriptors.put(FONT_NORMAL, Config.get().get(FONT_NORMAL).trim().toLowerCase());
+		namesToDescriptors.put(FONT_MAP, Config.get().get(FONT_MAP).trim().toLowerCase());
 		
 		for (String key : namesToDescriptors.keySet())
 			namesToInstances.put(key, parseDescriptor(namesToDescriptors.get(key)));
@@ -93,21 +101,29 @@ public class Fonts {
 				throw new IllegalArgumentException(
 						"Cannot parse font descriptor: malformed 'file' descriptor: \"" + descriptor + "\"");
 			
+			if (Gdx.files == null)
+				throw new IllegalStateException("Cannot parse font descriptor: LibGDX has not been initialized!");
+			
 			if (parts.length == 1)
 				return new BitmapFont(Gdx.files.local(parts[0]));
 			else
 				return new BitmapFont(Gdx.files.local(parts[0]), Gdx.files.local(parts[1]), false);
 		}
 		
-		try {
-			return Prefab.valueOf(working.toUpperCase()).getBitmapFont();
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException(
-					"Cannot parse font-descriptor: unrecognized descriptor \"" + descriptor + "\"");
-		}
+		for (PrefabBitmapFonts p : PrefabBitmapFonts.values())
+			if (p.name().equalsIgnoreCase(working))
+				return p.getBitmapFont();
+			
+		throw new IllegalArgumentException("Cannot parse font descriptor: unknown descriptor: \"" + descriptor + "\"");
 	}
 	
-	public enum Prefab {
+	/**
+	 * Pre-defined {@link BitmapFont}s which can be referenced by name.
+	 * 
+	 * @author snowjak88
+	 *
+	 */
+	public enum PrefabBitmapFonts {
 		
 		/**
 		 * Mapped to {@link DefaultResources#getDefaultFont()}
@@ -128,7 +144,7 @@ public class Fonts {
 		
 		private final Supplier<BitmapFont> tcf;
 		
-		Prefab(Supplier<BitmapFont> supplier) {
+		PrefabBitmapFonts(Supplier<BitmapFont> supplier) {
 			
 			tcf = supplier;
 		}
