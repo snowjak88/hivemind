@@ -68,6 +68,19 @@ public class Engine {
 	}
 	
 	/**
+	 * Test whether the save-file (as defined by {@link #SAVE_FILE_NAME}) is
+	 * available.
+	 * 
+	 * @return {@code true} if the save-file exists
+	 */
+	public boolean canLoad() {
+		
+		if (Gdx.files == null)
+			throw new IllegalStateException("LibGDX is not yet initialized!");
+		return Gdx.files.external(SAVE_FILE_NAME).exists();
+	}
+	
+	/**
 	 * Clears this Engine's state and loads its saved state from its save-file. If
 	 * the load fails for any reason, an IOException is thrown. In the event of a
 	 * failure, this Engine's state is indeterminate.

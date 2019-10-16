@@ -18,10 +18,10 @@ public class DefaultProperties {
 	
 	private static Properties properties = new Properties();
 	{
-		properties.put(App.PREFERENCE_WINDOW_WIDTH, 640);
-		properties.put(App.PREFERENCE_WINDOW_HEIGHT, 480);
-		properties.put(App.PREFERENCE_WINDOW_MIN_WIDTH, 640);
-		properties.put(App.PREFERENCE_WINDOW_MIN_HEIGHT, 480);
+		properties.put(App.PREFERENCE_WINDOW_WIDTH, 800);
+		properties.put(App.PREFERENCE_WINDOW_HEIGHT, 600);
+		properties.put(App.PREFERENCE_WINDOW_MIN_WIDTH, 800);
+		properties.put(App.PREFERENCE_WINDOW_MIN_HEIGHT, 600);
 		
 		properties.put(Json.PREFRENCE_PRETTY_PRINTING, false);
 	}
