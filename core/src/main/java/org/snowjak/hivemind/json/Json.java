@@ -57,7 +57,7 @@ public class Json {
 		
 		gb.serializeSpecialFloatingPointValues();
 		gb.serializeNulls();
-		if (Config.get().getBoolean(PREFRENCE_PRETTY_PRINTING, false))
+		if (Config.get().getBoolean(PREFRENCE_PRETTY_PRINTING))
 			gb.setPrettyPrinting();
 		
 		final ScanResult sr = new ClassGraph().enableClassInfo().enableAnnotationInfo()

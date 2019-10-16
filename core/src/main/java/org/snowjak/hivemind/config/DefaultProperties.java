@@ -6,6 +6,7 @@ package org.snowjak.hivemind.config;
 import java.util.Properties;
 
 import org.snowjak.hivemind.App;
+import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.json.Json;
 
 /**
@@ -16,17 +17,26 @@ import org.snowjak.hivemind.json.Json;
  */
 public class DefaultProperties {
 	
-	private static Properties properties = new Properties();
-	{
-		properties.put(App.PREFERENCE_WINDOW_WIDTH, 800);
-		properties.put(App.PREFERENCE_WINDOW_HEIGHT, 600);
-		properties.put(App.PREFERENCE_WINDOW_MIN_WIDTH, 800);
-		properties.put(App.PREFERENCE_WINDOW_MIN_HEIGHT, 600);
-		
-		properties.put(Json.PREFRENCE_PRETTY_PRINTING, false);
-	}
+	private static Properties properties = null;
 	
 	public static Properties get() {
+		
+		if (properties == null)
+			synchronized (Properties.class) {
+				if (properties == null) {
+					properties = new Properties();
+					properties.setProperty(App.PREFERENCE_WINDOW_WIDTH, Integer.toString(800));
+					properties.setProperty(App.PREFERENCE_WINDOW_HEIGHT, Integer.toString(600));
+					properties.setProperty(App.PREFERENCE_WINDOW_MIN_WIDTH, Integer.toString(800));
+					properties.setProperty(App.PREFERENCE_WINDOW_MIN_HEIGHT, Integer.toString(600));
+					
+					properties.setProperty(Fonts.FONT_NORMAL, "SMOOTH");
+					properties.setProperty(Fonts.FONT_HEADING, "LARGE");
+					properties.setProperty(Fonts.FONT_MAP, "SQUARE");
+					
+					properties.setProperty(Json.PREFRENCE_PRETTY_PRINTING, Boolean.toString(false));
+				}
+			}
 		
 		return properties;
 	}

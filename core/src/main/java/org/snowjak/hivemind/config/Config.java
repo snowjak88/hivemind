@@ -12,8 +12,6 @@ import java.time.Instant;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import org.snowjak.hivemind.App;
-
 /**
  * Abstracts configuration / preferences handling into a singleton instance.
  * 
@@ -24,8 +22,7 @@ public class Config {
 	
 	private static final Logger LOG = Logger.getLogger(Config.class.getName());
 	
-	private static final File configFile = new File(System.getProperty("user.home") + File.separator + ".prefs"
-			+ File.separator + App.class.getPackage().getName() + ".properties");
+	private static final File configFile = new File("hivemind.properties");
 	
 	private static Config __INSTANCE = null;
 	
@@ -42,7 +39,7 @@ public class Config {
 		return __INSTANCE;
 	}
 	
-	private Properties properties = new Properties(DefaultProperties.get());
+	private final Properties properties = new Properties(DefaultProperties.get());
 	
 	private Config() {
 		
@@ -74,51 +71,22 @@ public class Config {
 	
 	public String getString(String key) {
 		
-		return getString(key, null);
-	}
-	
-	public String getString(String key, String defaultValue) {
-		
-		return properties.getProperty(key, defaultValue);
+		return properties.getProperty(key);
 	}
 	
 	public boolean getBoolean(String key) {
 		
-		return getBoolean(key, false);
-	}
-	
-	public boolean getBoolean(String key, boolean defaultValue) {
-		
-		if (properties.containsKey(key))
-			return Boolean.parseBoolean(properties.getProperty(key));
-		
-		return defaultValue;
+		return Boolean.parseBoolean(properties.getProperty(key));
 	}
 	
 	public int getInt(String key) {
 		
-		return getInt(key, 0);
-	}
-	
-	public int getInt(String key, int defaultValue) {
-		
-		if (properties.containsKey(key))
-			return Integer.parseInt(properties.getProperty(key));
-		
-		return defaultValue;
+		return Integer.parseInt(properties.getProperty(key));
 	}
 	
 	public float getFloat(String key) {
 		
-		return getFloat(key, 0f);
-	}
-	
-	public float getFloat(String key, float defaultValue) {
-		
-		if (properties.containsKey(key))
-			return Float.parseFloat(properties.getProperty(key));
-		
-		return defaultValue;
+		return Float.parseFloat(properties.getProperty(key));
 	}
 	
 	public void set(String key, String value) {

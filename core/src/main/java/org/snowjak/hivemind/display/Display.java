@@ -18,11 +18,9 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
-import squidpony.squidgrid.gui.gdx.DefaultResources;
 import squidpony.squidgrid.gui.gdx.FilterBatch;
 import squidpony.squidgrid.gui.gdx.FloatFilters;
 import squidpony.squidgrid.gui.gdx.SColor;
-import squidpony.squidgrid.gui.gdx.TextCellFactory;
 
 /**
  * A Display presents an interface to the game-window. UI elements, including
@@ -32,8 +30,6 @@ import squidpony.squidgrid.gui.gdx.TextCellFactory;
  *
  */
 public class Display implements Disposable {
-	
-	public static final TextCellFactory DEFAULT_FONT = DefaultResources.getStretchableSquareFont();
 	
 	private StateMachine<Display, DisplayState> displayStateMachine;
 	
@@ -47,12 +43,13 @@ public class Display implements Disposable {
 	
 	public void created() {
 		
-		displayStateMachine = new DefaultStateMachine<>(this, new MainMenuDisplayState());
-		
 		batch = new FilterBatch(FloatFilters.identityFilter);
 		mainViewport = new StretchViewport(Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH),
 				Config.get().getInt(App.PREFERENCE_WINDOW_HEIGHT));
 		stage = new Stage(mainViewport, batch);
+		
+		displayStateMachine = new DefaultStateMachine<>(this);
+		displayStateMachine.changeState(new MainMenuDisplayState());
 		
 		Gdx.input.setInputProcessor(new InputMultiplexer(stage));
 	}
@@ -96,6 +93,14 @@ public class Display implements Disposable {
 		
 		Gdx.graphics.setTitle("FPS: " + Gdx.graphics.getFramesPerSecond());
 		
+	}
+	
+	/**
+	 * @return the {@link StateMachine} managing this Display's different states
+	 */
+	public StateMachine<Display, DisplayState> getDisplayStateMachine() {
+		
+		return displayStateMachine;
 	}
 	
 	public void resize(int width, int height) {
