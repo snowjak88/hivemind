@@ -31,8 +31,8 @@ import squidpony.squidmath.OrderedSet;
 
 /**
  * Encapsulates logic surrounding the game-map display. Doesn't act as an
- * {@link Actor} in the scene-graph itself, but provides a configured Actor upon
- * request.
+ * {@link Actor} in the scene-graph itself, but provides a configured Actor and
+ * {@link SquidInput} upon request.
  * 
  * @author snowjak88
  *

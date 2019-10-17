@@ -7,11 +7,14 @@ import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.ui.GameScreen;
 
+import com.badlogic.gdx.ai.fsm.State;
 import com.badlogic.gdx.ai.msg.Telegram;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.Subscribe;
 
 /**
+ * In this {@link State}, the {@link Display} displays the {@link GameScreen}.
+ * 
  * @author snowjak88
  *
  */

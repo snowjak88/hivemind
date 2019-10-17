@@ -18,11 +18,33 @@ public class MouseHoverListener {
 	
 	private float currentDuration = 0;
 	
+	/**
+	 * Construct a new {@link MouseHoverListener} that can fire its
+	 * {@link MouseHoverReceiver receiver} immediately.
+	 * 
+	 * @param startX
+	 * @param startY
+	 * @param endX
+	 * @param endY
+	 * @param receiver
+	 */
 	public MouseHoverListener(int startX, int startY, int endX, int endY, MouseHoverReceiver receiver) {
 		
 		this(startX, startY, endX, endY, 0, false, receiver);
 	}
 	
+	/**
+	 * Construct a new {@link MouseHoverListener} that will wait to fire its
+	 * {@link MouseHoverReceiver receiver} until it's been active for
+	 * {@code duration} seconds.
+	 * 
+	 * @param startX
+	 * @param startY
+	 * @param endX
+	 * @param endY
+	 * @param duration
+	 * @param receiver
+	 */
 	public MouseHoverListener(int startX, int startY, int endX, int endY, float duration, MouseHoverReceiver receiver) {
 		
 		this(startX, startY, endX, endY, duration, (duration > 0), receiver);

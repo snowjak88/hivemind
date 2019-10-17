@@ -114,13 +114,16 @@ public class Profiler {
 			this.record.keys().forEach(labels::add);
 			labels.sort(String::compareTo);
 			
-			for (String label : labels) {
-				System.out.print("   [");
-				System.out.print(label);
-				System.out.print("]");
-				System.out.print(Strings.repeat(" ", maxLabelLength - label.length() + 3));
-				System.out.println(this.record.get(label).toString());
-			}
+			if (record.isEmpty())
+				System.out.println("    (no results)");
+			else
+				for (String label : labels) {
+					System.out.print("   [");
+					System.out.print(label);
+					System.out.print("]");
+					System.out.print(Strings.repeat(" ", maxLabelLength - label.length() + 3));
+					System.out.println(this.record.get(label).toString());
+				}
 			System.out.println();
 			System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
 		}

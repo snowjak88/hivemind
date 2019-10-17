@@ -21,6 +21,18 @@ public class ConfigurationItem<T> {
 	private final Function<String, T> stringToType;
 	private String value;
 	
+	/**
+	 * Copies an existing ConfigurationItem.
+	 * 
+	 * @param toCopy
+	 */
+	public ConfigurationItem(ConfigurationItem<T> toCopy) {
+		
+		this(toCopy.valueType, toCopy.key, toCopy.description, toCopy.stringToType.apply(toCopy.defaultValue),
+				toCopy.configurable, toCopy.requiresRestart, toCopy.typeToString, toCopy.stringToType);
+		this.setValue(toCopy.stringToType.apply(toCopy.value));
+	}
+	
 	ConfigurationItem(Class<T> type, String key, String description, T defaultValue, boolean configurable,
 			boolean requiresRestart, Function<T, String> typeToString, Function<String, T> stringToType) {
 		
@@ -36,7 +48,7 @@ public class ConfigurationItem<T> {
 		this.value = typeToString.apply(defaultValue);
 	}
 	
-	Class<T> getType() {
+	public Class<T> getType() {
 		
 		return valueType;
 	}

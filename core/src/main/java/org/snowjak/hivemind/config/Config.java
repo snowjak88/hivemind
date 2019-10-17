@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,7 +27,17 @@ public class Config {
 	
 	private static final Logger LOG = Logger.getLogger(Config.class.getName());
 	
-	private static final File CONFIG_FILE = new File("hivemind.properties");
+	/**
+	 * Application configuration-values are stored in this file.
+	 */
+	public static final File CONFIG_FILE = new File("hivemind.properties");
+	
+	/**
+	 * This {@link Config} has specific support for these types. Be careful about
+	 * using it for other types.
+	 */
+	public static final Collection<Class<?>> SUPPORTED_TYPES = Arrays.asList(String.class, Boolean.class, Integer.class,
+			Float.class);
 	
 	private static Config __INSTANCE = null;
 	
@@ -90,6 +101,10 @@ public class Config {
 	
 	public <T> void register(Class<T> valueType, String key, String description, T defaultValue, boolean configurable,
 			boolean requiresRestart, Function<T, String> typeToString, Function<String, T> stringToType) {
+		
+		if (!SUPPORTED_TYPES.stream().anyMatch(t -> t.isAssignableFrom(valueType)))
+			LOG.warning("WARNING: Registered configuration is not an explicitly-supported type (" + valueType.getName()
+					+ ")");
 		
 		final ConfigurationItem<T> ci = new ConfigurationItem<T>(valueType, key, description, defaultValue,
 				configurable, requiresRestart, typeToString, stringToType);

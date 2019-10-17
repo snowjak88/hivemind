@@ -32,6 +32,7 @@ public class MainMenuDisplayState implements DisplayState {
 	private final VerticalGroup rootWidget;
 	
 	private boolean startGame = false;
+	private boolean showConfig = false;
 	
 	public MainMenuDisplayState() {
 		
@@ -60,6 +61,17 @@ public class MainMenuDisplayState implements DisplayState {
 			
 		});
 		
+		final TextButton configButton = new TextButton("Settings", buttonStyle);
+		configButton.pad(16, 32, 16, 32);
+		configButton.addListener(new ClickListener() {
+			
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				
+				showConfig = true;
+			}
+		});
+		
 		final TextButton exitButton = new TextButton("Exit", buttonStyle);
 		exitButton.pad(16, 32, 16, 32);
 		exitButton.addListener(new ClickListener() {
@@ -74,6 +86,7 @@ public class MainMenuDisplayState implements DisplayState {
 		
 		rootWidget.addActor(titleLabel);
 		rootWidget.addActor(startButton);
+		rootWidget.addActor(configButton);
 		rootWidget.addActor(exitButton);
 	}
 	
@@ -83,6 +96,7 @@ public class MainMenuDisplayState implements DisplayState {
 		entity.setRoot(rootWidget);
 		
 		startGame = false;
+		showConfig = false;
 	}
 	
 	@Override
@@ -90,6 +104,9 @@ public class MainMenuDisplayState implements DisplayState {
 		
 		if (startGame)
 			entity.getDisplayStateMachine().changeState(new GameScreenDisplayState());
+		
+		else if (showConfig)
+			entity.getDisplayStateMachine().changeState(new ConfigScreenDisplayState());
 	}
 	
 	@Override
