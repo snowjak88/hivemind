@@ -9,7 +9,7 @@ package org.snowjak.hivemind.events;
  * @author snowjak88
  *
  */
-public class ExitGameEvent implements Event {
+public class ExitAppEvent implements Event {
 	
 	@Override
 	public void reset() {

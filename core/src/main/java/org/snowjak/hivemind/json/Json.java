@@ -36,7 +36,7 @@ public class Json {
 	public static final String PREFRENCE_PRETTY_PRINTING = "json.pretty-print";
 	{
 		Config.get().register(PREFRENCE_PRETTY_PRINTING, "Enable \"pretty-printing\" when serializing JSON files",
-				false, true);
+				false, true, true);
 	}
 	
 	private static Json __INSTANCE = null;

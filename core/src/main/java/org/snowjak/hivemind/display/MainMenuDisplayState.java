@@ -4,7 +4,7 @@
 package org.snowjak.hivemind.display;
 
 import org.snowjak.hivemind.events.EventBus;
-import org.snowjak.hivemind.events.ExitGameEvent;
+import org.snowjak.hivemind.events.ExitAppEvent;
 import org.snowjak.hivemind.ui.Skin;
 
 import com.badlogic.gdx.ai.fsm.State;
@@ -31,6 +31,8 @@ public class MainMenuDisplayState implements DisplayState {
 	
 	private final VerticalGroup rootWidget;
 	
+	private boolean startGame = false;
+	
 	public MainMenuDisplayState() {
 		
 		rootWidget = new VerticalGroup();
@@ -43,20 +45,35 @@ public class MainMenuDisplayState implements DisplayState {
 		
 		final BitmapFont buttonFont = Fonts.get().get(Fonts.FONT_NORMAL);
 		buttonFont.setColor(SColor.AURORA_CLOUD);
-		final TextButton exitButton = new TextButton("Exit", new TextButtonStyle(Skin.get().getDrawable(Skin.BUTTON_UP),
-				Skin.get().getDrawable(Skin.BUTTON_DOWN), Skin.get().getDrawable(Skin.BUTTON_CHECKED), buttonFont));
+		final TextButtonStyle buttonStyle = new TextButtonStyle(Skin.get().getDrawable(Skin.BUTTON_UP),
+				Skin.get().getDrawable(Skin.BUTTON_DOWN), Skin.get().getDrawable(Skin.BUTTON_CHECKED), buttonFont);
+		
+		final TextButton startButton = new TextButton("Start", buttonStyle);
+		startButton.pad(16, 32, 16, 32);
+		startButton.addListener(new ClickListener() {
+			
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				
+				startGame = true;
+			}
+			
+		});
+		
+		final TextButton exitButton = new TextButton("Exit", buttonStyle);
 		exitButton.pad(16, 32, 16, 32);
 		exitButton.addListener(new ClickListener() {
 			
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				
-				EventBus.get().post(ExitGameEvent.class);
+				EventBus.get().post(ExitAppEvent.class);
 			}
 			
 		});
 		
 		rootWidget.addActor(titleLabel);
+		rootWidget.addActor(startButton);
 		rootWidget.addActor(exitButton);
 	}
 	
@@ -64,12 +81,15 @@ public class MainMenuDisplayState implements DisplayState {
 	public void enter(Display entity) {
 		
 		entity.setRoot(rootWidget);
+		
+		startGame = false;
 	}
 	
 	@Override
 	public void update(Display entity) {
 		
-		// TODO Auto-generated method stub
+		if (startGame)
+			entity.getDisplayStateMachine().changeState(new GameScreenDisplayState());
 	}
 	
 	@Override

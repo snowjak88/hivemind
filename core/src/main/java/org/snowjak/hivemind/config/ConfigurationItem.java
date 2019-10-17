@@ -15,18 +15,20 @@ public class ConfigurationItem<T> {
 	private final String key;
 	private final String description;
 	private final String defaultValue;
+	private final boolean configurable;
 	private final boolean requiresRestart;
 	private final Function<T, String> typeToString;
 	private final Function<String, T> stringToType;
 	private String value;
 	
-	ConfigurationItem(Class<T> type, String key, String description, T defaultValue, boolean requiresRestart,
-			Function<T, String> typeToString, Function<String, T> stringToType) {
+	ConfigurationItem(Class<T> type, String key, String description, T defaultValue, boolean configurable,
+			boolean requiresRestart, Function<T, String> typeToString, Function<String, T> stringToType) {
 		
 		this.valueType = type;
 		this.key = key;
 		this.description = description;
 		this.defaultValue = typeToString.apply(defaultValue);
+		this.configurable = configurable;
 		this.requiresRestart = requiresRestart;
 		this.typeToString = typeToString;
 		this.stringToType = stringToType;
@@ -72,6 +74,11 @@ public class ConfigurationItem<T> {
 	public T getDefaultValue() {
 		
 		return stringToType.apply(defaultValue);
+	}
+	
+	public boolean isConfigurable() {
+		
+		return configurable;
 	}
 	
 	public boolean isRequiresRestart() {

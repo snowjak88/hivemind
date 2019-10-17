@@ -26,8 +26,7 @@ public class Lwjgl3Launcher {
 		configuration.setTitle("hivemind");
 		configuration.setWindowedMode(Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH),
 				Config.get().getInt(App.PREFERENCE_WINDOW_HEIGHT));
-		configuration.setWindowSizeLimits(Config.get().getInt(App.PREFERENCE_WINDOW_MIN_WIDTH),
-				Config.get().getInt(App.PREFERENCE_WINDOW_MIN_HEIGHT), -1, -1);
+		configuration.setResizable(false);
 		configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
 		
 		return configuration;

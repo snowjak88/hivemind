@@ -40,9 +40,9 @@ public class Fonts {
 	
 	public static final String FONT_MAP = "fonts.map", FONT_HEADING = "fonts.heading", FONT_NORMAL = "fonts.normal";
 	{
-		Config.get().register(FONT_MAP, "Font used to draw the game-world", "SQUARE", true);
-		Config.get().register(FONT_HEADING, "Font used to draw UI header-text", "LARGE", true);
-		Config.get().register(FONT_NORMAL, "Font used to draw normal UI text", "SMOOTH", true);
+		Config.get().register(FONT_MAP, "Font used to draw the game-world", "SQUARE", true, true);
+		Config.get().register(FONT_HEADING, "Font used to draw UI header-text", "LARGE", true, true);
+		Config.get().register(FONT_NORMAL, "Font used to draw normal UI text", "SMOOTH", true, true);
 	}
 	
 	private static Fonts __INSTANCE = null;

@@ -61,34 +61,38 @@ public class Config {
 		}
 	}
 	
-	public void register(String key, String description, boolean defaultValue, boolean requiresRestart) {
+	public void register(String key, String description, boolean defaultValue, boolean configurable,
+			boolean requiresRestart) {
 		
-		register(Boolean.class, key, description, defaultValue, requiresRestart, (v) -> Boolean.toString(v),
-				Boolean::parseBoolean);
+		register(Boolean.class, key, description, defaultValue, configurable, requiresRestart,
+				(v) -> Boolean.toString(v), Boolean::parseBoolean);
 	}
 	
-	public void register(String key, String description, int defaultValue, boolean requiresRestart) {
+	public void register(String key, String description, int defaultValue, boolean configurable,
+			boolean requiresRestart) {
 		
-		register(Integer.class, key, description, defaultValue, requiresRestart, (v) -> Integer.toString(v),
-				Integer::parseInt);
+		register(Integer.class, key, description, defaultValue, configurable, requiresRestart,
+				(v) -> Integer.toString(v), Integer::parseInt);
 	}
 	
-	public void register(String key, String description, float defaultValue, boolean requiresRestart) {
+	public void register(String key, String description, float defaultValue, boolean configurable,
+			boolean requiresRestart) {
 		
-		register(Float.class, key, description, defaultValue, requiresRestart, (v) -> Float.toString(v),
+		register(Float.class, key, description, defaultValue, configurable, requiresRestart, (v) -> Float.toString(v),
 				Float::parseFloat);
 	}
 	
-	public void register(String key, String description, String defaultValue, boolean requiresRestart) {
+	public void register(String key, String description, String defaultValue, boolean configurable,
+			boolean requiresRestart) {
 		
-		register(String.class, key, description, defaultValue, requiresRestart, (s) -> s, (s) -> s);
+		register(String.class, key, description, defaultValue, configurable, requiresRestart, (s) -> s, (s) -> s);
 	}
 	
-	public <T> void register(Class<T> valueType, String key, String description, T defaultValue,
+	public <T> void register(Class<T> valueType, String key, String description, T defaultValue, boolean configurable,
 			boolean requiresRestart, Function<T, String> typeToString, Function<String, T> stringToType) {
 		
 		final ConfigurationItem<T> ci = new ConfigurationItem<T>(valueType, key, description, defaultValue,
-				requiresRestart, typeToString, stringToType);
+				configurable, requiresRestart, typeToString, stringToType);
 		final String existingValue = properties.getProperty(key);
 		if (existingValue != null)
 			ci.setStringValue(properties.getProperty(key));
@@ -115,17 +119,19 @@ public class Config {
 	@SuppressWarnings("unchecked")
 	public <T> T get(String key, Class<T> expectedType) {
 		
-		final ConfigurationItem<?> ci = configurations.get(key);
-		if (ci == null)
-			throw new IllegalArgumentException(
-					"Cannot get value from configuration [" + key + "] -- no such key recognized!");
-		
-		if (!ci.getType().isAssignableFrom(expectedType))
-			throw new IllegalArgumentException(
-					"Cannot get value from configuration [" + key + "] -- configuration-item is a ["
-							+ ci.getType().getSimpleName() + "], not a [" + expectedType.getSimpleName() + "]!");
-		
-		return ((ConfigurationItem<T>) ci).getValue();
+		synchronized (this) {
+			final ConfigurationItem<?> ci = configurations.get(key);
+			if (ci == null)
+				throw new IllegalArgumentException(
+						"Cannot get value from configuration [" + key + "] -- no such key recognized!");
+			
+			if (!ci.getType().isAssignableFrom(expectedType))
+				throw new IllegalArgumentException(
+						"Cannot get value from configuration [" + key + "] -- configuration-item is a ["
+								+ ci.getType().getSimpleName() + "], not a [" + expectedType.getSimpleName() + "]!");
+			
+			return ((ConfigurationItem<T>) ci).getValue();
+		}
 	}
 	
 	public String get(String key) {
@@ -151,16 +157,19 @@ public class Config {
 	@SuppressWarnings("unchecked")
 	public <T> void set(String key, T value) {
 		
-		final ConfigurationItem<?> ci = configurations.get(key);
-		if (ci == null)
-			throw new IllegalArgumentException(
-					"Cannot set value for configuration [" + key + "] -- no such configuration registered!");
-		
-		if (!ci.getType().isAssignableFrom(value.getClass()))
-			throw new IllegalArgumentException("Cannot set value for configuration [" + key + "] -- cannot assign a ["
-					+ value.getClass().getSimpleName() + "] to a [" + ci.getType().getSimpleName() + "]!");
-		
-		((ConfigurationItem<T>) ci).setValue(value);
+		synchronized (this) {
+			final ConfigurationItem<?> ci = configurations.get(key);
+			if (ci == null)
+				throw new IllegalArgumentException(
+						"Cannot set value for configuration [" + key + "] -- no such configuration registered!");
+			
+			if (!ci.getType().isAssignableFrom(value.getClass()))
+				throw new IllegalArgumentException(
+						"Cannot set value for configuration [" + key + "] -- cannot assign a ["
+								+ value.getClass().getSimpleName() + "] to a [" + ci.getType().getSimpleName() + "]!");
+			
+			((ConfigurationItem<T>) ci).setValue(value);
+		}
 	}
 	
 	public Collection<ConfigurationItem<?>> getConfigurations() {

@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import squidpony.squidgrid.gui.gdx.FilterBatch;
 import squidpony.squidgrid.gui.gdx.FloatFilters;
 import squidpony.squidgrid.gui.gdx.SColor;
+import squidpony.squidgrid.gui.gdx.SquidInput;
 
 /**
  * A Display presents an interface to the game-window. UI elements, including
@@ -36,8 +37,12 @@ public class Display implements Disposable {
 	private FilterBatch batch;
 	private Viewport mainViewport;
 	private Stage stage;
+	private InputMultiplexer inputMultiplexer;
+	
+	private float delta = 0;
 	
 	private Actor rootActor = null;
+	private SquidInput squidInput = null;
 	
 	private Color background = SColor.BLACK;
 	
@@ -51,7 +56,8 @@ public class Display implements Disposable {
 		displayStateMachine = new DefaultStateMachine<>(this);
 		displayStateMachine.changeState(new MainMenuDisplayState());
 		
-		Gdx.input.setInputProcessor(new InputMultiplexer(stage));
+		inputMultiplexer = new InputMultiplexer(stage);
+		Gdx.input.setInputProcessor(inputMultiplexer);
 	}
 	
 	/**
@@ -73,9 +79,32 @@ public class Display implements Disposable {
 			stage.addActor(this.rootActor);
 	}
 	
+	/**
+	 * If necessary, you can provide a special {@link SquidInput} instance which
+	 * will receive all input-events <em>before</em> the normal LibGDX-UI
+	 * input-handling system.
+	 * 
+	 * @param squidInput
+	 *            {@code null} to remove any SquidInput assignment and revert all
+	 *            input-handling back to LibGDX-UI's default input-handling system
+	 */
+	public void setInput(SquidInput squidInput) {
+		
+		if (squidInput == null)
+			inputMultiplexer.setProcessors(stage);
+		else
+			inputMultiplexer.setProcessors(squidInput, stage);
+		
+		this.squidInput = squidInput;
+	}
+	
 	public void render(float delta) {
 		
+		this.delta = delta;
 		displayStateMachine.update();
+		
+		if (squidInput != null && squidInput.hasNext())
+			squidInput.next();
 		
 		Gdx.gl.glClearColor(background.r, background.g, background.b, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -92,7 +121,6 @@ public class Display implements Disposable {
 		batch.end();
 		
 		Gdx.graphics.setTitle("FPS: " + Gdx.graphics.getFramesPerSecond());
-		
 	}
 	
 	/**
@@ -101,6 +129,14 @@ public class Display implements Disposable {
 	public StateMachine<Display, DisplayState> getDisplayStateMachine() {
 		
 		return displayStateMachine;
+	}
+	
+	/**
+	 * @return the last-received "delta" -- i.e., "seconds since last frame"
+	 */
+	public float getDelta() {
+		
+		return delta;
 	}
 	
 	public void resize(int width, int height) {

@@ -10,7 +10,7 @@ import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Display;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.EventPool;
-import org.snowjak.hivemind.events.ExitGameEvent;
+import org.snowjak.hivemind.events.ExitAppEvent;
 import org.snowjak.hivemind.util.Profiler;
 
 import com.badlogic.gdx.ApplicationAdapter;
@@ -27,10 +27,10 @@ public class App extends ApplicationAdapter {
 	public static final String PREFERENCE_WINDOW_WIDTH = "window.width", PREFERENCE_WINDOW_HEIGHT = "window.height",
 			PREFERENCE_WINDOW_MIN_WIDTH = "window.min-width", PREFERENCE_WINDOW_MIN_HEIGHT = "window.min-height";
 	{
-		Config.get().register(PREFERENCE_WINDOW_WIDTH, "Game window width (in pixels)", 800, true);
-		Config.get().register(PREFERENCE_WINDOW_HEIGHT, "Game window height (in pixels)", 600, true);
-		Config.get().register(PREFERENCE_WINDOW_MIN_WIDTH, "Game window width (in pixels)", 800, true);
-		Config.get().register(PREFERENCE_WINDOW_MIN_HEIGHT, "Game window height (in pixels)", 600, true);
+		Config.get().register(PREFERENCE_WINDOW_WIDTH, "Game window width (in pixels)", 800, true, true);
+		Config.get().register(PREFERENCE_WINDOW_HEIGHT, "Game window height (in pixels)", 600, true, true);
+		Config.get().register(PREFERENCE_WINDOW_MIN_WIDTH, "Game window minimum width (in pixels)", 800, false, true);
+		Config.get().register(PREFERENCE_WINDOW_MIN_HEIGHT, "Game window minimum height (in pixels)", 600, false, true);
 	}
 	
 	private Instant lastFrame = null;
@@ -72,10 +72,10 @@ public class App extends ApplicationAdapter {
 		
 		super.resize(width, height);
 		
-		display.resize(width, height);
-		
 		Config.get().set(PREFERENCE_WINDOW_WIDTH, width);
 		Config.get().set(PREFERENCE_WINDOW_HEIGHT, height);
+		
+		display.resize(width, height);
 	}
 	
 	@Override
@@ -95,7 +95,7 @@ public class App extends ApplicationAdapter {
 	
 	@Subscribe
 	@AllowConcurrentEvents
-	public void receiveExitGameEvent(ExitGameEvent event) {
+	public void receiveExitGameEvent(ExitAppEvent event) {
 		
 		Gdx.app.postRunnable(() -> Gdx.app.exit());
 		EventPool.get().retire(event);
