@@ -3,11 +3,12 @@
  */
 package org.snowjak.hivemind.engine;
 
-import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
-import org.snowjak.hivemind.ui.gamescreen.GameScreen;
-import org.snowjak.hivemind.ui.gamescreen.updates.DrawMapCellUpdate;
-import org.snowjak.hivemind.ui.gamescreen.updates.GameScreenUpdatePool;
-import org.snowjak.hivemind.ui.gamescreen.updates.SetMapSizeUpdate;
+import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.map.GameMap;
+import org.snowjak.hivemind.util.ExtGreasedRegion;
+
+import com.badlogic.ashley.core.Entity;
 
 import squidpony.squidgrid.gui.gdx.SColor;
 
@@ -21,50 +22,38 @@ public class EnginePrefabs {
 	
 	public static void loadTest() {
 		
-		final Engine e = Engine.get();
-		e.clear();
+		final Engine eng = Engine.get();
+		eng.clear();
 		
-		final RunnableExecutingSystem res = e.getSystem(RunnableExecutingSystem.class);
+		final Entity e = eng.createEntity();
 		
-		res.submit(() -> GameScreen.get().postGameScreenUpdate(new SetMapSizeUpdate(64, 64)));
+		final HasMap hm = eng.createComponent(HasMap.class);
+		hm.setUpdatedLocations(new ExtGreasedRegion(64, 64));
+		hm.setMap(new GameMap(64, 64));
 		
-		res.submit(() -> {
-			for (int x = 0; x < 64; x++) {
-				final DrawMapCellUpdate upd1 = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class),
-						upd2 = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class);
-				
-				upd1.setX(x);
-				upd1.setY(0);
-				upd1.setCh('#');
-				upd1.setForeground(SColor.WHITE);
-				
-				upd2.setX(x);
-				upd2.setY(63);
-				upd2.setCh('#');
-				upd2.setForeground(SColor.WHITE);
-				
-				GameScreen.get().postGameScreenUpdate(upd1);
-				GameScreen.get().postGameScreenUpdate(upd2);
-			}
-		});
-		res.submit(() -> {
-			for (int y = 0; y < 64; y++) {
-				final DrawMapCellUpdate upd1 = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class),
-						upd2 = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class);
-				
-				upd1.setX(0);
-				upd1.setY(y);
-				upd1.setCh('#');
-				upd1.setForeground(SColor.WHITE);
-				
-				upd2.setX(63);
-				upd2.setY(y);
-				upd2.setCh('#');
-				upd2.setForeground(SColor.WHITE);
-				
-				GameScreen.get().postGameScreenUpdate(upd1);
-				GameScreen.get().postGameScreenUpdate(upd2);
-			}
-		});
+		hm.getMap().set(32, 32, 'X', SColor.RED, null);
+		hm.getUpdatedLocations().insert(32, 32);
+		
+		for (int x = 0; x < 64; x++) {
+			hm.getMap().set(x, 0, '#', SColor.WHITE, null);
+			hm.getUpdatedLocations().insert(x, 0);
+			
+			hm.getMap().set(x, 63, '#', SColor.WHITE, null);
+			hm.getUpdatedLocations().insert(x, 63);
+		}
+		
+		for (int y = 0; y < 64; y++) {
+			hm.getMap().set(0, y, '#', SColor.WHITE, null);
+			hm.getUpdatedLocations().insert(0, y);
+			
+			hm.getMap().set(63, y, '#', SColor.WHITE, null);
+			hm.getUpdatedLocations().insert(63, y);
+		}
+		
+		e.add(hm);
+		
+		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, e);
+		
+		eng.addEntity(e);
 	}
 }

@@ -11,15 +11,15 @@ import org.snowjak.hivemind.ui.gamescreen.GameScreen;
  * @author snowjak88
  *
  */
-public class SetMapSizeUpdate implements GameScreenUpdate {
+public class MapScreenSizeUpdate implements GameScreenUpdate {
 	
 	private int width, height;
 	
-	public SetMapSizeUpdate() {
+	public MapScreenSizeUpdate() {
 		
 	}
 	
-	public SetMapSizeUpdate(int width, int height) {
+	public MapScreenSizeUpdate(int width, int height) {
 		
 		this.width = width;
 		this.height = height;

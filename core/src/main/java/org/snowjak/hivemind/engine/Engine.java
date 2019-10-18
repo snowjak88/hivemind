@@ -12,6 +12,7 @@ import java.util.function.Function;
 
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.GameScreenUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
 import org.snowjak.hivemind.json.Json;
@@ -63,6 +64,9 @@ public class Engine {
 		this.engine = new PooledEngine();
 		
 		this.engine.addSystem(new RunnableExecutingSystem());
+		
+		this.engine.addSystem(new GameScreenUpdatingSystem());
+		
 		this.engine.addSystem(new UniqueTagManager());
 		this.engine.addSystem(new EntityRefManager());
 	}
