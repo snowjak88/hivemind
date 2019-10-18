@@ -11,10 +11,10 @@ import java.io.Writer;
 import java.util.function.Function;
 
 import org.snowjak.hivemind.App;
+import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
+import org.snowjak.hivemind.engine.systems.UniqueTagManager;
 import org.snowjak.hivemind.json.Json;
-import org.snowjak.hivemind.systems.EntityRefManager;
-import org.snowjak.hivemind.systems.RunnableExecutingSystem;
-import org.snowjak.hivemind.systems.UniqueTagManager;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;

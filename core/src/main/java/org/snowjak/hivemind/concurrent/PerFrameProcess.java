@@ -49,36 +49,50 @@ public abstract class PerFrameProcess {
 	
 	private final BlockingQueue<Float> updateQueue = new ArrayBlockingQueue<>(1);
 	
-	private boolean isStopped = false;
+	private boolean isStarted = false, isStopped = false;
 	
+	/**
+	 * Start this {@link PerFrameProcess}. This process will immediately call its
+	 * {@link #starting()} method and then wait for the first "delta"-time.
+	 * 
+	 * @return the {@link Future} associated with this process, which you could use
+	 *         to cancel it
+	 * @throw {@link IllegalStateException} if this PerFrameProcess has already been
+	 *        started
+	 */
 	public Future<?> start() {
 		
-		final Future<?> f = Executor.get().submit(() -> {
+		synchronized (this) {
+			if (isStarted)
+				throw new IllegalStateException("Cannot start this PerFrameProcess -- already started");
 			
-			starting();
+			isStarted = true;
 			
-			PerFrameProcess.register(this);
-			
-			try {
+			return Executor.get().submit(() -> {
 				
-				while (!Thread.interrupted() && !isStopped) {
-					final Float delta = updateQueue.poll(1, TimeUnit.SECONDS);
-					if (delta != null)
-						processFrame(delta);
+				starting();
+				
+				PerFrameProcess.register(this);
+				
+				try {
+					
+					while (!Thread.interrupted() && !isStopped) {
+						final Float delta = updateQueue.poll(1, TimeUnit.SECONDS);
+						if (delta != null)
+							processFrame(delta);
+					}
+					
+				} catch (InterruptedException e) {
+					
+				} finally {
+					
+					PerFrameProcess.unregister(this);
+					
+					stopping();
 				}
 				
-			} catch (InterruptedException e) {
-				
-			} finally {
-				
-				PerFrameProcess.unregister(this);
-				
-				stopping();
-			}
-			
-		});
-		
-		return f;
+			});
+		}
 	}
 	
 	/**
@@ -91,9 +105,13 @@ public abstract class PerFrameProcess {
 	 * </p>
 	 * 
 	 * @param delta
+	 * @throws IllegalStateException
+	 *             if this method is called before a call to {@link #start()}
 	 */
 	public void update(float delta) {
 		
+		if (!isStarted)
+			throw new IllegalStateException("Cannot update this PerFrameProcess because it has not been started yet!");
 		try {
 			updateQueue.put(delta);
 		} catch (InterruptedException e) {

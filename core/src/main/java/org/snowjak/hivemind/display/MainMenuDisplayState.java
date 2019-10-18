@@ -103,7 +103,7 @@ public class MainMenuDisplayState implements DisplayState {
 	public void update(Display entity) {
 		
 		if (startGame)
-			entity.getDisplayStateMachine().changeState(new GameScreenDisplayState());
+			entity.getDisplayStateMachine().changeState(new LoadEnginePrefabDisplayState());
 		
 		else if (showConfig)
 			entity.getDisplayStateMachine().changeState(new ConfigScreenDisplayState());

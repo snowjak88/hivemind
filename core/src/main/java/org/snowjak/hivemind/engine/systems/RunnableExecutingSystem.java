@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.systems;
+package org.snowjak.hivemind.engine.systems;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

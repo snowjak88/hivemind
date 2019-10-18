@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.EntityRefManager;
 
 import com.badlogic.ashley.core.Entity;
 import com.google.gson.JsonDeserializationContext;

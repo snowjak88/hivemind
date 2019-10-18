@@ -4,7 +4,7 @@
 package org.snowjak.hivemind.events.game;
 
 import org.snowjak.hivemind.events.Event;
-import org.snowjak.hivemind.ui.GameScreen;
+import org.snowjak.hivemind.ui.gamescreen.GameScreen;
 
 /**
  * Indicates that the user wishes to exit the {@link GameScreen} and return to

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.systems;
+package org.snowjak.hivemind.engine.systems;
 
 import java.util.Collection;
 import java.util.Collections;
