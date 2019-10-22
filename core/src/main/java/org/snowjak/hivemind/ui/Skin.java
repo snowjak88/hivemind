@@ -41,8 +41,8 @@ public class Skin extends com.badlogic.gdx.scenes.scene2d.ui.Skin {
 		
 		super();
 		
-		this.add(BUTTON_UP, new Texture("data/button-background-up.png"));
-		this.add(BUTTON_DOWN, new Texture("data/button-background-down.png"));
-		this.add(BUTTON_CHECKED, new Texture("data/button-background-checked.png"));
+		this.add(BUTTON_UP, new Texture("button-background-up.png"));
+		this.add(BUTTON_DOWN, new Texture("button-background-down.png"));
+		this.add(BUTTON_CHECKED, new Texture("button-background-checked.png"));
 	}
 }

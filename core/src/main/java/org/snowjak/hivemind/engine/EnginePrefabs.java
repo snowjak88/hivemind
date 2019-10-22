@@ -8,6 +8,7 @@ import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
 import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
+import org.snowjak.hivemind.map.TerrainTypes;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 
 import com.badlogic.ashley.core.Entity;
@@ -38,19 +39,24 @@ public class EnginePrefabs {
 		hm.setEntities(new EntityMap());
 		
 		for (int x = 0; x < height; x++) {
-			hm.getMap().set(x, 0, '#', SColor.WHITE, null);
-			hm.getUpdatedLocations().insert(x, 0);
-			
-			hm.getMap().set(x, width - 1, '#', SColor.WHITE, null);
-			hm.getUpdatedLocations().insert(x, width - 1);
-		}
-		
-		for (int y = 0; y < width; y++) {
-			hm.getMap().set(0, y, '#', SColor.WHITE, null);
-			hm.getUpdatedLocations().insert(0, y);
-			
-			hm.getMap().set(height - 1, y, '#', SColor.WHITE, null);
-			hm.getUpdatedLocations().insert(height - 1, y);
+			for (int y = 0; y < width; y++) {
+				if (x == 0 || x == height - 1) {
+					hm.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('#'));
+					hm.getUpdatedLocations().insert(x, y);
+				}
+				
+				else if (y == 0 || y == width - 1) {
+					hm.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('#'));
+					hm.getUpdatedLocations().insert(x, y);
+				}
+				
+				else {
+					
+					hm.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('.'));
+					hm.getUpdatedLocations().insert(x, y);
+					
+				}
+			}
 		}
 		
 		mapE.add(hm);

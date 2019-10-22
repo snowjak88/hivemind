@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.map;
 
+import org.snowjak.hivemind.map.TerrainTypes.TerrainType;
 import org.snowjak.hivemind.util.ArrayUtil;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.cache.ColorCache;
@@ -27,8 +28,7 @@ import squidpony.squidmath.GreasedRegion;
 public class GameMap {
 	
 	private int width = 0, height = 0;
-	private char[][] chars = new char[0][0];
-	private short[][] foreground = new short[0][0], background = new short[0][0];
+	private short[][] terrain = new short[0][0];
 	private ExtGreasedRegion known = new ExtGreasedRegion(0, 0);
 	
 	/**
@@ -55,38 +55,41 @@ public class GameMap {
 		synchronized (toCopy) {
 			this.width = toCopy.width;
 			this.height = toCopy.height;
-			this.chars = ArrayUtil.copy(toCopy.chars);
-			this.foreground = ArrayUtil.copy(toCopy.foreground);
-			this.background = ArrayUtil.copy(toCopy.background);
+			this.terrain = ArrayUtil.copy(toCopy.terrain);
 			this.known.remake(toCopy.known);
 		}
 	}
 	
 	/**
-	 * Construct a new GameMap from the given arrays. After construction, the whole
-	 * map is tagged as "known".
+	 * Construct a new GameMap from the given {@code char[][]}. The configured
+	 * {@link TerrainType}s are scanned, and a random TerrainType, whose character
+	 * matches each given {@code char}, will be selected for each cell.
 	 * 
 	 * @param chars
-	 * @param foreground
-	 * @param background
+	 * @param useSquidMappings
+	 *            if {@code true}, {@code chars[][]} will be matched against
+	 *            {@link TerrainType#getSquidChar()}; if {@code false}, against
+	 *            {@link TerrainType#getCh()}
 	 * @throws IllegalArgumentException
-	 *             if the sizes of {@code chars}, {@code foreground}, or
-	 *             {@code background} do not match
+	 *             if the given {@code char[][]} is a jagged array
 	 */
-	public GameMap(char[][] chars, Color[][] foreground, Color[][] background) {
-		
-		if (chars.length != foreground.length || chars[0].length != foreground[0].length
-				|| chars.length != background.length || chars[0].length != background[0].length
-				|| foreground.length != background.length || foreground[0].length != background[0].length)
-			throw new IllegalArgumentException(
-					"Cannot create a new GameMap -- given map-element arrays do not match sizes.");
+	public GameMap(char[][] chars, boolean useSquidMappings) {
 		
 		this.width = chars.length;
 		this.height = chars[0].length;
 		
-		this.chars = ArrayUtil.copy(chars);
-		this.foreground = compressColors(foreground);
-		this.background = compressColors(background);
+		terrain = new short[width][height];
+		
+		for (int i = 0; i < chars.length; i++) {
+			if (chars[i].length != height)
+				throw new IllegalArgumentException("Jagged arrays are not supported as game-maps!");
+			
+			for (int j = 0; j < chars[i].length; j++) {
+				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
+						: TerrainTypes.get().getRandomForChar(chars[i][j]);
+				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+			}
+		}
 		this.known.resizeAndEmpty(width, height).fill(true);
 	}
 	
@@ -94,27 +97,36 @@ public class GameMap {
 	 * Construct a new GameMap from the given arrays and "known" region.
 	 * 
 	 * @param chars
-	 * @param foreground
-	 * @param background
 	 * @param known
+	 * @param useSquidMappings
+	 *            if {@code true}, {@code chars[][]} will be matched against
+	 *            {@link TerrainType#getSquidChar()}; if {@code false}, against
+	 *            {@link TerrainType#getCh()}
 	 * @throws IllegalArgumentException
 	 *             if the sizes of {@code chars}, {@code foreground}, or
 	 *             {@code background} do not match
 	 */
-	public GameMap(char[][] chars, Color[][] foreground, Color[][] background, GreasedRegion known) {
+	public GameMap(char[][] chars, GreasedRegion known, boolean useSquidMappings) {
 		
-		if (chars.length != foreground.length || chars[0].length != foreground[0].length
-				|| chars.length != background.length || chars[0].length != background[0].length
-				|| foreground.length != background.length || foreground[0].length != background[0].length)
-			throw new IllegalArgumentException(
-					"Cannot create a new GameMap -- given map-element arrays do not match sizes.");
+		if (chars.length != known.width || chars[0].length != known.height)
+			throw new IllegalArgumentException("Cannot create a new GameMap -- given map-elements do not match sizes.");
 		
 		this.width = chars.length;
 		this.height = chars[0].length;
 		
-		this.chars = ArrayUtil.copy(chars);
-		this.foreground = compressColors(foreground);
-		this.background = compressColors(background);
+		terrain = new short[width][height];
+		
+		for (int i = 0; i < chars.length; i++) {
+			if (chars[i].length != height)
+				throw new IllegalArgumentException("Jagged arrays are not supported as game-maps!");
+			
+			for (int j = 0; j < chars[i].length; j++) {
+				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
+						: TerrainTypes.get().getRandomForChar(chars[i][j]);
+				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+			}
+		}
+		
 		this.known = new ExtGreasedRegion(known);
 	}
 	
@@ -141,9 +153,7 @@ public class GameMap {
 			this.width = width;
 			this.height = height;
 			
-			chars = new char[width][height];
-			foreground = new short[width][height];
-			background = new short[width][height];
+			terrain = new short[width][height];
 			known.resizeAndEmpty(width, height);
 		}
 	}
@@ -171,9 +181,7 @@ public class GameMap {
 				if (this.width != insertFrom.width || this.height != insertFrom.height)
 					resize(insertFrom.width, insertFrom.height);
 				
-				this.chars = insertOnly.inverseMask(this.chars, insertFrom.chars);
-				this.foreground = insertOnly.inverseMask(this.foreground, insertFrom.foreground);
-				this.background = insertOnly.inverseMask(this.background, insertFrom.background);
+				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
 				
 				this.known.or(insertOnly);
 			}
@@ -186,24 +194,13 @@ public class GameMap {
 	 * If the given location is not {@link #isInMap(int, int) on this map}, then
 	 * this method does nothing.
 	 * </p>
-	 * <p>
-	 * Note that the updated map-location now counts as "known" <em>unless</em> all
-	 * of the following are true:
-	 * <ul>
-	 * <li>{@code ch == 0}</li>
-	 * <li>{@code foreground == null}</li>
-	 * <li>{@code background == null}</li>
-	 * </ul>
-	 * </p>
 	 * 
 	 * @param c
-	 * @param ch
-	 * @param foreground
-	 * @param background
+	 * @param type
 	 */
-	public void set(Coord c, char ch, Color foreground, Color background) {
+	public void set(Coord c, TerrainType type) {
 		
-		set(c.x, c.y, ch, foreground, background);
+		set(c.x, c.y, type);
 	}
 	
 	/**
@@ -211,26 +208,15 @@ public class GameMap {
 	 * <p>
 	 * If the given location is not {@link #isInMap(int, int) on this map}, then
 	 * this method does nothing.
-	 * </p>
-	 * <p>
-	 * Note that the updated map-location now counts as "known" <em>unless</em> all
-	 * of the following are true:
-	 * <ul>
-	 * <li>{@code ch == 0}</li>
-	 * <li>{@code foreground == null}</li>
-	 * <li>{@code background == null}</li>
-	 * </ul>
 	 * </p>
 	 * 
 	 * @param x
 	 * @param y
-	 * @param ch
-	 * @param foreground
-	 * @param background
+	 * @param type
 	 */
-	public void set(int x, int y, char ch, Color foreground, Color background) {
+	public void set(int x, int y, TerrainType type) {
 		
-		set(x, y, ch, ColorCache.get().get(foreground), ColorCache.get().get(background));
+		set(x, y, TerrainTypes.get().getIndexOf(type));
 	}
 	
 	/**
@@ -238,59 +224,68 @@ public class GameMap {
 	 * <p>
 	 * If the given location is not {@link #isInMap(int, int) on this map}, then
 	 * this method does nothing.
-	 * </p>
-	 * <p>
-	 * Note that the updated map-location now counts as "known" <em>unless</em> all
-	 * of the following are true:
-	 * <ul>
-	 * <li>{@code ch == 0}</li>
-	 * <li>{@code foreground < 0}</li>
-	 * <li>{@code background < 0}</li>
-	 * </ul>
-	 * </p>
-	 * 
-	 * @param c
-	 * @param ch
-	 * @param foreground
-	 * @param background
-	 */
-	public void set(Coord c, char ch, short foreground, short background) {
-		
-		set(c.x, c.y, ch, foreground, background);
-	}
-	
-	/**
-	 * Sets this map's contents to the given values.
-	 * <p>
-	 * If the given location is not {@link #isInMap(int, int) on this map}, then
-	 * this method does nothing.
-	 * </p>
-	 * <p>
-	 * Note that the updated map-location now counts as "known" <em>unless</em> all
-	 * of the following are true:
-	 * <ul>
-	 * <li>{@code ch == 0}</li>
-	 * <li>{@code foreground < 0}</li>
-	 * <li>{@code background < 0}</li>
-	 * </ul>
 	 * </p>
 	 * 
 	 * @param x
 	 * @param y
-	 * @param ch
-	 * @param foreground
-	 * @param background
+	 * @param terrainType
 	 */
-	public void set(int x, int y, char ch, short foreground, short background) {
+	public void set(int x, int y, short terrainType) {
 		
 		synchronized (this) {
 			if (!isInMap(x, y))
 				return;
 			
-			this.chars[x][y] = ch;
-			this.foreground[x][y] = foreground;
-			this.background[x][y] = background;
-			this.known.set((ch != 0 || foreground >= 0 || background >= 0), x, y);
+			this.terrain[x][y] = terrainType;
+			this.known.set((terrainType >= 0), x, y);
+		}
+	}
+	
+	/**
+	 * Compile a {@code char[][]} consisting of every map-cell's
+	 * {@link TerrainType#getSquidChar()}.
+	 * 
+	 * @return
+	 */
+	public char[][] getSquidCharMap() {
+		
+		synchronized (this) {
+			final char[][] result = new char[width][height];
+			for (int i = 0; i < width; i++)
+				for (int j = 0; j < height; j++) {
+					final TerrainType tt = getTerrain(i, j);
+					result[i][j] = (tt == null) ? 0 : tt.getSquidChar();
+				}
+			return result;
+		}
+	}
+	
+	/**
+	 * Get the active {@link TerrainType} at the given location, or {@code null} if
+	 * there is no assigned TerrainType or the location is outside the map.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public TerrainType getTerrain(Coord c) {
+		
+		return getTerrain(c.x, c.y);
+	}
+	
+	/**
+	 * Get the active {@link TerrainType} at the given location, or {@code null} if
+	 * there is no assigned TerrainType or the location is outside the map.
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public TerrainType getTerrain(int x, int y) {
+		
+		synchronized (this) {
+			if (!isInMap(x, y))
+				return null;
+			return TerrainTypes.get().getAt(terrain[x][y]);
 		}
 	}
 	
@@ -319,22 +314,11 @@ public class GameMap {
 	public char getChar(int x, int y) {
 		
 		synchronized (this) {
-			if (!isInMap(x, y))
+			final TerrainType tt = getTerrain(x, y);
+			if (tt == null)
 				return 0;
-			if (!known.contains(x, y))
-				return 0;
-			return chars[x][y];
+			return tt.getCh();
 		}
-	}
-	
-	/**
-	 * Get the {@code char[][]} array underlying this GameMap.
-	 * 
-	 * @return
-	 */
-	public char[][] getChars() {
-		
-		return chars;
 	}
 	
 	/**
@@ -361,50 +345,12 @@ public class GameMap {
 	 */
 	public Color getForeground(int x, int y) {
 		
-		return ColorCache.get().get(getForegroundIndex(x, y));
-	}
-	
-	/**
-	 * Get the foreground color-index at the given location, or {@code -1} if the
-	 * given location is either unknown or outside the map.
-	 * 
-	 * @param c
-	 * @return
-	 */
-	public short getForegroundIndex(Coord c) {
-		
-		if (c == null)
-			return -1;
-		return getForegroundIndex(c.x, c.y);
-	}
-	
-	/**
-	 * Get the foreground color-index at the given location, or {@code -1} if the
-	 * given location is either unknown or outside the map.
-	 * 
-	 * @param x
-	 * @param y
-	 * @return
-	 */
-	public short getForegroundIndex(int x, int y) {
-		
 		synchronized (this) {
-			if (!isInMap(x, y))
-				return -1;
-			if (!known.contains(x, y))
-				return -1;
-			return foreground[x][y];
+			final TerrainType tt = getTerrain(x, y);
+			if (tt == null)
+				return null;
+			return tt.getForeground();
 		}
-	}
-	
-	/**
-	 * Get the {@code short[][]} foreground-color-index array underlying this map.
-	 * 
-	 * @return
-	 */
-	public short[][] getForegroundIndices() {
-		
-		return foreground;
 	}
 	
 	/**
@@ -431,50 +377,12 @@ public class GameMap {
 	 */
 	public Color getBackground(int x, int y) {
 		
-		return ColorCache.get().get(getBackgroundIndex(x, y));
-	}
-	
-	/**
-	 * Get the background color-index at the given location, or {@code -1} if the
-	 * given location is either unknown or outside the map.
-	 * 
-	 * @param c
-	 * @return
-	 */
-	public short getBackgroundIndex(Coord c) {
-		
-		if (c == null)
-			return -1;
-		return getBackgroundIndex(c.x, c.y);
-	}
-	
-	/**
-	 * Get the background color-index at the given location, or {@code -1} if the
-	 * given location is either unknown or outside the map.
-	 * 
-	 * @param x
-	 * @param y
-	 * @return
-	 */
-	public short getBackgroundIndex(int x, int y) {
-		
 		synchronized (this) {
-			if (!isInMap(x, y))
-				return -1;
-			if (!known.contains(x, y))
-				return -1;
-			return background[x][y];
+			final TerrainType tt = getTerrain(x, y);
+			if (tt == null)
+				return null;
+			return tt.getBackground();
 		}
-	}
-	
-	/**
-	 * Get the {@code short[][]} background-color-index array underlying this map.
-	 * 
-	 * @return
-	 */
-	public short[][] getBackgroundIndices() {
-		
-		return background;
 	}
 	
 	/**
@@ -551,9 +459,7 @@ public class GameMap {
 	public void clear() {
 		
 		synchronized (this) {
-			ArrayUtil.fill(chars, (char) 0);
-			ArrayUtil.fill(foreground, (short) 0);
-			ArrayUtil.fill(background, (short) 0);
+			ArrayUtil.fill(terrain, (short) -1);
 			known.clear();
 		}
 	}
@@ -566,9 +472,7 @@ public class GameMap {
 	public void clear(ExtGreasedRegion onlyWithin) {
 		
 		synchronized (this) {
-			chars = onlyWithin.inverseMask(chars, (char) 0);
-			foreground = onlyWithin.inverseMask(foreground, (short) -1);
-			background = onlyWithin.inverseMask(background, (short) -1);
+			terrain = onlyWithin.inverseMask(terrain, (short) -1);
 			known.andNot(onlyWithin);
 		}
 	}

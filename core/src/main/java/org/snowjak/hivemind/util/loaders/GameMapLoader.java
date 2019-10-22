@@ -4,14 +4,9 @@
 package org.snowjak.hivemind.util.loaders;
 
 import java.lang.reflect.Type;
-import java.util.Map.Entry;
 
-import org.eclipse.collections.api.set.primitive.MutableShortSet;
-import org.eclipse.collections.impl.set.mutable.primitive.ShortHashSet;
 import org.snowjak.hivemind.map.GameMap;
-import org.snowjak.hivemind.util.cache.ColorCache;
 
-import com.badlogic.gdx.graphics.Color;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
@@ -39,27 +34,26 @@ public class GameMapLoader implements Loader<GameMap> {
 		obj.add("width", new JsonPrimitive(src.getWidth()));
 		obj.add("height", new JsonPrimitive(src.getHeight()));
 		
-		final MutableShortSet colorIndices = new ShortHashSet();
-		for (int i = 0; i < src.getWidth(); i++)
-			for (int j = 0; j < src.getHeight(); j++) {
-				colorIndices.add(src.getForegroundIndex(i, j));
-				colorIndices.add(src.getBackgroundIndex(i, j));
-			}
+		// final MutableShortSet colorIndices = new ShortHashSet();
+		// for (int i = 0; i < src.getWidth(); i++)
+		// for (int j = 0; j < src.getHeight(); j++) {
+		// colorIndices.add(src.getForegroundIndex(i, j));
+		// colorIndices.add(src.getBackgroundIndex(i, j));
+		// }
+		//
+		// final JsonObject colorMappings = new JsonObject();
+		//
+		// for (short index : colorIndices.toArray()) {
+		// if (index == -1)
+		// continue;
+		//
+		// colorMappings.add(Short.toString(index),
+		// context.serialize(ColorCache.get().get(index)));
+		// }
+		//
+		// obj.add("colors", colorMappings);
 		
-		final JsonObject colorMappings = new JsonObject();
-		
-		for (short index : colorIndices.toArray()) {
-			if (index == -1)
-				continue;
-			
-			colorMappings.add(Short.toString(index), context.serialize(ColorCache.get().get(index)));
-		}
-		
-		obj.add("colors", colorMappings);
-		
-		obj.add("chars", new JsonPrimitive(toBase64(src.getChars())));
-		obj.add("foreground", new JsonPrimitive(toBase64(src.getForegroundIndices())));
-		obj.add("background", new JsonPrimitive(toBase64(src.getBackgroundIndices())));
+		obj.add("terrain", new JsonPrimitive(toBase64(src.getSquidCharMap())));
 		obj.add("known", new JsonPrimitive(toBase64(src.getKnown())));
 		
 		return obj;
@@ -97,45 +91,31 @@ public class GameMapLoader implements Loader<GameMap> {
 					e);
 		}
 		
-		if (!obj.has("colors"))
-			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [colors]!");
-		if (!obj.get("colors").isJsonObject())
-			throw new JsonParseException("Cannot parse GameMap from JSON -- [colors] is not an object!");
-		final JsonObject colorMappings = obj.getAsJsonObject("colors");
-		try {
-			for (Entry<String, JsonElement> entry : colorMappings.entrySet()) {
-				final short index = Short.parseShort(entry.getKey());
-				ColorCache.get().set(context.deserialize(entry.getValue(), Color.class), index);
-			}
-		} catch (Throwable t) {
-			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [colors]!", t);
-		}
+		// if (!obj.has("colors"))
+		// throw new JsonParseException("Cannot parse GameMap from JSON -- missing
+		// [colors]!");
+		// if (!obj.get("colors").isJsonObject())
+		// throw new JsonParseException("Cannot parse GameMap from JSON -- [colors] is
+		// not an object!");
+		// final JsonObject colorMappings = obj.getAsJsonObject("colors");
+		// try {
+		// for (Entry<String, JsonElement> entry : colorMappings.entrySet()) {
+		// final short index = Short.parseShort(entry.getKey());
+		// ColorCache.get().set(context.deserialize(entry.getValue(), Color.class),
+		// index);
+		// }
+		// } catch (Throwable t) {
+		// throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse
+		// [colors]!", t);
+		// }
 		
-		final char[][] chars;
-		if (!obj.has("chars"))
-			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [chars]!");
+		final char[][] squidCharMap;
+		if (!obj.has("terrain"))
+			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [terrain]!");
 		try {
-			chars = toCharArray(obj.get("chars").getAsString(), width, height);
+			squidCharMap = toCharArray(obj.get("terrain").getAsString(), width, height);
 		} catch (Throwable t) {
-			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [chars]!", t);
-		}
-		
-		final short[][] foreground;
-		if (!obj.has("foreground"))
-			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [foreground]!");
-		try {
-			foreground = toShortArray(obj.get("foreground").getAsString(), width, height);
-		} catch (Throwable t) {
-			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [foreground]!", t);
-		}
-		
-		final short[][] background;
-		if (!obj.has("background"))
-			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [background]!");
-		try {
-			background = toShortArray(obj.get("background").getAsString(), width, height);
-		} catch (Throwable t) {
-			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [background]!", t);
+			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [terrain]!", t);
 		}
 		
 		final GreasedRegion known;
@@ -147,7 +127,7 @@ public class GameMapLoader implements Loader<GameMap> {
 			throw new JsonParseException("Cannot parse GameMap from JSON -- cannot parse [known]!", t);
 		}
 		
-		return new GameMap(chars, GameMap.uncompressColors(foreground), GameMap.uncompressColors(background), known);
+		return new GameMap(squidCharMap, known, true);
 	}
 	
 }
