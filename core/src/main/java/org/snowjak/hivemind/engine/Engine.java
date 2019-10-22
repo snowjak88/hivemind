@@ -13,8 +13,10 @@ import java.util.function.Function;
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
 import org.snowjak.hivemind.engine.systems.GameScreenUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.LocationUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.engine.systems.UpdatedLocationResettingSystem;
 import org.snowjak.hivemind.json.Json;
 
 import com.badlogic.ashley.core.Component;
@@ -63,8 +65,10 @@ public class Engine {
 		
 		this.engine = new PooledEngine();
 		
+		this.engine.addSystem(new UpdatedLocationResettingSystem());
 		this.engine.addSystem(new RunnableExecutingSystem());
 		
+		this.engine.addSystem(new LocationUpdatingSystem());
 		this.engine.addSystem(new GameScreenUpdatingSystem());
 		
 		this.engine.addSystem(new UniqueTagManager());

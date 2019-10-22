@@ -1,9 +1,9 @@
 /**
  * 
  */
-package org.snowjak.hivemind.ui.gamescreen.updates;
+package org.snowjak.hivemind.gamescreen.updates;
 
-import org.snowjak.hivemind.ui.gamescreen.GameScreen;
+import org.snowjak.hivemind.gamescreen.GameScreen;
 
 import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 

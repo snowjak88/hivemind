@@ -3,14 +3,26 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
+import java.util.logging.Logger;
+
+import org.snowjak.hivemind.engine.ComponentMappers;
 import org.snowjak.hivemind.engine.Tags;
+import org.snowjak.hivemind.engine.components.HasAppearance;
+import org.snowjak.hivemind.engine.components.HasFOV;
+import org.snowjak.hivemind.engine.components.HasGlyph;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.ui.gamescreen.GameScreen;
-import org.snowjak.hivemind.ui.gamescreen.updates.ClearMapUpdate;
-import org.snowjak.hivemind.ui.gamescreen.updates.DrawMapCellUpdate;
-import org.snowjak.hivemind.ui.gamescreen.updates.GameScreenUpdate;
-import org.snowjak.hivemind.ui.gamescreen.updates.GameScreenUpdatePool;
-import org.snowjak.hivemind.ui.gamescreen.updates.MapScreenSizeUpdate;
+import org.snowjak.hivemind.gamescreen.GameScreen;
+import org.snowjak.hivemind.gamescreen.updates.ClearMapUpdate;
+import org.snowjak.hivemind.gamescreen.updates.DrawMapCellUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
+import org.snowjak.hivemind.gamescreen.updates.GlyphAddedUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GlyphColorChangeUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GlyphMovedUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GlyphRemovedUpdate;
+import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
+import org.snowjak.hivemind.map.EntityMap;
+import org.snowjak.hivemind.map.GameMap;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -18,20 +30,30 @@ import com.badlogic.ashley.core.EntitySystem;
 
 import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.GreasedRegion;
+import squidpony.squidmath.OrderedMap;
+import squidpony.squidmath.OrderedSet;
 
 /**
  * This system will send {@link GameScreenUpdate}s to the {@link GameScreen}, if
  * there is an {@link Entity} tagged with {@link Tags#SCREEN_MAP} that
  * {@link HasMap has an associated GameMap}.
  * 
- * TODO: still have to figure out how to update displayed {@link Glyph}s.
- * 
  * @author snowjak88
  *
  */
 public class GameScreenUpdatingSystem extends EntitySystem {
 	
-	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
+	private static final Logger LOG = Logger.getLogger(GameScreenUpdatingSystem.class.getName());
+	
+	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMappers.get().get(HasMap.class);
+	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMappers.get().get(HasFOV.class);
+	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMappers.get()
+			.get(HasAppearance.class);
+	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMappers.get().get(HasGlyph.class);
+	
+	private final OrderedMap<Glyph, Entity> glyphToEntity = new OrderedMap<>();
+	private boolean resetAllGlyphs = false;
 	
 	@Override
 	public void update(float deltaTime) {
@@ -42,15 +64,21 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 		
 		final Entity e = utm.get(Tags.SCREEN_MAP);
 		
+		updateMap(e, deltaTime);
+		updateEntities(e, deltaTime);
+	}
+	
+	private void updateMap(Entity screenMapEntity, float deltaTime) {
+		
 		//
 		// If the tagged Entity has no associated map, then just clear the screen.
-		if (!HAS_MAP.has(e)) {
+		if (!HAS_MAP.has(screenMapEntity)) {
 			GameScreen.get().postGameScreenUpdate(GameScreenUpdatePool.get().get(ClearMapUpdate.class));
 			
 			return;
 		}
 		
-		final HasMap hm = HAS_MAP.get(e);
+		final HasMap hm = HAS_MAP.get(screenMapEntity);
 		
 		//
 		// If the HasMap has no updated locations, then there's nothing to do.
@@ -70,6 +98,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 			upd.setWidth(hm.getMap().getWidth());
 			upd.setHeight(hm.getMap().getHeight());
 			GameScreen.get().postGameScreenUpdate(upd);
+			resetAllGlyphs = true;
 		}
 		
 		//
@@ -88,5 +117,172 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 		//
 		// Now that we've queued up all updates, reset that list of updated locations.
 		hm.getUpdatedLocations().clear();
+	}
+	
+	private void updateEntities(Entity screenMapEntity, float deltaTime) {
+		
+		if (!HAS_MAP.has(screenMapEntity))
+			return;
+		
+		final HasMap hasMap = HAS_MAP.get(screenMapEntity);
+		
+		if (hasMap.getMap() == null)
+			return;
+		final GameMap map = hasMap.getMap();
+		
+		if (hasMap.getEntities() == null)
+			hasMap.setEntities(new EntityMap());
+		final EntityMap entities = hasMap.getEntities();
+		
+		final GreasedRegion fov;
+		if (!HAS_FOV.has(screenMapEntity))
+			fov = new GreasedRegion(map.getWidth(), map.getHeight());
+		else
+			fov = HAS_FOV.get(screenMapEntity).getVisible();
+			
+		//
+		// 1) Create Glyphs for any Entities that have become visible.
+		// 2) Remove Glyphs for any Entity that has been removed.
+		// 3) Update the Glyph positions of all Entities that are currently visible.
+		// 4) Ensure that any Entities outside the FOV have their Glyphs "ghosted".
+		//
+		final OrderedSet<Entity> updatedEntities;
+		if (resetAllGlyphs) {
+			updatedEntities = entities.getValues();
+			resetAllGlyphs = false;
+		} else
+			updatedEntities = entities.getRecentlyUpdatedEntities();
+		synchronized (glyphToEntity) {
+			for (int i = 0; i < updatedEntities.size(); i++) {
+				
+				final Entity e = updatedEntities.getAt(i);
+				
+				//
+				// Has this entity been added?
+				if (!glyphToEntity.containsValue(e)) {
+					if (!HAS_APPEARANCE.has(e))
+						continue;
+					final HasAppearance appearance = HAS_APPEARANCE.get(e);
+					
+					final HasGlyph hg;
+					if (HAS_GLYPH.has(e))
+						hg = HAS_GLYPH.get(e);
+					else
+						hg = getEngine().createComponent(HasGlyph.class);
+					
+					if (hg.getGlyph() != null) {
+						final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
+						upd.setGlyph(hg.getGlyph());
+						GameScreen.get().postGameScreenUpdate(upd);
+					}
+					
+					final Coord location = entities.getLocation(e);
+					final GlyphAddedUpdate upd = GameScreenUpdatePool.get().get(GlyphAddedUpdate.class);
+					upd.setCh(appearance.getCh());
+					upd.setColor(appearance.getColor());
+					upd.setX(location.x);
+					upd.setY(location.y);
+					upd.setConsumer((g) -> getEngine().getSystem(RunnableExecutingSystem.class).submit(() -> {
+						synchronized (glyphToEntity) {
+							hg.setGlyph(g);
+							hg.setX(location.x);
+							hg.setY(location.y);
+							e.add(hg);
+							glyphToEntity.put(g, e);
+						}
+					}));
+					GameScreen.get().postGameScreenUpdate(upd);
+					
+				}
+				//
+				// Has this entity been removed?
+				else if (glyphToEntity.containsValue(e) && entities.getLocation(e) == null) {
+					
+					if (!HAS_GLYPH.has(e))
+						throw new IllegalStateException(
+								"An entity is associated with a Glyph but has no HasGlyph component!");
+					
+					final HasGlyph hg = HAS_GLYPH.get(e);
+					if (hg.getGlyph() == null)
+						throw new IllegalStateException(
+								"An entity is associated with a Glyph but its HasGlyph is not configured properly!");
+					
+					glyphToEntity.remove(hg.getGlyph());
+					
+					final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
+					upd.setGlyph(hg.getGlyph());
+					GameScreen.get().postGameScreenUpdate(upd);
+				} else {
+					//
+					// Has this entity's location been updated?
+					if (glyphToEntity.containsValue(e) && entities.getLocation(e) != null) {
+						
+						if (!HAS_GLYPH.has(e))
+							throw new IllegalStateException(
+									"An entity is supposedly associated with a Glyph, but has no HasGlyph!");
+						final HasGlyph hg = HAS_GLYPH.get(e);
+						
+						final Coord location = entities.getLocation(e);
+						
+						final GlyphMovedUpdate upd = GameScreenUpdatePool.get().get(GlyphMovedUpdate.class);
+						upd.setFromX(hg.getX());
+						upd.setFromY(hg.getY());
+						upd.setToX(location.x);
+						upd.setToY(location.y);
+						upd.setGlyph(hg.getGlyph());
+						upd.setMovementDuration(deltaTime);
+						upd.setAfterMove(() -> getEngine().getSystem(RunnableExecutingSystem.class).submit(() -> {
+							hg.setX(location.x);
+							hg.setY(location.y);
+						}));
+						GameScreen.get().postGameScreenUpdate(upd);
+					}
+					
+					//
+					// Any Glyph within the FOV should be full-colored. Any Glyph outside the FOV
+					// should be ghosted.
+					if (entities.getLocation(e) != null) {
+						if (!HAS_APPEARANCE.has(e))
+							continue;
+						
+						final HasAppearance ha = HAS_APPEARANCE.get(e);
+						
+						if (!HAS_GLYPH.has(e))
+							throw new IllegalStateException("An entity which is supposed to be known has no HasGlyph!");
+						
+						final HasGlyph hg = HAS_GLYPH.get(e);
+						
+						if (!HAS_GLYPH.has(e))
+							throw new IllegalStateException(
+									"An entity which is supposed to be known has no glyph within its HasGlyph!");
+						
+						final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
+						upd.setGlyph(hg.getGlyph());
+						if (fov.contains(entities.getLocation(e)))
+							upd.setNewColor(ha.getColor());
+						else
+							upd.setNewColor(ha.getGhostedColor());
+						
+						GameScreen.get().postGameScreenUpdate(upd);
+					}
+				}
+			}
+			
+			entities.resetRecentlyUpdatedEntities();
+		}
+	}
+	
+	/**
+	 * Get the {@link Entity} associated with the given {@link Glyph}, or
+	 * {@code null} if no such association exists.
+	 * 
+	 * @param glyph
+	 * @return
+	 */
+	public Entity getEntityFor(Glyph glyph) {
+		
+		synchronized (glyphToEntity) {
+			return glyphToEntity.get(glyph);
+		}
 	}
 }

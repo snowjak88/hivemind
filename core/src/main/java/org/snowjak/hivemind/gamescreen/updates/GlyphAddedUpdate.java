@@ -1,11 +1,11 @@
 /**
  * 
  */
-package org.snowjak.hivemind.ui.gamescreen.updates;
+package org.snowjak.hivemind.gamescreen.updates;
 
 import java.util.function.Consumer;
 
-import org.snowjak.hivemind.ui.gamescreen.GameScreen;
+import org.snowjak.hivemind.gamescreen.GameScreen;
 
 import com.badlogic.gdx.graphics.Color;
 

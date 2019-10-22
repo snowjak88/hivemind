@@ -19,9 +19,21 @@ import com.badlogic.gdx.utils.Pool.Poolable;
 @IgnoreSerialization
 public class HasUpdatedLocation implements Component, Poolable {
 	
+	private int tickCounter = 0;
+	
+	public void incrementTickCounter() {
+		
+		tickCounter++;
+	}
+	
+	public int getTickCounter() {
+		
+		return tickCounter;
+	}
+	
 	@Override
 	public void reset() {
 		
-		// nothing required to reset
+		this.tickCounter = 0;
 	}
 }

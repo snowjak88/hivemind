@@ -139,6 +139,10 @@ public class Display implements Disposable {
 		return delta;
 	}
 	
+	public Stage getStage() {
+		return stage;
+	}
+	
 	public void resize(int width, int height) {
 		
 		stage.getViewport().update(width, height, false);

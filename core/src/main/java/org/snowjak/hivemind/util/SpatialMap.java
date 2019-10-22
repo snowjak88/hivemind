@@ -44,6 +44,16 @@ public class SpatialMap<T> {
 	}
 	
 	/**
+	 * Get all values associated with locations.
+	 * 
+	 * @return
+	 */
+	public OrderedSet<T> getValues() {
+		
+		return objectToCoord.keysAsOrderedSet();
+	}
+	
+	/**
 	 * Sets this value's associated location. If the value is already associated
 	 * with a different location, removes the previous association.
 	 * 

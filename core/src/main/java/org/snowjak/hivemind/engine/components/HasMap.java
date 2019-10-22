@@ -3,9 +3,9 @@
  */
 package org.snowjak.hivemind.engine.components;
 
+import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
-import org.snowjak.hivemind.util.SpatialMap;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.Pool.Poolable;
 
 /**
  * Indicates that an {@link Entity} knows about its surroundings, both via a
- * {@link GameMap} (to record the terrain) and a {@link SpatialMap} (to record
+ * {@link GameMap} (to record the terrain) and an {@link EntityMap} (to record
  * {@link Entity}-locations).
  * 
  * @author snowjak88
@@ -22,7 +22,7 @@ import com.badlogic.gdx.utils.Pool.Poolable;
 public class HasMap implements Component, Poolable {
 	
 	private GameMap map;
-	private SpatialMap<Entity> entities;
+	private EntityMap entities;
 	private ExtGreasedRegion updatedLocations;
 	
 	public GameMap getMap() {
@@ -35,12 +35,12 @@ public class HasMap implements Component, Poolable {
 		this.map = map;
 	}
 	
-	public SpatialMap<Entity> getEntities() {
+	public EntityMap getEntities() {
 		
 		return entities;
 	}
 	
-	public void setEntities(SpatialMap<Entity> entities) {
+	public void setEntities(EntityMap entities) {
 		
 		this.entities = entities;
 	}

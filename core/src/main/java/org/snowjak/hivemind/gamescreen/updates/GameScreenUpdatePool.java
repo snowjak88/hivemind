@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.ui.gamescreen.updates;
+package org.snowjak.hivemind.gamescreen.updates;
 
 import org.snowjak.hivemind.util.cache.TypedPool;
 

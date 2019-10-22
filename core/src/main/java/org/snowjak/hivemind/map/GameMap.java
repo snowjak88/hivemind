@@ -10,6 +10,7 @@ import org.snowjak.hivemind.util.cache.ColorCache;
 import com.badlogic.gdx.graphics.Color;
 
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.GreasedRegion;
 
 /**
  * Encapsulates knowledge about the game-map. Such knowledge may be either total
@@ -87,6 +88,34 @@ public class GameMap {
 		this.foreground = compressColors(foreground);
 		this.background = compressColors(background);
 		this.known.resizeAndEmpty(width, height).fill(true);
+	}
+	
+	/**
+	 * Construct a new GameMap from the given arrays and "known" region.
+	 * 
+	 * @param chars
+	 * @param foreground
+	 * @param background
+	 * @param known
+	 * @throws IllegalArgumentException
+	 *             if the sizes of {@code chars}, {@code foreground}, or
+	 *             {@code background} do not match
+	 */
+	public GameMap(char[][] chars, Color[][] foreground, Color[][] background, GreasedRegion known) {
+		
+		if (chars.length != foreground.length || chars[0].length != foreground[0].length
+				|| chars.length != background.length || chars[0].length != background[0].length
+				|| foreground.length != background.length || foreground[0].length != background[0].length)
+			throw new IllegalArgumentException(
+					"Cannot create a new GameMap -- given map-element arrays do not match sizes.");
+		
+		this.width = chars.length;
+		this.height = chars[0].length;
+		
+		this.chars = ArrayUtil.copy(chars);
+		this.foreground = compressColors(foreground);
+		this.background = compressColors(background);
+		this.known = new ExtGreasedRegion(known);
 	}
 	
 	/**
@@ -299,6 +328,16 @@ public class GameMap {
 	}
 	
 	/**
+	 * Get the {@code char[][]} array underlying this GameMap.
+	 * 
+	 * @return
+	 */
+	public char[][] getChars() {
+		
+		return chars;
+	}
+	
+	/**
 	 * Get the foreground {@link Color} at the given location, or {@code null} if
 	 * the given location is either unknown or outside the map.
 	 * 
@@ -356,6 +395,16 @@ public class GameMap {
 				return -1;
 			return foreground[x][y];
 		}
+	}
+	
+	/**
+	 * Get the {@code short[][]} foreground-color-index array underlying this map.
+	 * 
+	 * @return
+	 */
+	public short[][] getForegroundIndices() {
+		
+		return foreground;
 	}
 	
 	/**
@@ -419,6 +468,16 @@ public class GameMap {
 	}
 	
 	/**
+	 * Get the {@code short[][]} background-color-index array underlying this map.
+	 * 
+	 * @return
+	 */
+	public short[][] getBackgroundIndices() {
+		
+		return background;
+	}
+	
+	/**
 	 * Determine if the given map-location is "known".
 	 * 
 	 * @param c
@@ -443,6 +502,16 @@ public class GameMap {
 		synchronized (this) {
 			return known.contains(x, y);
 		}
+	}
+	
+	/**
+	 * Get the "known" region underlying this map.
+	 * 
+	 * @return
+	 */
+	public ExtGreasedRegion getKnown() {
+		
+		return known;
 	}
 	
 	/**

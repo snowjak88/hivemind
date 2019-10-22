@@ -8,7 +8,9 @@ import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.EngineUpdatePerFrameProcess;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
-import org.snowjak.hivemind.ui.gamescreen.GameScreen;
+import org.snowjak.hivemind.gamescreen.GameScreen;
+import org.snowjak.hivemind.gamescreen.updates.ClearMapUpdate;
+import org.snowjak.hivemind.gamescreen.updates.RemoveAllGlyphsUpdate;
 
 import com.badlogic.gdx.ai.msg.Telegram;
 import com.google.common.eventbus.AllowConcurrentEvents;
@@ -33,6 +35,9 @@ public class GameScreenDisplayState implements DisplayState {
 	
 	@Override
 	public void enter(Display entity) {
+		
+		gameScreen.postGameScreenUpdate(new ClearMapUpdate());
+		gameScreen.postGameScreenUpdate(new RemoveAllGlyphsUpdate());
 		
 		entity.setRoot(gameScreen.getActor());
 		entity.setInput(gameScreen.getSquidInput());
@@ -60,6 +65,11 @@ public class GameScreenDisplayState implements DisplayState {
 		
 		entity.setRoot(null);
 		entity.setInput(null);
+		
+		entity.getStage().getCamera().position.x = entity.getStage().getViewport().getWorldWidth() / 2;
+		entity.getStage().getCamera().position.y = entity.getStage().getViewport().getWorldHeight() / 2;
+		
+		engineUpdateProcess.stop();
 		
 		EventBus.get().unregister(this);
 	}

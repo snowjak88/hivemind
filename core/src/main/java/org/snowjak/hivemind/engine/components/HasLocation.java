@@ -18,6 +18,7 @@ import squidpony.squidmath.Coord;
 public class HasLocation implements Component, Poolable {
 	
 	private Coord location;
+	private float fractionalX = 0.5f, fractionalY = 0.5f;
 	
 	public Coord getLocation() {
 		
@@ -29,9 +30,31 @@ public class HasLocation implements Component, Poolable {
 		this.location = location;
 	}
 	
+	public float getFractionalX() {
+		
+		return fractionalX;
+	}
+	
+	public void setFractionalX(float fractionalX) {
+		
+		this.fractionalX = fractionalX;
+	}
+	
+	public float getFractionalY() {
+		
+		return fractionalY;
+	}
+	
+	public void setFractionalY(float fractionalY) {
+		
+		this.fractionalY = fractionalY;
+	}
+	
 	@Override
 	public void reset() {
 		
 		location = null;
+		fractionalX = 0.5f;
+		fractionalY = 0.5f;
 	}
 }

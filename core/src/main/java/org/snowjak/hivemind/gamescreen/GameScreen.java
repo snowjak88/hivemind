@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.ui.gamescreen;
+package org.snowjak.hivemind.gamescreen;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -12,13 +12,12 @@ import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.engine.EnginePrefabs;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
 import org.snowjak.hivemind.ui.MouseHoverListener.MouseHoverListenerRegistrar;
-import org.snowjak.hivemind.ui.gamescreen.updates.GameScreenUpdate;
-import org.snowjak.hivemind.ui.gamescreen.updates.GameScreenUpdatePool;
 
 import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.gdx.InputAdapter;
@@ -27,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.utils.Disposable;
 
 import squidpony.squidgrid.Direction;
+import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.SparseLayers;
 import squidpony.squidgrid.gui.gdx.SquidInput;
 import squidpony.squidgrid.gui.gdx.SquidInput.KeyHandler;
@@ -98,16 +98,15 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		
 		super();
 		
-		this.rootActor = new Container<SparseLayers>();
-		this.rootActor.setFillParent(true);
-		this.rootActor.setClip(true);
+		rootActor = new Container<>();
+		// rootActor.setFillParent(true);
+		// rootActor.setX(0);
+		// rootActor.setY(0);
 		
 		this.cameraX = 0;
 		this.cameraY = 0;
 		
 		setupScrollHoverListeners();
-		
-		EnginePrefabs.loadTest();
 		
 		EventBus.get().register(this);
 	}
@@ -149,8 +148,10 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		if (sparseLayers == null)
 			return;
 		
-		sparseLayers.setX(-cameraX);
-		sparseLayers.setY(-cameraY);
+		if (sparseLayers.getStage() != null) {
+			sparseLayers.getStage().getCamera().position.x = cameraX;
+			sparseLayers.getStage().getCamera().position.y = cameraY;
+		}
 		
 		updateHoverListeners(delta);
 	}
@@ -184,9 +185,14 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 			
 			final TextCellFactory font = new TextCellFactory().font(Fonts.get().get(Fonts.FONT_MAP));
 			sparseLayers = new SparseLayers(width, height, getCellWidth(), getCellHeight(), font);
+			sparseLayers.fillBackground(SColor.AURORA_GRAPHITE);
+			
+			rootActor.setWidth(sparseLayers.getWidth());
+			rootActor.setHeight(sparseLayers.getHeight());
 			rootActor.setActor(sparseLayers);
 			
-			squidInput.getMouse().reinitialize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0);
+			getSquidInput().getMouse().reinitialize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0,
+					0);
 		}
 		
 		cameraX = (width * getCellWidth() - getWindowWidth()) / 2f;
@@ -286,9 +292,11 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		final float newX = cameraX + ((float) direction.deltaX) * scale;
 		final float newY = cameraY - ((float) direction.deltaY) * scale;
 		
-		final float minX = 0, minY = 0;
-		final float maxX = (getGridWidth() * getCellWidth()) - getWindowWidth();
-		final float maxY = (getGridHeight() * getCellHeight()) - getWindowHeight();
+		final float worldWidth = getGridWidth() * getCellWidth(), worldHeight = getGridHeight() * getCellHeight();
+		
+		final float minX = 0 + (getWindowWidth() / 2f), minY = 0 + (getWindowHeight() / 2f);
+		final float maxX = worldWidth - getWindowWidth() / 2f;
+		final float maxY = worldHeight - getWindowHeight() / 2f;
 		
 		cameraX = Math.min(Math.max(newX, minX), maxX);
 		cameraY = Math.min(Math.max(newY, minY), maxY);
