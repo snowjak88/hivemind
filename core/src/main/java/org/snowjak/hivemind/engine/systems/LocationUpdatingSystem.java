@@ -3,7 +3,6 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
-import org.snowjak.hivemind.engine.ComponentMappers;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
@@ -16,17 +15,26 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
 /**
- * System which updates an Entity's {@link HasLocation} from a
- * {@link NeedsUpdatedLocation}, and adds an {@link HasUpdatedLocation}. Also
- * handles updating the {@link HasMap} associated with the {@link Tags#WORLD_MAP
- * "WORLD_MAP" tag}.
+ * System which handles {@link Entity Entities} flagged as having updated
+ * locations.
+ * <ol>
+ * <li>updates an Entity's {@link HasLocation} from a
+ * {@link NeedsUpdatedLocation}</li>
+ * <li>adds an {@link HasUpdatedLocation}</li>
+ * <li>updates the {@link HasMap} associated with the {@link Tags#WORLD_MAP
+ * "WORLD_MAP" tag}</li>
+ * </ol>
  * 
  * @author snowjak88
  *
  */
 public class LocationUpdatingSystem extends IteratingSystem {
 	
-	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMappers.get().get(HasMap.class);
+	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
+	private static final ComponentMapper<NeedsUpdatedLocation> NEED_UPDATED_LOC = ComponentMapper
+			.getFor(NeedsUpdatedLocation.class);
+	private static final ComponentMapper<HasUpdatedLocation> HAS_UPDATED_LOC = ComponentMapper
+			.getFor(HasUpdatedLocation.class);
 	
 	public LocationUpdatingSystem() {
 		
@@ -36,23 +44,16 @@ public class LocationUpdatingSystem extends IteratingSystem {
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		
-		final ComponentMapper<HasUpdatedLocation> hasUpdatedLocation = ComponentMappers.get()
-				.get(HasUpdatedLocation.class);
-		final ComponentMapper<NeedsUpdatedLocation> needsUpdatedLocation = ComponentMappers.get()
-				.get(NeedsUpdatedLocation.class);
-		
 		//
 		
-		if (hasUpdatedLocation.has(entity))
+		if (HAS_UPDATED_LOC.has(entity))
 			entity.remove(HasUpdatedLocation.class);
 		
 		//
 		
-		if (!needsUpdatedLocation.has(entity))
-			return;
-		final NeedsUpdatedLocation updatedLocation = needsUpdatedLocation.get(entity);
+		final NeedsUpdatedLocation updatedLocation = NEED_UPDATED_LOC.get(entity);
 		
-		final HasLocation location = ComponentMappers.get().get(HasLocation.class).get(entity);
+		final HasLocation location = ComponentMapper.getFor(HasLocation.class).get(entity);
 		location.setLocation(updatedLocation.getNewLocation());
 		entity.add(getEngine().createComponent(HasUpdatedLocation.class));
 		

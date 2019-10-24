@@ -5,7 +5,8 @@
 		"squid-char": '#',
 		"foreground": "ffffffff",
 		"background": "22222222",
-		"navigable": false
+		"navigable": false,
+		"visibility-resistance": 1.0
 	},
 	{
 		"name": "floor",

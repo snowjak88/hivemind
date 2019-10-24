@@ -11,9 +11,16 @@ import java.io.Writer;
 import java.util.function.Function;
 
 import org.snowjak.hivemind.App;
+import org.snowjak.hivemind.engine.systems.BehaviorProcessingSystem;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.FOVCopyingSystem;
+import org.snowjak.hivemind.engine.systems.FOVResettingSystem;
+import org.snowjak.hivemind.engine.systems.FOVUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.GameScreenUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.LocationUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
+import org.snowjak.hivemind.engine.systems.PathfinderUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
 import org.snowjak.hivemind.engine.systems.UpdatedLocationResettingSystem;
@@ -66,9 +73,16 @@ public class Engine {
 		this.engine = new PooledEngine();
 		
 		this.engine.addSystem(new UpdatedLocationResettingSystem());
-		this.engine.addSystem(new RunnableExecutingSystem());
-		
+		this.engine.addSystem(new FOVResettingSystem());
 		this.engine.addSystem(new LocationUpdatingSystem());
+		this.engine.addSystem(new RunnableExecutingSystem());
+		this.engine.addSystem(new InputEventProcessingSystem());
+		
+		this.engine.addSystem(new PathfinderUpdatingSystem());
+		this.engine.addSystem(new FOVUpdatingSystem());
+		this.engine.addSystem(new FOVCopyingSystem());
+		this.engine.addSystem(new OwnMapFOVInsertingSystem());
+		this.engine.addSystem(new BehaviorProcessingSystem());
 		this.engine.addSystem(new GameScreenUpdatingSystem());
 		
 		this.engine.addSystem(new UniqueTagManager());

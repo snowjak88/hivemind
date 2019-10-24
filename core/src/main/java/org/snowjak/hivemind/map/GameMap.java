@@ -29,7 +29,11 @@ public class GameMap {
 	
 	private int width = 0, height = 0;
 	private short[][] terrain = new short[0][0];
+	private double[][] modifiedVisibilityResistance = new double[0][0];
 	private ExtGreasedRegion known = new ExtGreasedRegion(0, 0);
+	
+	private double[][] baseVisibility = new double[0][0], totalVisibility = new double[0][0];
+	private char[][] squidCharMap = null, charMap = null;
 	
 	/**
 	 * Construct a new (empty) GameMap of the given size.
@@ -56,7 +60,36 @@ public class GameMap {
 			this.width = toCopy.width;
 			this.height = toCopy.height;
 			this.terrain = ArrayUtil.copy(toCopy.terrain);
+			this.modifiedVisibilityResistance = ArrayUtil.copy(toCopy.modifiedVisibilityResistance);
 			this.known.remake(toCopy.known);
+			
+			this.baseVisibility = new double[width][height];
+			this.totalVisibility = new double[width][height];
+			recalculateBaseVisibility();
+			recalculateTotalVisibility();
+		}
+	}
+	
+	/**
+	 * Construct a new GameMap, making an exact copy of any existing GameMap, but
+	 * only within the given {@link ExtGreasedRegion}.
+	 * 
+	 * @param toCopy
+	 * @param onlyWithin
+	 */
+	public GameMap(GameMap toCopy, ExtGreasedRegion onlyWithin) {
+		
+		synchronized (toCopy) {
+			this.width = toCopy.width;
+			this.height = toCopy.height;
+			this.terrain = new short[width][height];
+			this.modifiedVisibilityResistance = new double[width][height];
+			this.known.resizeAndEmpty(width, height);
+			
+			this.baseVisibility = new double[width][height];
+			this.totalVisibility = new double[width][height];
+			
+			this.insert(toCopy, onlyWithin);
 		}
 	}
 	
@@ -79,18 +112,27 @@ public class GameMap {
 		this.height = chars[0].length;
 		
 		terrain = new short[width][height];
+		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
 				throw new IllegalArgumentException("Jagged arrays are not supported as game-maps!");
 			
 			for (int j = 0; j < chars[i].length; j++) {
+				
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+				
+				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
 		this.known.resizeAndEmpty(width, height).fill(true);
+		
+		this.baseVisibility = new double[width][height];
+		this.totalVisibility = new double[width][height];
+		recalculateBaseVisibility();
+		recalculateTotalVisibility();
 	}
 	
 	/**
@@ -115,6 +157,7 @@ public class GameMap {
 		this.height = chars[0].length;
 		
 		terrain = new short[width][height];
+		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -123,11 +166,18 @@ public class GameMap {
 			for (int j = 0; j < chars[i].length; j++) {
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
+				
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
 		
 		this.known = new ExtGreasedRegion(known);
+		
+		this.baseVisibility = new double[width][height];
+		this.totalVisibility = new double[width][height];
+		recalculateBaseVisibility();
+		recalculateTotalVisibility();
 	}
 	
 	/**
@@ -146,6 +196,26 @@ public class GameMap {
 	 */
 	public void resize(int width, int height) {
 		
+		resize(width, height, true);
+	}
+	
+	/**
+	 * <p>
+	 * If this GameMap is already of the given size, this method does nothing.
+	 * </p>
+	 * <p>
+	 * If this GameMap is not already of the given size, this method will update
+	 * this GameMap's size. This method will completely erase the map's contents in
+	 * the process.
+	 * </p>
+	 * 
+	 * 
+	 * @param width
+	 * @param height
+	 * @param recalculate
+	 */
+	public void resize(int width, int height, boolean recalculate) {
+		
 		synchronized (this) {
 			if (this.width == width && this.height == height)
 				return;
@@ -154,7 +224,16 @@ public class GameMap {
 			this.height = height;
 			
 			terrain = new short[width][height];
+			modifiedVisibilityResistance = new double[width][height];
 			known.resizeAndEmpty(width, height);
+			
+			this.baseVisibility = new double[width][height];
+			this.totalVisibility = new double[width][height];
+			recalculateBaseVisibility();
+			recalculateTotalVisibility();
+			
+			squidCharMap = null;
+			charMap = null;
 		}
 	}
 	
@@ -167,8 +246,8 @@ public class GameMap {
 	 * </p>
 	 * <p>
 	 * Note that, if {@code insertFrom} is not the same size as this GameMap, then
-	 * this GameMap will be {@link #resize(int, int) resized} (and erased!) to match
-	 * before the insertion takes place.
+	 * this GameMap will be {@link #resize(int, int, boolean) resized} (and erased!)
+	 * to match before the insertion takes place.
 	 * </p>
 	 * 
 	 * @param insertFrom
@@ -179,11 +258,19 @@ public class GameMap {
 		synchronized (this) {
 			synchronized (insertFrom) {
 				if (this.width != insertFrom.width || this.height != insertFrom.height)
-					resize(insertFrom.width, insertFrom.height);
+					resize(insertFrom.width, insertFrom.height, false);
 				
-				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
+				this.terrain = insertOnly.inverseMask(insertFrom.terrain, insertFrom.terrain);
+				this.modifiedVisibilityResistance = insertOnly.inverseMask(insertFrom.modifiedVisibilityResistance,
+						insertFrom.modifiedVisibilityResistance);
 				
 				this.known.or(insertOnly);
+				
+				recalculateBaseVisibility();
+				recalculateTotalVisibility();
+				
+				squidCharMap = null;
+				charMap = null;
 			}
 		}
 	}
@@ -238,6 +325,10 @@ public class GameMap {
 			
 			this.terrain[x][y] = terrainType;
 			this.known.set((terrainType >= 0), x, y);
+			baseVisibility[x][y] = TerrainTypes.get().getAt(terrainType).getVisibilityResistance();
+			totalVisibility[x][y] = baseVisibility[x][y] + modifiedVisibilityResistance[x][y];
+			squidCharMap = null;
+			charMap = null;
 		}
 	}
 	
@@ -250,13 +341,41 @@ public class GameMap {
 	public char[][] getSquidCharMap() {
 		
 		synchronized (this) {
-			final char[][] result = new char[width][height];
-			for (int i = 0; i < width; i++)
-				for (int j = 0; j < height; j++) {
-					final TerrainType tt = getTerrain(i, j);
-					result[i][j] = (tt == null) ? 0 : tt.getSquidChar();
-				}
-			return result;
+			if (squidCharMap == null) {
+				squidCharMap = new char[width][height];
+				for (int i = 0; i < width; i++)
+					for (int j = 0; j < height; j++) {
+						final TerrainType tt = getTerrain(i, j);
+						squidCharMap[i][j] = (tt == null) ? 0 : tt.getSquidChar();
+					}
+			}
+			return squidCharMap;
+		}
+	}
+	
+	/**
+	 * Compile a {@code double[][]} representing the <em>base</em>
+	 * visibility-resistance of the Map (before any modifiers are applied).
+	 * 
+	 * @return
+	 */
+	public double[][] getBaseVisibilityResistance() {
+		
+		synchronized (this) {
+			return baseVisibility;
+		}
+	}
+	
+	/**
+	 * Compile a {@code double[][]} representing the <em>total</em>
+	 * visibility-resistance of the Map (after any modifiers are applied).
+	 * 
+	 * @return
+	 */
+	public double[][] getTotalVisibilityResistance() {
+		
+		synchronized (this) {
+			return totalVisibility;
 		}
 	}
 	
@@ -460,7 +579,12 @@ public class GameMap {
 		
 		synchronized (this) {
 			ArrayUtil.fill(terrain, (short) -1);
+			ArrayUtil.fill(modifiedVisibilityResistance, 0d);
 			known.clear();
+			ArrayUtil.fill(baseVisibility, 0d);
+			ArrayUtil.fill(totalVisibility, 0d);
+			squidCharMap = null;
+			charMap = null;
 		}
 	}
 	
@@ -473,7 +597,12 @@ public class GameMap {
 		
 		synchronized (this) {
 			terrain = onlyWithin.inverseMask(terrain, (short) -1);
+			modifiedVisibilityResistance = onlyWithin.inverseMask(modifiedVisibilityResistance, 0d);
 			known.andNot(onlyWithin);
+			baseVisibility = onlyWithin.inverseMask(baseVisibility, 0d);
+			totalVisibility = onlyWithin.inverseMask(totalVisibility, 0d);
+			squidCharMap = null;
+			charMap = null;
 		}
 	}
 	
@@ -517,5 +646,23 @@ public class GameMap {
 			for (int y = 0; y < colorIndices[x].length; y++)
 				result[x][y] = ColorCache.get().get(colorIndices[x][y]);
 		return result;
+	}
+	
+	private void recalculateBaseVisibility() {
+		
+		synchronized (this) {
+			for (int i = 0; i < width; i++)
+				for (int j = 0; j < height; j++)
+					baseVisibility[i][j] = getTerrain(i, j).getVisibilityResistance();
+		}
+	}
+	
+	private void recalculateTotalVisibility() {
+		
+		synchronized (this) {
+			for (int i = 0; i < width; i++)
+				for (int j = 0; j < height; j++)
+					totalVisibility[i][j] = baseVisibility[i][j] + modifiedVisibilityResistance[i][j];
+		}
 	}
 }

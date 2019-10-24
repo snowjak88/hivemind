@@ -208,6 +208,8 @@ public class TerrainTypes {
 		private Color foreground;
 		private Color background;
 		private boolean navigable = true;
+		@SerializedName("visibility-resistance")
+		private double visibilityResistance = 0f;
 		private float slipperiness = 0f;
 		
 		public String getName() {
@@ -268,6 +270,16 @@ public class TerrainTypes {
 		public void setNavigable(boolean navigable) {
 			
 			this.navigable = navigable;
+		}
+		
+		public double getVisibilityResistance() {
+			
+			return visibilityResistance;
+		}
+		
+		public void setVisibilityResistance(double visibilityResistance) {
+			
+			this.visibilityResistance = visibilityResistance;
 		}
 		
 		public float getSlipperiness() {

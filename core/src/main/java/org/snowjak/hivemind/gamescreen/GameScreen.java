@@ -12,8 +12,12 @@ import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
+import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.events.EventBus;
+import org.snowjak.hivemind.events.EventPool;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
+import org.snowjak.hivemind.events.input.InputEvent;
+import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
@@ -32,6 +36,7 @@ import squidpony.squidgrid.gui.gdx.SquidInput;
 import squidpony.squidgrid.gui.gdx.SquidInput.KeyHandler;
 import squidpony.squidgrid.gui.gdx.SquidMouse;
 import squidpony.squidgrid.gui.gdx.TextCellFactory;
+import squidpony.squidmath.Coord;
 import squidpony.squidmath.OrderedSet;
 
 /**
@@ -240,6 +245,18 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 						doScroll(Direction.DOWN, (shift ? 16 : 4) * getCellHeight());
 						break;
 					}
+					default: {
+						final InputEvent event = EventPool.get().get(InputEvent.class);
+						
+						event.setKey(key);
+						event.setAlt(alt);
+						event.setCtrl(ctrl);
+						event.setShift(shift);
+						event.setScreenCursor(Coord.get(mouseX, mouseY));
+						event.setMapCursor(Coord.get(getMapX(mouseX), getMapY(mouseY)));
+						
+						Engine.get().getSystem(InputEventProcessingSystem.class).postInputEvent(event);
+					}
 					}
 				}
 			}, new SquidMouse(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0,
@@ -256,7 +273,14 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 						@Override
 						public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 							
-							return false;
+							final InputEvent event = EventPool.get().get(InputEvent.class);
+							
+							event.setButton(MouseButton.getFor(button));
+							event.setScreenCursor(Coord.get(mouseX, mouseY));
+							event.setMapCursor(Coord.get(getMapX(mouseX), getMapY(mouseY)));
+							
+							Engine.get().getSystem(InputEventProcessingSystem.class).postInputEvent(event);
+							return true;
 						}
 						
 						@Override
@@ -462,6 +486,24 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 			return sparseLayers.getGridHeight();
 		
 		return 0;
+	}
+	
+	public int getMapX(int screenX) {
+		
+		if (sparseLayers == null)
+			return 0;
+		
+		final int leftGridCell = sparseLayers.gridX(cameraX - getWindowWidth() / 2f);
+		return screenX + leftGridCell;
+	}
+	
+	public int getMapY(int screenY) {
+		
+		if (sparseLayers == null)
+			return 0;
+		
+		final int topGridCell = sparseLayers.gridY(cameraY + getWindowHeight() / 2f);
+		return screenY + topGridCell;
 	}
 	
 	@Override

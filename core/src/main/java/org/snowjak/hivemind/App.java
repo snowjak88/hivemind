@@ -54,7 +54,7 @@ public class App extends ApplicationAdapter {
 		if (lastFrame == null)
 			secondsSinceFrame = 0;
 		else {
-			secondsSinceFrame = ((float) Duration.between(lastFrame, thisFrame).toNanos()) / 1e-9f;
+			secondsSinceFrame = ((float) Duration.between(lastFrame, thisFrame).toNanos()) * 1e-9f;
 		}
 		
 		GdxAI.getTimepiece().update(secondsSinceFrame);

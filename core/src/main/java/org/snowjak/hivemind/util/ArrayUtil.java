@@ -286,4 +286,26 @@ public class ArrayUtil {
 		for (int i = 0; i < array.length; i++)
 			Arrays.fill(array[i], supplier.get());
 	}
+	
+	/**
+	 * Adds the values in {@code addend} to {@code value}, storing the resulting
+	 * sums in {@code value}.
+	 * 
+	 * @param value
+	 * @param addend
+	 * @throws IllegalArgumentException
+	 *             if the two arrays' sizes do not match
+	 */
+	public static void addInPlace(double[][] value, double[][] addend) {
+		
+		if (value.length != addend.length)
+			throw new IllegalArgumentException("Cannot addInPlace two arrays not of the same size!");
+		
+		for (int i = 0; i < value.length; i++) {
+			if (value[i].length != addend[i].length)
+				throw new IllegalArgumentException("Cannot addInPlace two arrays not of the same size!");
+			for (int j = 0; j < value[i].length; j++)
+				value[i][j] += addend[i][j];
+		}
+	}
 }

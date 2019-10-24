@@ -17,8 +17,19 @@ import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
  */
 public class HasGlyph implements Component, Poolable {
 	
+	private boolean awaitingCreation = false;
 	private Glyph glyph;
 	private int x, y;
+	
+	public boolean isAwaitingCreation() {
+		
+		return awaitingCreation;
+	}
+	
+	public void setAwaitingCreation(boolean awaitingCreation) {
+		
+		this.awaitingCreation = awaitingCreation;
+	}
 	
 	public Glyph getGlyph() {
 		
@@ -53,6 +64,7 @@ public class HasGlyph implements Component, Poolable {
 	@Override
 	public void reset() {
 		
+		awaitingCreation = false;
 		glyph = null;
 		x = 0;
 		y = 0;

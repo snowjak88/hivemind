@@ -3,10 +3,10 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
-import org.snowjak.hivemind.engine.ComponentMappers;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasUpdatedLocation;
 
+import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
@@ -28,7 +28,7 @@ public class UpdatedLocationResettingSystem extends IteratingSystem {
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		
-		final HasUpdatedLocation updatedLocation = ComponentMappers.get().get(HasUpdatedLocation.class).get(entity);
+		final HasUpdatedLocation updatedLocation = ComponentMapper.getFor(HasUpdatedLocation.class).get(entity);
 		updatedLocation.incrementTickCounter();
 		if (updatedLocation.getTickCounter() > 1)
 			entity.remove(HasUpdatedLocation.class);

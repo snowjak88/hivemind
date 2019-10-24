@@ -5,7 +5,6 @@ package org.snowjak.hivemind.engine.systems;
 
 import java.util.logging.Logger;
 
-import org.snowjak.hivemind.engine.ComponentMappers;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasAppearance;
 import org.snowjak.hivemind.engine.components.HasFOV;
@@ -44,13 +43,13 @@ import squidpony.squidmath.OrderedSet;
  */
 public class GameScreenUpdatingSystem extends EntitySystem {
 	
+	@SuppressWarnings("unused")
 	private static final Logger LOG = Logger.getLogger(GameScreenUpdatingSystem.class.getName());
 	
-	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMappers.get().get(HasMap.class);
-	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMappers.get().get(HasFOV.class);
-	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMappers.get()
-			.get(HasAppearance.class);
-	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMappers.get().get(HasGlyph.class);
+	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
+	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
+	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
+	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMapper.getFor(HasGlyph.class);
 	
 	private final OrderedMap<Glyph, Entity> glyphToEntity = new OrderedMap<>();
 	private boolean resetAllGlyphs = false;
@@ -165,10 +164,17 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 					final HasAppearance appearance = HAS_APPEARANCE.get(e);
 					
 					final HasGlyph hg;
-					if (HAS_GLYPH.has(e))
+					if (HAS_GLYPH.has(e)) {
 						hg = HAS_GLYPH.get(e);
-					else
+						
+						if (hg.isAwaitingCreation())
+							continue;
+						
+					} else {
 						hg = getEngine().createComponent(HasGlyph.class);
+						hg.setAwaitingCreation(true);
+						e.add(hg);
+					}
 					
 					if (hg.getGlyph() != null) {
 						final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
@@ -187,8 +193,8 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 							hg.setGlyph(g);
 							hg.setX(location.x);
 							hg.setY(location.y);
-							e.add(hg);
 							glyphToEntity.put(g, e);
+							hg.setAwaitingCreation(false);
 						}
 					}));
 					GameScreen.get().postGameScreenUpdate(upd);

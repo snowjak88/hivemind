@@ -214,6 +214,31 @@ public class ExtGreasedRegion extends GreasedRegion {
 	/**
 	 * Returns a copy of {@code map} where if a cell is "off" in this GreasedRegion,
 	 * this keeps the value in {@code map} intact, and where a cell is "on", it
+	 * instead writes the value {@code toWrite}.
+	 * 
+	 * @param map
+	 *            a 2D array that will not be modified
+	 * @param toWrite
+	 *            the value to use where this GreasedRegion stores an "on" cell
+	 * @return a masked copy of map
+	 */
+	public double[][] inverseMask(double[][] map, double toWrite) {
+		
+		if (map == null || map.length == 0)
+			return new double[0][0];
+		final int width2 = Math.min(width, map.length), height2 = Math.min(height, map[0].length);
+		final double[][] values = new double[width2][height2];
+		for (int x = 0; x < width2; x++) {
+			for (int y = 0; y < height2; y++) {
+				values[x][y] = (data[x * getYSections() + (y >> 6)] & (1L << (y & 63))) != 0 ? toWrite : map[x][y];
+			}
+		}
+		return values;
+	}
+	
+	/**
+	 * Returns a copy of {@code map} where if a cell is "off" in this GreasedRegion,
+	 * this keeps the value in {@code map} intact, and where a cell is "on", it
 	 * instead writes the corresponding value in {@code toWrite}.
 	 * 
 	 * @param map
@@ -254,6 +279,32 @@ public class ExtGreasedRegion extends GreasedRegion {
 			return new short[0][0];
 		final int width2 = Math.min(width, map.length), height2 = Math.min(height, map[0].length);
 		final short[][] values = new short[width2][height2];
+		for (int x = 0; x < width2; x++) {
+			for (int y = 0; y < height2; y++) {
+				values[x][y] = (data[x * getYSections() + (y >> 6)] & (1L << (y & 63))) != 0 ? toWrite[x][y]
+						: map[x][y];
+			}
+		}
+		return values;
+	}
+	
+	/**
+	 * Returns a copy of {@code map} where if a cell is "off" in this GreasedRegion,
+	 * this keeps the value in {@code map} intact, and where a cell is "on", it
+	 * instead writes the corresponding value in {@code toWrite}.
+	 * 
+	 * @param map
+	 *            a 2D array that will not be modified
+	 * @param toWrite
+	 *            the map to use where this GreasedRegion stores an "on" cell
+	 * @return a masked copy of map
+	 */
+	public double[][] inverseMask(double[][] map, double[][] toWrite) {
+		
+		if (map == null || map.length == 0)
+			return new double[0][0];
+		final int width2 = Math.min(width, map.length), height2 = Math.min(height, map[0].length);
+		final double[][] values = new double[width2][height2];
 		for (int x = 0; x < width2; x++) {
 			for (int y = 0; y < height2; y++) {
 				values[x][y] = (data[x * getYSections() + (y >> 6)] & (1L << (y & 63))) != 0 ? toWrite[x][y]
