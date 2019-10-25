@@ -40,7 +40,7 @@ public class GameScreenDisplayState implements DisplayState {
 		gameScreen.postGameScreenUpdate(new RemoveAllGlyphsUpdate());
 		
 		entity.setRoot(gameScreen.getActor());
-		entity.setInput(gameScreen.getSquidInput());
+		entity.setInput(gameScreen.getInputProcessor());
 		
 		engineUpdateProcess.start();
 		

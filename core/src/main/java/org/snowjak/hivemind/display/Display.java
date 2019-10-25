@@ -5,9 +5,11 @@ package org.snowjak.hivemind.display;
 
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
+import org.snowjak.hivemind.events.input.UpdateableInputProcessor;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.ai.fsm.DefaultStateMachine;
 import com.badlogic.gdx.ai.fsm.StateMachine;
 import com.badlogic.gdx.graphics.Color;
@@ -21,7 +23,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import squidpony.squidgrid.gui.gdx.FilterBatch;
 import squidpony.squidgrid.gui.gdx.FloatFilters;
 import squidpony.squidgrid.gui.gdx.SColor;
-import squidpony.squidgrid.gui.gdx.SquidInput;
 
 /**
  * A Display presents an interface to the game-window. UI elements, including
@@ -42,7 +43,7 @@ public class Display implements Disposable {
 	private float delta = 0;
 	
 	private Actor rootActor = null;
-	private SquidInput squidInput = null;
+	private UpdateableInputProcessor inputProcessor = null;
 	
 	private Color background = SColor.BLACK;
 	
@@ -80,22 +81,23 @@ public class Display implements Disposable {
 	}
 	
 	/**
-	 * If necessary, you can provide a special {@link SquidInput} instance which
+	 * If necessary, you can provide a special {@link InputProcessor} instance which
 	 * will receive all input-events <em>before</em> the normal LibGDX-UI
 	 * input-handling system.
 	 * 
-	 * @param squidInput
-	 *            {@code null} to remove any SquidInput assignment and revert all
-	 *            input-handling back to LibGDX-UI's default input-handling system
+	 * @param inputProcessor
+	 *            {@code null} to remove any special InputProcessor assignment and
+	 *            revert all input-handling back to LibGDX-UI's default
+	 *            input-handling system
 	 */
-	public void setInput(SquidInput squidInput) {
+	public void setInput(UpdateableInputProcessor inputProcessor) {
 		
-		if (squidInput == null)
+		if (inputProcessor == null)
 			inputMultiplexer.setProcessors(stage);
 		else
-			inputMultiplexer.setProcessors(squidInput, stage);
+			inputMultiplexer.setProcessors(inputProcessor, stage);
 		
-		this.squidInput = squidInput;
+		this.inputProcessor = inputProcessor;
 	}
 	
 	public void render(float delta) {
@@ -103,8 +105,8 @@ public class Display implements Disposable {
 		this.delta = delta;
 		displayStateMachine.update();
 		
-		if (squidInput != null && squidInput.hasNext())
-			squidInput.next();
+		if (inputProcessor != null)
+			inputProcessor.update(delta);
 		
 		Gdx.gl.glClearColor(background.r, background.g, background.b, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -140,6 +142,7 @@ public class Display implements Disposable {
 	}
 	
 	public Stage getStage() {
+		
 		return stage;
 	}
 	

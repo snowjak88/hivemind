@@ -79,7 +79,7 @@ public class EnginePrefabs {
 		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
 		
 		final GreasedRegion floors = new GreasedRegion(worldMap.getMap().getSquidCharMap(), '.');
-		for (int i = 0; i < 64; i++) {
+		for (int i = 0; i < 4; i++) {
 			final Entity e = eng.createEntity();
 			
 			e.add(screenMap);

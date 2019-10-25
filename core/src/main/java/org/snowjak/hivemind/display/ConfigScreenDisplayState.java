@@ -8,8 +8,10 @@ import java.util.LinkedList;
 
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.config.ConfigurationItem;
+import org.snowjak.hivemind.events.input.UpdateableInputAdapter;
 import org.snowjak.hivemind.ui.Skin;
 
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ai.fsm.State;
 import com.badlogic.gdx.ai.msg.Telegram;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -30,8 +32,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import squidpony.squidgrid.gui.gdx.SColor;
-import squidpony.squidgrid.gui.gdx.SquidInput;
-import squidpony.squidgrid.gui.gdx.SquidInput.KeyHandler;
 
 /**
  * In this {@link State}, the {@link Display} displays the configuration-screen.
@@ -206,19 +206,20 @@ public class ConfigScreenDisplayState implements DisplayState {
 	public void enter(Display entity) {
 		
 		entity.setRoot(root);
-		entity.setInput(new SquidInput(new KeyHandler() {
+		entity.setInput(new UpdateableInputAdapter() {
 			
 			@Override
-			public void handle(char key, boolean alt, boolean ctrl, boolean shift) {
+			public boolean keyDown(int keycode) {
 				
-				switch (key) {
-				case SquidInput.ESCAPE: {
+				switch (keycode) {
+				case (Keys.ESCAPE):
 					backToMainMenu = true;
-					break;
-				}
+					return true;
+				default:
+					return false;
 				}
 			}
-		}));
+		});
 	}
 	
 	@Override

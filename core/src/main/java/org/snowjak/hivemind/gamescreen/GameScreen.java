@@ -6,25 +6,21 @@ package org.snowjak.hivemind.gamescreen;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.eclipse.collections.api.list.primitive.MutableBooleanList;
-import org.eclipse.collections.impl.list.mutable.primitive.BooleanArrayList;
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.events.EventBus;
-import org.snowjak.hivemind.events.EventPool;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
+import org.snowjak.hivemind.events.input.GameKey;
+import org.snowjak.hivemind.events.input.GameScreenInputProcessor;
 import org.snowjak.hivemind.events.input.InputEvent;
-import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
+import org.snowjak.hivemind.events.input.InputEventListener;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
-import org.snowjak.hivemind.ui.MouseHoverListener.MouseHoverListenerRegistrar;
 
 import com.badlogic.ashley.core.EntitySystem;
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.utils.Disposable;
@@ -33,11 +29,7 @@ import squidpony.squidgrid.Direction;
 import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.SparseLayers;
 import squidpony.squidgrid.gui.gdx.SquidInput;
-import squidpony.squidgrid.gui.gdx.SquidInput.KeyHandler;
-import squidpony.squidgrid.gui.gdx.SquidMouse;
 import squidpony.squidgrid.gui.gdx.TextCellFactory;
-import squidpony.squidmath.Coord;
-import squidpony.squidmath.OrderedSet;
 
 /**
  * Encapsulates logic surrounding the game-map display. Doesn't act as an
@@ -55,7 +47,7 @@ import squidpony.squidmath.OrderedSet;
  * @author snowjak88
  *
  */
-public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
+public class GameScreen implements Disposable, ScreenMapTranslator {
 	
 	public static final String PREFERENCE_CELL_WIDTH = "game-screen.cell-width",
 			PREFERENCE_CELL_HEIGHT = "game-screen.cell-height", PREFERENCE_MOUSE_SCROLL = "game-screen.mouse-scroll";
@@ -80,14 +72,10 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 	
 	private Container<SparseLayers> rootActor;
 	private SparseLayers sparseLayers;
-	private SquidInput squidInput;
-	
-	private OrderedSet<MouseHoverListener> hoverListeners = new OrderedSet<>();
-	private MutableBooleanList activeHoverListeners = new BooleanArrayList();
+	private GameScreenInputProcessor inputProcessor;
 	
 	private BlockingQueue<GameScreenUpdate> queuedUpdates = new LinkedBlockingQueue<>();
 	
-	private int mouseX, mouseY;
 	/**
 	 * Defines the bottom-left corner of the screen's current "scroll-window"
 	 */
@@ -110,8 +98,6 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		
 		this.cameraX = 0;
 		this.cameraY = 0;
-		
-		setupScrollHoverListeners();
 		
 		EventBus.get().register(this);
 	}
@@ -157,8 +143,6 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 			sparseLayers.getStage().getCamera().position.x = cameraX;
 			sparseLayers.getStage().getCamera().position.y = cameraY;
 		}
-		
-		updateHoverListeners(delta);
 	}
 	
 	/**
@@ -196,8 +180,7 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 			rootActor.setHeight(sparseLayers.getHeight());
 			rootActor.setActor(sparseLayers);
 			
-			getSquidInput().getMouse().reinitialize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0,
-					0);
+			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0);
 		}
 		
 		cameraX = (width * getCellWidth() - getWindowWidth()) / 2f;
@@ -214,83 +197,59 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 	}
 	
 	/**
-	 * @return the special GameScreen-optimized {@link SquidInput}
+	 * @return the special {@link GameScreenInputProcessor}
 	 */
-	public SquidInput getSquidInput() {
+	public GameScreenInputProcessor getInputProcessor() {
 		
-		if (squidInput == null)
-			squidInput = new SquidInput(new KeyHandler() {
+		if (inputProcessor == null) {
+			inputProcessor = new GameScreenInputProcessor(0, 0, getCellWidth(), getCellHeight(), getGridWidth(),
+					getGridHeight(), this);
+			
+			setupScrollHoverListeners();
+			
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.UP, false, false, false) {
 				
 				@Override
-				public void handle(char key, boolean alt, boolean ctrl, boolean shift) {
+				public void receive(InputEvent event) {
 					
-					switch (key) {
-					case SquidInput.ESCAPE: {
-						EventBus.get().post(ExitGameEvent.class);
-						break;
-					}
-					case SquidInput.LEFT_ARROW: {
-						doScroll(Direction.LEFT, (shift ? 16 : 4) * getCellWidth());
-						break;
-					}
-					case SquidInput.RIGHT_ARROW: {
-						doScroll(Direction.RIGHT, (shift ? 16 : 4) * getCellWidth());
-						break;
-					}
-					case SquidInput.UP_ARROW: {
-						doScroll(Direction.UP, (shift ? 16 : 4) * getCellHeight());
-						break;
-					}
-					case SquidInput.DOWN_ARROW: {
-						doScroll(Direction.DOWN, (shift ? 16 : 4) * getCellHeight());
-						break;
-					}
-					default: {
-						final InputEvent event = EventPool.get().get(InputEvent.class);
-						
-						event.setKey(key);
-						event.setAlt(alt);
-						event.setCtrl(ctrl);
-						event.setShift(shift);
-						event.setScreenCursor(Coord.get(mouseX, mouseY));
-						event.setMapCursor(Coord.get(getMapX(mouseX), getMapY(mouseY)));
-						
-						Engine.get().getSystem(InputEventProcessingSystem.class).postInputEvent(event);
-					}
-					}
+					doScroll(Direction.UP, 16f);
 				}
-			}, new SquidMouse(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0,
-					new InputAdapter() {
-						
-						@Override
-						public boolean mouseMoved(int screenX, int screenY) {
-							
-							mouseX = screenX;
-							mouseY = screenY;
-							return false;
-						}
-						
-						@Override
-						public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-							
-							final InputEvent event = EventPool.get().get(InputEvent.class);
-							
-							event.setButton(MouseButton.getFor(button));
-							event.setScreenCursor(Coord.get(mouseX, mouseY));
-							event.setMapCursor(Coord.get(getMapX(mouseX), getMapY(mouseY)));
-							
-							Engine.get().getSystem(InputEventProcessingSystem.class).postInputEvent(event);
-							return true;
-						}
-						
-						@Override
-						public boolean touchDragged(int screenX, int screenY, int pointer) {
-							
-							return false;
-						}
-					}));
+			});
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.DOWN, false, false, false) {
+				
+				@Override
+				public void receive(InputEvent event) {
+					
+					doScroll(Direction.DOWN, 16f);
+				}
+			});
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.LEFT, false, false, false) {
+				
+				@Override
+				public void receive(InputEvent event) {
+					
+					doScroll(Direction.LEFT, 16f);
+				}
+			});
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.RIGHT, false, false, false) {
+				
+				@Override
+				public void receive(InputEvent event) {
+					
+					doScroll(Direction.RIGHT, 16f);
+				}
+			});
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.ESCAPE, false, false, false) {
+				
+				@Override
+				public void receive(InputEvent event) {
+					
+					EventBus.get().post(ExitGameEvent.class);
+				}
+			});
+		}
 		
-		return squidInput;
+		return inputProcessor;
 	}
 	
 	/**
@@ -327,82 +286,6 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 	}
 	
 	/**
-	 * Register a new duration-less {@link MouseHoverListener}.
-	 * 
-	 * @param startX
-	 * @param startY
-	 * @param endX
-	 * @param endY
-	 * @param receiver
-	 * @return the configured {@link MouseHoverListener}
-	 */
-	@Override
-	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY,
-			MouseHoverListener.MouseHoverReceiver receiver) {
-		
-		final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, receiver);
-		hoverListeners.add(listener);
-		activeHoverListeners.add(false);
-		return listener;
-	}
-	
-	/**
-	 * Register a new {@link MouseHoverListener} that will fire only after the mouse
-	 * has been in the given zone for {@code duration} seconds.
-	 * 
-	 * @param startX
-	 * @param startY
-	 * @param endX
-	 * @param endY
-	 * @param duration
-	 * @param receiver
-	 * @return
-	 */
-	@Override
-	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY, float duration,
-			MouseHoverListener.MouseHoverReceiver receiver) {
-		
-		final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, duration, receiver);
-		hoverListeners.add(listener);
-		activeHoverListeners.add(false);
-		return listener;
-	}
-	
-	/**
-	 * Un-register the given {@link MouseHoverListener}.
-	 * 
-	 * @param listener
-	 */
-	@Override
-	public void unregisterHoverListener(MouseHoverListener listener) {
-		
-		final int index = hoverListeners.indexOf(listener);
-		if (index < 0)
-			return;
-		
-		hoverListeners.removeAt(index);
-		activeHoverListeners.removeAtIndex(index);
-	}
-	
-	protected void updateHoverListeners(float delta) {
-		
-		for (int i = 0; i < hoverListeners.size(); i++) {
-			final MouseHoverListener hover = hoverListeners.getAt(i);
-			
-			final boolean isActive = hover.isActive(mouseX, mouseY);
-			final boolean prevActive = activeHoverListeners.get(i);
-			if (prevActive ^ isActive) {
-				hover.reset();
-				activeHoverListeners.set(i, isActive);
-			}
-			
-			if (isActive)
-				if (hover.isSatisfied(mouseX, mouseY, delta))
-					hover.call(mouseX, mouseY);
-		}
-	}
-	
-	/**
 	 * Un-register any previously-registered and, if enabled in configuration,
 	 * re-creates the scrolling {@link MouseHoverListener}s.
 	 */
@@ -412,27 +295,28 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		final int onscreenGridHeight = (int) (getWindowHeight() / getCellHeight());
 		
 		if (scrollLeftListener != null)
-			unregisterHoverListener(scrollLeftListener);
+			getInputProcessor().unregisterHoverListener(scrollLeftListener);
 		if (scrollRightListener != null)
-			unregisterHoverListener(scrollRightListener);
+			getInputProcessor().unregisterHoverListener(scrollRightListener);
 		if (scrollUpListener != null)
-			unregisterHoverListener(scrollUpListener);
+			getInputProcessor().unregisterHoverListener(scrollUpListener);
 		if (scrollDownListener != null)
-			unregisterHoverListener(scrollDownListener);
+			getInputProcessor().unregisterHoverListener(scrollDownListener);
 		
 		if (Config.get().getBoolean(PREFERENCE_MOUSE_SCROLL)) {
 			
 			final int bufferWidth = onscreenGridWidth / 8;
 			final int bufferHeight = onscreenGridHeight / 8;
 			
-			scrollLeftListener = this.registerHoverListener(0, 0, bufferWidth, onscreenGridHeight,
+			scrollLeftListener = getInputProcessor().registerHoverListener(0, 0, bufferWidth, onscreenGridHeight,
 					(x, y) -> doScroll(Direction.LEFT, bufferWidth - x));
-			scrollRightListener = this.registerHoverListener(onscreenGridWidth - bufferWidth, 0, onscreenGridWidth,
-					onscreenGridHeight, (x, y) -> doScroll(Direction.RIGHT, x - (onscreenGridWidth - bufferWidth) + 1));
-			scrollUpListener = this.registerHoverListener(0, 0, onscreenGridWidth, bufferHeight,
+			scrollRightListener = getInputProcessor().registerHoverListener(onscreenGridWidth - bufferWidth, 0,
+					onscreenGridWidth, onscreenGridHeight,
+					(x, y) -> doScroll(Direction.RIGHT, x - (onscreenGridWidth - bufferWidth) + 1));
+			scrollUpListener = getInputProcessor().registerHoverListener(0, 0, onscreenGridWidth, bufferHeight,
 					(x, y) -> doScroll(Direction.UP, bufferHeight - y));
-			scrollDownListener = this.registerHoverListener(0, onscreenGridHeight - bufferHeight, onscreenGridWidth,
-					onscreenGridHeight,
+			scrollDownListener = getInputProcessor().registerHoverListener(0, onscreenGridHeight - bufferHeight,
+					onscreenGridWidth, onscreenGridHeight,
 					(x, y) -> doScroll(Direction.DOWN, y - (onscreenGridHeight - bufferHeight) + 1));
 		}
 	}
@@ -488,7 +372,8 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		return 0;
 	}
 	
-	public int getMapX(int screenX) {
+	@Override
+	public int screenToMapX(int screenX) {
 		
 		if (sparseLayers == null)
 			return 0;
@@ -497,13 +382,34 @@ public class GameScreen implements Disposable, MouseHoverListenerRegistrar {
 		return screenX + leftGridCell;
 	}
 	
-	public int getMapY(int screenY) {
+	@Override
+	public int screenToMapY(int screenY) {
 		
 		if (sparseLayers == null)
 			return 0;
 		
 		final int topGridCell = sparseLayers.gridY(cameraY + getWindowHeight() / 2f);
 		return screenY + topGridCell;
+	}
+	
+	@Override
+	public int mapToScreenX(int mapX) {
+		
+		if (sparseLayers == null)
+			return 0;
+		
+		final int leftGridCell = sparseLayers.gridX(cameraX - getWindowWidth() / 2f);
+		return mapX - leftGridCell;
+	}
+	
+	@Override
+	public int mapToScreenY(int mapY) {
+		
+		if (sparseLayers == null)
+			return 0;
+		
+		final int topGridCell = sparseLayers.gridY(cameraY + getWindowHeight() / 2f);
+		return mapY - topGridCell;
 	}
 	
 	@Override
