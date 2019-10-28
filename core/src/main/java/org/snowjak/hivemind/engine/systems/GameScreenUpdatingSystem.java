@@ -12,13 +12,13 @@ import org.snowjak.hivemind.engine.components.HasGlyph;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 import org.snowjak.hivemind.gamescreen.updates.ClearMapUpdate;
-import org.snowjak.hivemind.gamescreen.updates.DrawMapCellUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.gamescreen.updates.GlyphAddedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphColorChangeUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphMovedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphRemovedUpdate;
+import org.snowjak.hivemind.gamescreen.updates.MapDeltaUpdate;
 import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
 import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
@@ -125,17 +125,9 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 		
 		//
 		// Add updates for all recently-updated locations.
-		final Coord[] updatedLocations = visibleDelta.or(hm.getUpdatedLocations()).asCoords();
-		for (int i = 0; i < updatedLocations.length; i++) {
-			final DrawMapCellUpdate upd = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class);
-			upd.setX(updatedLocations[i].x);
-			upd.setY(updatedLocations[i].y);
-			upd.setCh(hm.getMap().getChar(updatedLocations[i]));
-			upd.setVisible(visible.contains(updatedLocations[i].x, updatedLocations[i].y));
-			upd.setForeground(hm.getMap().getForeground(updatedLocations[i]));
-			upd.setBackground(hm.getMap().getBackground(updatedLocations[i]));
-			GameScreen.get().postGameScreenUpdate(upd);
-		}
+		final MapDeltaUpdate upd = GameScreenUpdatePool.get().get(MapDeltaUpdate.class);
+		upd.setMap(hm.getMap(), visible, visibleDelta.or(hm.getUpdatedLocations()));
+		GameScreen.get().postGameScreenUpdate(upd);
 		
 		//
 		// Now that we've queued up all updates, reset that list of updated locations.

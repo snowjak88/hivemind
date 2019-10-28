@@ -401,10 +401,35 @@ public class GameMap {
 	 */
 	public TerrainType getTerrain(int x, int y) {
 		
+		return TerrainTypes.get().getAt(getTerrainIndex(x, y));
+	}
+	
+	/**
+	 * Get the active {@link TerrainType}-index at the given location, or {@code -1}
+	 * if there is no assigned TerrainType or the location is outside the map.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public short getTerrainIndex(Coord c) {
+		
+		return getTerrainIndex(c.x, c.y);
+	}
+	
+	/**
+	 * Get the active {@link TerrainType} at the given location, or {@code null} if
+	 * there is no assigned TerrainType or the location is outside the map.
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public short getTerrainIndex(int x, int y) {
+		
 		synchronized (this) {
 			if (!isInMap(x, y))
-				return null;
-			return TerrainTypes.get().getAt(terrain[x][y]);
+				return -1;
+			return terrain[x][y];
 		}
 	}
 	

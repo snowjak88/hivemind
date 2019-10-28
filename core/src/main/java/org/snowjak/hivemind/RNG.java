@@ -21,6 +21,8 @@ import squidpony.squidmath.IRNG;
  */
 public class RNG implements IRNG {
 	
+	private static final long serialVersionUID = 8317838413092083047L;
+	
 	public static final String PREFERENCE_SEED = "rng.seed";
 	{
 		Config.get().register(PREFERENCE_SEED, "RNG seed", "hivemind", true, true);
@@ -54,7 +56,7 @@ public class RNG implements IRNG {
 		
 		Config.get().set(PREFERENCE_SEED, seed);
 	}
-
+	
 	/**
 	 * @param bound
 	 * @return
@@ -64,7 +66,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextLong(bound);
 	}
-
+	
 	/**
 	 * @param bits
 	 * @return
@@ -74,7 +76,7 @@ public class RNG implements IRNG {
 		
 		return rng.next(bits);
 	}
-
+	
 	/**
 	 * @param outer
 	 * @return
@@ -84,7 +86,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextDouble(outer);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#nextInt()
@@ -93,7 +95,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextInt();
 	}
-
+	
 	/**
 	 * @param bound
 	 * @return
@@ -103,7 +105,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextInt(bound);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#nextLong()
@@ -112,7 +114,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextLong();
 	}
-
+	
 	/**
 	 * @param outer
 	 * @return
@@ -122,7 +124,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextFloat(outer);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#nextBoolean()
@@ -131,7 +133,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextBoolean();
 	}
-
+	
 	/**
 	 * @param bound
 	 * @return
@@ -141,7 +143,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextSignedLong(bound);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#nextDouble()
@@ -150,7 +152,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextDouble();
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#nextFloat()
@@ -159,7 +161,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextFloat();
 	}
-
+	
 	/**
 	 * @param bound
 	 * @return
@@ -169,7 +171,7 @@ public class RNG implements IRNG {
 		
 		return rng.nextSignedInt(bound);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#copy()
@@ -178,7 +180,7 @@ public class RNG implements IRNG {
 		
 		return rng.copy();
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#toSerializable()
@@ -187,7 +189,7 @@ public class RNG implements IRNG {
 		
 		return rng.toSerializable();
 	}
-
+	
 	/**
 	 * @param min
 	 * @param max
@@ -198,7 +200,7 @@ public class RNG implements IRNG {
 		
 		return rng.between(min, max);
 	}
-
+	
 	/**
 	 * @param seed
 	 * @see squidpony.squidmath.GWTRNG#setSeed(int)
@@ -207,7 +209,7 @@ public class RNG implements IRNG {
 		
 		rng.setSeed(seed);
 	}
-
+	
 	/**
 	 * @param min
 	 * @param max
@@ -218,7 +220,7 @@ public class RNG implements IRNG {
 		
 		return rng.between(min, max);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#getStateA()
@@ -227,7 +229,7 @@ public class RNG implements IRNG {
 		
 		return rng.getStateA();
 	}
-
+	
 	/**
 	 * @param stateA
 	 * @see squidpony.squidmath.GWTRNG#setStateA(int)
@@ -236,7 +238,7 @@ public class RNG implements IRNG {
 		
 		rng.setStateA(stateA);
 	}
-
+	
 	/**
 	 * @param min
 	 * @param max
@@ -247,7 +249,7 @@ public class RNG implements IRNG {
 		
 		return rng.between(min, max);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#getStateB()
@@ -256,7 +258,7 @@ public class RNG implements IRNG {
 		
 		return rng.getStateB();
 	}
-
+	
 	/**
 	 * @param stateB
 	 * @see squidpony.squidmath.GWTRNG#setStateB(int)
@@ -265,7 +267,7 @@ public class RNG implements IRNG {
 		
 		rng.setStateB(stateB);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param array
@@ -276,7 +278,7 @@ public class RNG implements IRNG {
 		
 		return rng.getRandomElement(array);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param list
@@ -287,7 +289,7 @@ public class RNG implements IRNG {
 		
 		return rng.getRandomElement(list);
 	}
-
+	
 	/**
 	 * @param stateA
 	 * @param stateB
@@ -297,7 +299,7 @@ public class RNG implements IRNG {
 		
 		rng.setState(stateA, stateB);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param coll
@@ -308,7 +310,7 @@ public class RNG implements IRNG {
 		
 		return rng.getRandomElement(coll);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#getState()
@@ -317,7 +319,7 @@ public class RNG implements IRNG {
 		
 		return rng.getState();
 	}
-
+	
 	/**
 	 * @param state
 	 * @see squidpony.squidmath.GWTRNG#setState(long)
@@ -326,7 +328,7 @@ public class RNG implements IRNG {
 		
 		rng.setState(state);
 	}
-
+	
 	/**
 	 * @param o
 	 * @return
@@ -336,7 +338,7 @@ public class RNG implements IRNG {
 		
 		return rng.equals(o);
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#hashCode()
@@ -345,7 +347,7 @@ public class RNG implements IRNG {
 		
 		return rng.hashCode();
 	}
-
+	
 	/**
 	 * @return
 	 * @see squidpony.squidmath.GWTRNG#toString()
@@ -354,7 +356,7 @@ public class RNG implements IRNG {
 		
 		return rng.toString();
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
@@ -365,7 +367,7 @@ public class RNG implements IRNG {
 		
 		return rng.shuffle(elements);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
@@ -376,19 +378,20 @@ public class RNG implements IRNG {
 		
 		return rng.shuffleInPlace(elements);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
 	 * @param dest
 	 * @return
-	 * @see squidpony.squidmath.AbstractRNG#shuffle(java.lang.Object[], java.lang.Object[])
+	 * @see squidpony.squidmath.AbstractRNG#shuffle(java.lang.Object[],
+	 *      java.lang.Object[])
 	 */
 	public <T> T[] shuffle(T[] elements, T[] dest) {
 		
 		return rng.shuffle(elements, dest);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
@@ -399,19 +402,20 @@ public class RNG implements IRNG {
 		
 		return rng.shuffle(elements);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
 	 * @param buf
 	 * @return
-	 * @see squidpony.squidmath.AbstractRNG#shuffle(java.util.Collection, java.util.ArrayList)
+	 * @see squidpony.squidmath.AbstractRNG#shuffle(java.util.Collection,
+	 *      java.util.ArrayList)
 	 */
 	public <T> ArrayList<T> shuffle(Collection<T> elements, ArrayList<T> buf) {
 		
 		return rng.shuffle(elements, buf);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param elements
@@ -422,7 +426,7 @@ public class RNG implements IRNG {
 		
 		return rng.shuffleInPlace(elements);
 	}
-
+	
 	/**
 	 * @param length
 	 * @return
@@ -432,7 +436,7 @@ public class RNG implements IRNG {
 		
 		return rng.randomOrdering(length);
 	}
-
+	
 	/**
 	 * @param length
 	 * @param dest
@@ -443,18 +447,18 @@ public class RNG implements IRNG {
 		
 		return rng.randomOrdering(length, dest);
 	}
-
+	
 	/**
 	 * @param <T>
 	 * @param data
 	 * @param output
 	 * @return
-	 * @see squidpony.squidmath.AbstractRNG#randomPortion(java.lang.Object[], java.lang.Object[])
+	 * @see squidpony.squidmath.AbstractRNG#randomPortion(java.lang.Object[],
+	 *      java.lang.Object[])
 	 */
 	public <T> T[] randomPortion(T[] data, T[] output) {
 		
 		return rng.randomPortion(data, output);
 	}
-	
 	
 }

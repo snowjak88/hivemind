@@ -202,7 +202,8 @@ public class GameScreenInputProcessor extends InputAdapter
 			final int index = activeIterator.next();
 			final InputEventListener listener = inputListeners.getAt(index);
 			
-			if (!activeKeys.equals(listener.getKeys())) {
+			if (!activeKeys.equals(listener.getKeys())
+					|| (listener.getButton() == null || !activeButtons.contains(listener.getButton()))) {
 				activeContinuousListeners.remove(index);
 				activeIterator.remove();
 			}

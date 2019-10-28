@@ -22,6 +22,8 @@ import org.snowjak.hivemind.util.ExtGreasedRegion;
 import com.badlogic.ashley.core.Entity;
 
 import squidpony.squidgrid.gui.gdx.SColor;
+import squidpony.squidgrid.mapping.DungeonGenerator;
+import squidpony.squidgrid.mapping.styled.TilesetType;
 import squidpony.squidmath.GreasedRegion;
 
 /**
@@ -43,34 +45,10 @@ public class EnginePrefabs {
 		
 		final HasMap worldMap = eng.createComponent(HasMap.class);
 		worldMap.setUpdatedLocations(new ExtGreasedRegion(width, height));
-		worldMap.setMap(new GameMap(width, height));
 		worldMap.setEntities(new EntityMap());
 		
-		for (int x = 0; x < height; x++) {
-			for (int y = 0; y < width; y++) {
-				if (x == 0 || x == height - 1) {
-					worldMap.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('#'));
-					worldMap.getUpdatedLocations().insert(x, y);
-				}
-				
-				else if (y == 0 || y == width - 1) {
-					worldMap.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('#'));
-					worldMap.getUpdatedLocations().insert(x, y);
-				}
-				
-				else {
-					
-					final char ch;
-					if (RNG.get().nextInt(10) < 2)
-						ch = '#';
-					else
-						ch = '.';
-					worldMap.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar(ch));
-					worldMap.getUpdatedLocations().insert(x, y);
-					
-				}
-			}
-		}
+		final DungeonGenerator dg = new DungeonGenerator(width, height);
+		worldMap.setMap(new GameMap(dg.generate(TilesetType.CORNER_CAVES), true));
 		
 		worldMapEntity.add(worldMap);
 		eng.addEntity(worldMapEntity);
@@ -84,7 +62,7 @@ public class EnginePrefabs {
 		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
 		
 		final GreasedRegion floors = new GreasedRegion(worldMap.getMap().getSquidCharMap(), '.');
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 16; i++) {
 			final Entity e = eng.createEntity();
 			
 			e.add(screenMap);

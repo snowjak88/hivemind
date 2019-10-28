@@ -207,6 +207,9 @@ public class TerrainTypes {
 		private char squidChar;
 		private Color foreground;
 		private Color background;
+		
+		private transient float foregroundFloat = 0f, backgroundFloat = 0f;
+		
 		private boolean navigable = true;
 		@SerializedName("visibility-resistance")
 		private double visibilityResistance = 0f;
@@ -247,6 +250,14 @@ public class TerrainTypes {
 			return foreground;
 		}
 		
+		public float getForegroundFloat() {
+			
+			if (foregroundFloat == 0f)
+				foregroundFloat = foreground.toFloatBits();
+			
+			return foregroundFloat;
+		}
+		
 		public void setForeground(Color foreground) {
 			
 			this.foreground = foreground;
@@ -255,6 +266,14 @@ public class TerrainTypes {
 		public Color getBackground() {
 			
 			return background;
+		}
+		
+		public float getBackgroundFloat() {
+			
+			if (backgroundFloat == 0f)
+				backgroundFloat = background.toFloatBits();
+			
+			return backgroundFloat;
 		}
 		
 		public void setBackground(Color background) {
