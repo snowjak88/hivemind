@@ -90,11 +90,13 @@ public class Behaviors {
 				final HasLocation loc = ComponentMapper.getFor(HasLocation.class).get(getObject());
 				final HasMap hasMap = ComponentMapper.getFor(HasMap.class).get(getObject());
 				
-				nearbyPointResult = Executor.get()
-						.submit((Callable<Coord>) () -> new GreasedRegion(hasMap.getMap().getSquidCharMap(), '#').not()
-								.and(new GreasedRegion(hasMap.getMap().getWidth(), hasMap.getMap().getHeight())
-										.insert(loc.getLocation()).expand(8))
-								.and(hasMap.getMap().getKnown()).singleRandom(RNG.get()));
+				nearbyPointResult = Executor.get().submit((Callable<Coord>) () -> {
+					final GreasedRegion floors = new GreasedRegion(hasMap.getMap().getSquidCharMap(), '#').not();
+					final GreasedRegion known = hasMap.getMap().getKnown();
+					final GreasedRegion nearby = new GreasedRegion(hasMap.getMap().getWidth(),
+							hasMap.getMap().getHeight()).insert(loc.getLocation()).flood(floors.and(known), 8);
+					return nearby.singleRandom(RNG.get());
+				});
 				return Status.RUNNING;
 			}
 			
