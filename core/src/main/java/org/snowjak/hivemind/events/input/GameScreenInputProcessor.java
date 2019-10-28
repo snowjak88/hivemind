@@ -35,6 +35,12 @@ import squidpony.squidmath.OrderedSet;
 public class GameScreenInputProcessor extends InputAdapter
 		implements UpdateableInputProcessor, MouseHoverListenerRegistrar {
 	
+	/**
+	 * Discrete {@link InputEventListener}s will be repeatedly fired every {@code N}
+	 * seconds, so long as their respective key-combinations are active.
+	 */
+	public static final float REPEAT_INTERVAL = 0.2f;
+	
 	private int offsetX, offsetY;
 	private float cellWidth, cellHeight, gridWidth, gridHeight;
 	
@@ -166,9 +172,10 @@ public class GameScreenInputProcessor extends InputAdapter
 				
 				activeInputListeners.add(i);
 				
-				if (listener.isDiscrete())
+				if (listener.isDiscrete()) {
+					listener.setRemainingInterval(REPEAT_INTERVAL);
 					fireListener(listener);
-				else
+				} else
 					activeContinuousListeners.add(i);
 			}
 		}
@@ -206,7 +213,7 @@ public class GameScreenInputProcessor extends InputAdapter
 	protected void fireListener(InputEventListener listener) {
 		
 		final InputEvent event = EventPool.get().get(InputEvent.class);
-		event.setKeys(listener.getKeys());
+		event.setKeys(activeKeys);
 		event.setButton(listener.getButton());
 		
 		final Coord screenCursor = Coord.get(mouseX, mouseY);
@@ -259,26 +266,46 @@ public class GameScreenInputProcessor extends InputAdapter
 	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY,
 			MouseHoverListener.MouseHoverReceiver receiver) {
 		
-		final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, receiver);
-		hoverListeners.add(listener);
-		activeHoverListeners.add(false);
-		return listener;
+		synchronized (this) {
+			final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, receiver);
+			hoverListeners.add(listener);
+			activeHoverListeners.add(false);
+			return listener;
+		}
 	}
 	
 	@Override
 	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY, float duration,
 			MouseHoverListener.MouseHoverReceiver receiver) {
 		
-		final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, duration, receiver);
-		hoverListeners.add(listener);
-		activeHoverListeners.add(false);
-		return listener;
+		synchronized (this) {
+			final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, duration, receiver);
+			hoverListeners.add(listener);
+			activeHoverListeners.add(false);
+			return listener;
+		}
+	}
+	
+	@Override
+	public void unregisterHoverListener(MouseHoverListener listener) {
+		
+		synchronized (this) {
+			final int index = hoverListeners.indexOf(listener);
+			if (index < 0)
+				return;
+			
+			hoverListeners.removeAt(index);
+			activeHoverListeners.removeAtIndex(index);
+		}
 	}
 	
 	@Override
 	public void update(float delta) {
 		
-		updateHoverListeners(delta);
+		synchronized (this) {
+			updateHoverListeners(delta);
+			updateDiscreteListeners(delta);
+		}
 	}
 	
 	protected void updateHoverListeners(float delta) {
@@ -299,14 +326,19 @@ public class GameScreenInputProcessor extends InputAdapter
 		}
 	}
 	
-	@Override
-	public void unregisterHoverListener(MouseHoverListener listener) {
+	protected void updateDiscreteListeners(float delta) {
 		
-		final int index = hoverListeners.indexOf(listener);
-		if (index < 0)
-			return;
-		
-		hoverListeners.removeAt(index);
-		activeHoverListeners.removeAtIndex(index);
+		final IntIterator activeIterator = activeInputListeners.intIterator();
+		while (activeIterator.hasNext()) {
+			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
+			if (listener.isDiscrete()) {
+				listener.setRemainingInterval(listener.getRemainingInterval() - delta);
+				if (listener.getRemainingInterval() <= 0f) {
+					listener.setRemainingInterval(REPEAT_INTERVAL);
+					fireListener(listener);
+				}
+			}
+		}
 	}
+	
 }

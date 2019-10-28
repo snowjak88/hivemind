@@ -19,6 +19,7 @@ public abstract class InputEventListener {
 	
 	private final boolean isDiscrete;
 	private boolean isActive = false;
+	private float remainingInterval = 0f;
 	
 	private final Bits keys;
 	private final MouseButton button;
@@ -37,12 +38,23 @@ public abstract class InputEventListener {
 	 */
 	public InputEventListener(GameKey key, boolean alt, boolean ctrl, boolean shift) {
 		
-		isDiscrete = true;
-		
-		this.keys = GameKey.get(key, (alt ? GameKey.ALT_LEFT : null), (alt ? GameKey.ALT_RIGHT : null),
+		this(key, (alt ? GameKey.ALT_LEFT : null), (alt ? GameKey.ALT_RIGHT : null),
 				(ctrl ? GameKey.CONTROL_LEFT : null), (ctrl ? GameKey.CONTROL_RIGHT : null),
 				(shift ? GameKey.SHIFT_LEFT : null), (shift ? GameKey.SHIFT_RIGHT : null));
-		this.button = null;
+	}
+	
+	/**
+	 * Construct a new InputEventListener. This Listener will be "discrete":
+	 * <ul>
+	 * <li>{@link #receive(InputEvent)} is called whenever the depressed keys
+	 * match</li>
+	 * </ul>
+	 * 
+	 * @param keys
+	 */
+	public InputEventListener(GameKey... keys) {
+		
+		this(null, keys);
 	}
 	
 	/**
@@ -59,10 +71,25 @@ public abstract class InputEventListener {
 	 */
 	public InputEventListener(MouseButton button, boolean alt, boolean ctrl, boolean shift) {
 		
-		this.isDiscrete = true;
-		this.keys = GameKey.get((alt ? GameKey.ALT_LEFT : null), (alt ? GameKey.ALT_RIGHT : null),
+		this(button, (alt ? GameKey.ALT_LEFT : null), (alt ? GameKey.ALT_RIGHT : null),
 				(ctrl ? GameKey.CONTROL_LEFT : null), (ctrl ? GameKey.CONTROL_RIGHT : null),
 				(shift ? GameKey.SHIFT_LEFT : null), (shift ? GameKey.SHIFT_RIGHT : null));
+	}
+	
+	/**
+	 * Construct a new InputEventListener. This Listener will be "discrete":
+	 * <ul>
+	 * <li>{@link #receive(InputEvent)} is called whenever the depressed keys
+	 * match</li>
+	 * </ul>
+	 * 
+	 * @param keys
+	 */
+	public InputEventListener(MouseButton button, GameKey... keys) {
+		
+		isDiscrete = true;
+		
+		this.keys = GameKey.get(keys);
 		this.button = button;
 	}
 	
@@ -109,6 +136,16 @@ public abstract class InputEventListener {
 	public void setActive(boolean isActive) {
 		
 		this.isActive = isActive;
+	}
+	
+	public float getRemainingInterval() {
+		
+		return remainingInterval;
+	}
+	
+	public void setRemainingInterval(float remainingInterval) {
+		
+		this.remainingInterval = remainingInterval;
 	}
 	
 	/**
