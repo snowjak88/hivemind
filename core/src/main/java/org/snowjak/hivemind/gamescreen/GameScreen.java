@@ -10,11 +10,13 @@ import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
+import org.snowjak.hivemind.engine.systems.MapScramblingSystem;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.GameScreenInputProcessor;
 import org.snowjak.hivemind.events.input.InputEvent;
+import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.events.input.InputEventListener;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
@@ -57,6 +59,9 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		Config.get().register(PREFERENCE_MOUSE_SCROLL, "Use mouse to scroll game-map screen?", true, true, false);
 	}
 	
+	public static final SColor NOT_VISIBLE_DARKNESS = SColor.INK;
+	public static final float NOT_VISIBLE_DARKNESS_FLOAT = NOT_VISIBLE_DARKNESS.toFloatBits();
+	
 	private static GameScreen __INSTANCE = null;
 	
 	public static GameScreen get() {
@@ -92,9 +97,6 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		super();
 		
 		rootActor = new Container<>();
-		// rootActor.setFillParent(true);
-		// rootActor.setX(0);
-		// rootActor.setY(0);
 		
 		this.cameraX = 0;
 		this.cameraY = 0;
@@ -207,38 +209,56 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			
 			setupScrollHoverListeners();
 			
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.UP, false, false, false) {
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.UP) {
 				
 				@Override
 				public void receive(InputEvent event) {
 					
-					doScroll(Direction.UP, 16f);
+					doScroll(Direction.UP,
+							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
+									: 0f));
 				}
 			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.DOWN, false, false, false) {
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.DOWN) {
 				
 				@Override
 				public void receive(InputEvent event) {
 					
-					doScroll(Direction.DOWN, 16f);
+					doScroll(Direction.DOWN,
+							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
+									: 0f));
 				}
 			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.LEFT, false, false, false) {
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.LEFT) {
 				
 				@Override
 				public void receive(InputEvent event) {
 					
-					doScroll(Direction.LEFT, 16f);
+					doScroll(Direction.LEFT,
+							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
+									: 0f));
 				}
 			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.RIGHT, false, false, false) {
+			inputProcessor.registerInputListener(new InputEventListener(GameKey.RIGHT) {
 				
 				@Override
 				public void receive(InputEvent event) {
 					
-					doScroll(Direction.RIGHT, 16f);
+					doScroll(Direction.RIGHT,
+							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
+									: 0f));
 				}
 			});
+			
+			inputProcessor.registerInputListener(new InputEventListener(MouseButton.LEFT_BUTTON, GameKey.ALT_LEFT) {
+				
+				@Override
+				public void receive(InputEvent event) {
+					
+					Engine.get().getSystem(MapScramblingSystem.class).postScrambleLocation(event.getMapCursor());
+				}
+			});
+			
 			inputProcessor.registerInputListener(new InputEventListener(GameKey.ESCAPE, false, false, false) {
 				
 				@Override

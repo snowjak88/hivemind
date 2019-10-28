@@ -17,8 +17,8 @@ import org.snowjak.hivemind.engine.systems.FOVCopyingSystem;
 import org.snowjak.hivemind.engine.systems.FOVResettingSystem;
 import org.snowjak.hivemind.engine.systems.FOVUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.GameScreenUpdatingSystem;
-import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.LocationUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.MapScramblingSystem;
 import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
 import org.snowjak.hivemind.engine.systems.PathfinderUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
@@ -76,7 +76,7 @@ public class Engine {
 		this.engine.addSystem(new FOVResettingSystem());
 		this.engine.addSystem(new LocationUpdatingSystem());
 		this.engine.addSystem(new RunnableExecutingSystem());
-		this.engine.addSystem(new InputEventProcessingSystem());
+		this.engine.addSystem(new MapScramblingSystem());
 		
 		this.engine.addSystem(new PathfinderUpdatingSystem());
 		this.engine.addSystem(new FOVUpdatingSystem());

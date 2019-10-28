@@ -39,7 +39,7 @@ public class GameScreenInputProcessor extends InputAdapter
 	 * Discrete {@link InputEventListener}s will be repeatedly fired every {@code N}
 	 * seconds, so long as their respective key-combinations are active.
 	 */
-	public static final float REPEAT_INTERVAL = 0.2f;
+	public static final float REPEAT_INTERVAL = 0.1f;
 	
 	private int offsetX, offsetY;
 	private float cellWidth, cellHeight, gridWidth, gridHeight;
@@ -167,7 +167,7 @@ public class GameScreenInputProcessor extends InputAdapter
 				continue;
 			
 			final InputEventListener listener = inputListeners.getAt(i);
-			if (activeKeys.containsAll(listener.getKeys())
+			if (activeKeys.equals(listener.getKeys())
 					&& (listener.getButton() == null || activeButtons.contains(listener.getButton()))) {
 				
 				activeInputListeners.add(i);
@@ -202,7 +202,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			final int index = activeIterator.next();
 			final InputEventListener listener = inputListeners.getAt(index);
 			
-			if (!activeKeys.containsAll(listener.getKeys())) {
+			if (!activeKeys.equals(listener.getKeys())) {
 				activeContinuousListeners.remove(index);
 				activeIterator.remove();
 			}

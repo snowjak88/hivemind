@@ -27,17 +27,12 @@ import squidpony.squidai.DijkstraMap;
  */
 public class PathfinderUpdatingSystem extends IteratingSystem implements EntityListener {
 	
-	/**
-	 * All pathfinder instances will be checked and updated every {@code N} seconds.
-	 */
-	public static final float UPDATE_INTERVAL = 5f;
-	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<HasPathfinder> HAS_PATHFINDER = ComponentMapper.getFor(HasPathfinder.class);
 	
 	public PathfinderUpdatingSystem() {
 		
-		super(Family.all(CanMove.class, HasMap.class).get());// , UPDATE_INTERVAL);
+		super(Family.all(CanMove.class, HasMap.class).get());
 	}
 	
 	@Override

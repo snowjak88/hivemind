@@ -60,7 +60,12 @@ public class EnginePrefabs {
 				
 				else {
 					
-					worldMap.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar('.'));
+					final char ch;
+					if (RNG.get().nextInt(10) < 2)
+						ch = '#';
+					else
+						ch = '.';
+					worldMap.getMap().set(x, y, TerrainTypes.get().getRandomForSquidChar(ch));
 					worldMap.getUpdatedLocations().insert(x, y);
 					
 				}

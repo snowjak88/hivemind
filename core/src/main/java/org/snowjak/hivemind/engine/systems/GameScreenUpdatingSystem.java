@@ -22,6 +22,7 @@ import org.snowjak.hivemind.gamescreen.updates.GlyphRemovedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
 import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
+import org.snowjak.hivemind.util.ExtGreasedRegion;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -50,6 +51,9 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMapper.getFor(HasGlyph.class);
+	
+	private static final ExtGreasedRegion emptyVisible = new ExtGreasedRegion(0, 0),
+			visibleDelta = new ExtGreasedRegion(0, 0), prevVisible = new ExtGreasedRegion(0, 0);
 	
 	private final OrderedMap<Glyph, Entity> glyphToEntity = new OrderedMap<>();
 	private boolean resetAllGlyphs = false;
@@ -101,13 +105,33 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 		}
 		
 		//
+		// Now -- compare the aggregate FOV (if available) against the previous FOV (if
+		// available)
+		final ExtGreasedRegion visible;
+		if (HAS_FOV.has(screenMapEntity) && HAS_FOV.get(screenMapEntity).getVisible() != null)
+			visible = HAS_FOV.get(screenMapEntity).getVisible();
+		else
+			visible = emptyVisible;
+		
+		if (prevVisible.width != visible.width || prevVisible.height != visible.height)
+			prevVisible.resizeAndEmpty(visible.width, visible.height);
+		
+		if (visibleDelta.width != visible.width || visibleDelta.height != visible.height)
+			visibleDelta.resizeAndEmpty(visible.width, visible.height);
+		
+		visibleDelta.remake(visible).xor(prevVisible);
+		
+		prevVisible.remake(visible);
+		
+		//
 		// Add updates for all recently-updated locations.
-		final Coord[] updatedLocations = hm.getUpdatedLocations().asCoords();
+		final Coord[] updatedLocations = visibleDelta.or(hm.getUpdatedLocations()).asCoords();
 		for (int i = 0; i < updatedLocations.length; i++) {
 			final DrawMapCellUpdate upd = GameScreenUpdatePool.get().get(DrawMapCellUpdate.class);
 			upd.setX(updatedLocations[i].x);
 			upd.setY(updatedLocations[i].y);
 			upd.setCh(hm.getMap().getChar(updatedLocations[i]));
+			upd.setVisible(visible.contains(updatedLocations[i].x, updatedLocations[i].y));
 			upd.setForeground(hm.getMap().getForeground(updatedLocations[i]));
 			upd.setBackground(hm.getMap().getBackground(updatedLocations[i]));
 			GameScreen.get().postGameScreenUpdate(upd);

@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import org.snowjak.hivemind.RNG;
 import org.snowjak.hivemind.concurrent.Executor;
 import org.snowjak.hivemind.engine.Engine;
+import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
@@ -19,6 +20,8 @@ import org.snowjak.hivemind.engine.components.HasMovementList;
 import org.snowjak.hivemind.engine.components.HasPathfinder;
 import org.snowjak.hivemind.engine.components.IsMovingTo;
 import org.snowjak.hivemind.engine.components.NeedsUpdatedLocation;
+import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.map.TerrainTypes.TerrainType;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -272,6 +275,21 @@ public class Behaviors {
 					return Status.SUCCEEDED;
 				}
 				
+				//
+				// If the current movement would place us inside a wall, we can't perform it.
+				//
+				final Entity worldMapEntity = Engine.get().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
+				if (worldMapEntity == null)
+					return Status.FAILED;
+				final ComponentMapper<HasMap> hasMapMapper = ComponentMapper.getFor(HasMap.class);
+				if (!hasMapMapper.has(worldMapEntity))
+					return Status.FAILED;
+				
+				final TerrainType movingToTerrain = hasMapMapper.get(worldMapEntity).getMap()
+						.getTerrain(movementList.getCurrentMovement());
+				if (movingToTerrain == null || movingToTerrain.getSquidChar() == '#')
+					return Status.FAILED;
+					
 				//
 				// We have a movement ready. So we need to wait a time sufficient to move us
 				// there.
