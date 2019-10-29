@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
+import org.snowjak.hivemind.behavior.Behaviors;
 import org.snowjak.hivemind.engine.components.HasBehavior;
 
 import com.badlogic.ashley.core.ComponentMapper;
@@ -31,8 +32,17 @@ public class BehaviorProcessingSystem extends IteratingSystem {
 		
 		final HasBehavior behavior = HAS_BEHAVIOR.get(entity);
 		
-		if (behavior.getBehavior() == null)
+		if (behavior.getBehaviorName() == null)
 			return;
+		
+		if (behavior.getBehavior() == null)
+			switch (behavior.getBehaviorName()) {
+			case "default":
+				behavior.setBehavior(Behaviors.getDefault());
+				break;
+			default:
+				return;
+			}
 		
 		behavior.getBehavior().setObject(entity);
 		behavior.getBehavior().step();

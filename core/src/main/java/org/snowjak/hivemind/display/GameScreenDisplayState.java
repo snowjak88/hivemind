@@ -58,7 +58,7 @@ public class GameScreenDisplayState implements DisplayState {
 		Context.getGameScreen().update(entity.getDelta());
 		
 		if (exitGame)
-			entity.getDisplayStateMachine().changeState(new MainMenuDisplayState());
+			entity.getDisplayStateMachine().changeState(new SaveEngineStateDisplayState());
 	}
 	
 	@Override
@@ -71,12 +71,6 @@ public class GameScreenDisplayState implements DisplayState {
 		entity.getStage().getCamera().position.y = entity.getStage().getViewport().getWorldHeight() / 2;
 		
 		engineUpdateProcess.kill();
-		
-		Context.getGameScreen().dispose();
-		Context.getEngine().clear();
-		
-		Context.setGameScreen(null);
-		Context.setEngine(null);
 		
 		EventBus.get().unregister(this);
 	}

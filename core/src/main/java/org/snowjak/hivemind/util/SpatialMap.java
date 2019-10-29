@@ -48,6 +48,19 @@ public class SpatialMap<T> {
 	}
 	
 	/**
+	 * Get all locations registered within this map (whether or not they have any
+	 * values associated with them).
+	 * 
+	 * @return
+	 */
+	public OrderedSet<Coord> getLocations() {
+		
+		synchronized (this) {
+			return coordToObjects.keysAsOrderedSet();
+		}
+	}
+	
+	/**
 	 * Get all values associated with locations.
 	 * 
 	 * @return

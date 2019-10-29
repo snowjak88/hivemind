@@ -109,11 +109,14 @@ public class Materials {
 	 * Get the index corresponding to the given Material.
 	 * 
 	 * @param material
-	 * @return
+	 * @return -1 if {@code material} == {@code null}
 	 */
 	public short getIndex(Material material) {
 		
 		synchronized (this) {
+			if (material == null)
+				return -1;
+			
 			if (!materials.containsKey(material.getName()))
 				materials.put(material.getName(), material);
 			return (short) materials.indexOf(material.getName());

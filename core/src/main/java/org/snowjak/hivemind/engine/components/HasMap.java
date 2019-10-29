@@ -23,7 +23,7 @@ public class HasMap implements Component, Poolable {
 	
 	private GameMap map = null;
 	private EntityMap entities = new EntityMap();
-	private ExtGreasedRegion updatedLocations = new ExtGreasedRegion(1, 1);
+	private transient ExtGreasedRegion updatedLocations = new ExtGreasedRegion(1, 1);
 	
 	public GameMap getMap() {
 		

@@ -68,12 +68,17 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 		
 		final OrderedSet<Entity> worldEntities;
 		synchronized (myMap) {
-			if (myMap.getMap() == null) {
+			if (myMap.getMap() == null)
 				myMap.setMap(new GameMap(worldMap.getMap(), fov.getVisible()));
+			else
+				myMap.getMap().insert(worldMap.getMap(), fov.getVisible());
+			
+			if (myMap.getUpdatedLocations() == null)
 				myMap.setUpdatedLocations(
 						new ExtGreasedRegion(worldMap.getMap().getWidth(), worldMap.getMap().getHeight()));
-			} else
-				myMap.getMap().insert(worldMap.getMap(), fov.getVisible());
+			if (myMap.getUpdatedLocations().width != worldMap.getMap().getWidth()
+					|| myMap.getUpdatedLocations().height != worldMap.getMap().getHeight())
+				myMap.getUpdatedLocations().resizeAndEmpty(worldMap.getMap().getWidth(), worldMap.getMap().getHeight());
 			
 			if (myMap.getEntities() == null) {
 				myMap.setEntities(new EntityMap());

@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.display;
 
+import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.ExitAppEvent;
 import org.snowjak.hivemind.ui.Skin;
@@ -31,7 +32,8 @@ public class MainMenuDisplayState implements DisplayState {
 	
 	private final VerticalGroup rootWidget;
 	
-	private boolean startGame = false;
+	private boolean startPrefabGame = false;
+	private boolean loadSavedGame = false;
 	private boolean showConfig = false;
 	
 	public MainMenuDisplayState() {
@@ -49,14 +51,28 @@ public class MainMenuDisplayState implements DisplayState {
 		final TextButtonStyle buttonStyle = new TextButtonStyle(Skin.get().getDrawable(Skin.BUTTON_UP),
 				Skin.get().getDrawable(Skin.BUTTON_DOWN), Skin.get().getDrawable(Skin.BUTTON_CHECKED), buttonFont);
 		
-		final TextButton startButton = new TextButton("Start", buttonStyle);
-		startButton.pad(16, 32, 16, 32);
-		startButton.addListener(new ClickListener() {
+		final TextButton startPrefabButton = new TextButton("New Game", buttonStyle);
+		startPrefabButton.pad(16, 32, 16, 32);
+		startPrefabButton.addListener(new ClickListener() {
 			
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				
-				startGame = true;
+				startPrefabGame = true;
+			}
+			
+		});
+		
+		final TextButton loadGameButton = new TextButton("Load Saved Game", buttonStyle);
+		loadGameButton.pad(16, 32, 16, 32);
+		loadGameButton.setDisabled(!Engine.canLoad());
+		loadGameButton.addListener(new ClickListener() {
+			
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				
+				if (!loadGameButton.isDisabled())
+					loadSavedGame = true;
 			}
 			
 		});
@@ -85,7 +101,8 @@ public class MainMenuDisplayState implements DisplayState {
 		});
 		
 		rootWidget.addActor(titleLabel);
-		rootWidget.addActor(startButton);
+		rootWidget.addActor(startPrefabButton);
+		rootWidget.addActor(loadGameButton);
 		rootWidget.addActor(configButton);
 		rootWidget.addActor(exitButton);
 	}
@@ -95,15 +112,18 @@ public class MainMenuDisplayState implements DisplayState {
 		
 		entity.setRoot(rootWidget);
 		
-		startGame = false;
+		startPrefabGame = false;
 		showConfig = false;
 	}
 	
 	@Override
 	public void update(Display entity) {
 		
-		if (startGame)
+		if (startPrefabGame)
 			entity.getDisplayStateMachine().changeState(new LoadEnginePrefabDisplayState());
+		
+		else if (loadSavedGame)
+			entity.getDisplayStateMachine().changeState(new LoadSavedEngineDisplayState());
 		
 		else if (showConfig)
 			entity.getDisplayStateMachine().changeState(new ConfigScreenDisplayState());

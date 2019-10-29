@@ -128,8 +128,8 @@ public class GameMapLoader implements Loader<GameMap> {
 		final MutableShortObjectMap<String> materialIndicesToNames = new ShortObjectHashMap<>();
 		try {
 			for (Entry<String, JsonElement> entry : materialMappings.entrySet()) {
-				final short index = Short.parseShort(entry.getKey());
-				final String name = entry.getValue().getAsString();
+				final String name = entry.getKey();
+				final short index = Short.parseShort(entry.getValue().getAsString());
 				materialIndicesToNames.put(index, name);
 			}
 		} catch (Throwable t) {

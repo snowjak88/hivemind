@@ -79,11 +79,25 @@ public class Engine {
 	 * 
 	 * @return {@code true} if the save-file exists
 	 */
-	public boolean canLoad() {
+	public static boolean canLoad() {
 		
 		if (Gdx.files == null)
 			throw new IllegalStateException("LibGDX is not yet initialized!");
 		return Gdx.files.external(SAVE_FILE_NAME).exists();
+	}
+	
+	/**
+	 * Test whether the prefab-file (as defined by {@link #PREFAB_FILE_NAME}) is
+	 * available.
+	 * 
+	 * @param id
+	 * @return {@code true} if the prefab-file exists
+	 */
+	public static boolean canLoad(int id) {
+		
+		if (Gdx.files == null)
+			throw new IllegalStateException("LibGDX is not yet initialized!");
+		return Gdx.files.external(PREFAB_FILE_NAME.apply(id)).exists();
 	}
 	
 	/**

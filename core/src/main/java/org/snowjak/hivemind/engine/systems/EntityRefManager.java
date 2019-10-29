@@ -148,7 +148,7 @@ public class EntityRefManager extends EntitySystem {
 	 * added reference-resolvers}. All successful resolvers are removed from this
 	 * manager. All unsuccessful resolvers are retained.
 	 * 
-	 * @return {@core true} if all reference-resolvers were successful,
+	 * @return {@code true} if all reference-resolvers were successful,
 	 *         {@code false} if any were unsuccessful
 	 */
 	public boolean resolveReferences() {
@@ -175,8 +175,8 @@ public class EntityRefManager extends EntitySystem {
 					successfullyResolved.add(id);
 					
 				} else {
-					LOG.severe("Cannot resolve reference to entity (ID = [" + id.a + "/" + id.b + "/" + id.c + "/"
-							+ id.d + "])");
+//					LOG.severe("Cannot resolve reference to entity (ID = [" + id.a + "/" + id.b + "/" + id.c + "/"
+//							+ id.d + "])");
 					allSuccessful = false;
 				}
 			

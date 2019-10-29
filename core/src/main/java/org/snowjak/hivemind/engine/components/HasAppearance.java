@@ -3,8 +3,6 @@
  */
 package org.snowjak.hivemind.engine.components;
 
-import org.snowjak.hivemind.util.cache.ColorCache;
-
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.graphics.Color;
@@ -20,11 +18,10 @@ import squidpony.squidgrid.gui.gdx.SColor;
  */
 public class HasAppearance implements Component, Poolable {
 	
-	private static final float GHOST_COLOR = new SColor(SColor.AURORA_CLOUD).mul(1f, 1f, 1f, 0.25f).toFloatBits();
+	private static final float GHOST_COLOR = SColor.AURORA_CLOUD.cpy().mul(1f, 1f, 1f, 0.25f).toFloatBits();
 	
 	private char ch;
-	private short colorIndex;
-	private short ghostedColorIndex;
+	private Color color = null, ghostedColor = null;
 	
 	public char getCh() {
 		
@@ -38,38 +35,25 @@ public class HasAppearance implements Component, Poolable {
 	
 	public Color getColor() {
 		
-		return ColorCache.get().get(colorIndex);
+		return color;
 	}
 	
 	public Color getGhostedColor() {
 		
-		return ColorCache.get().get(ghostedColorIndex);
-	}
-	
-	public short getColorIndex() {
-		
-		return colorIndex;
+		return ghostedColor;
 	}
 	
 	public void setColor(Color color) {
 		
-		setColorIndex(ColorCache.get().get(color));
-	}
-	
-	public void setColorIndex(short colorIndex) {
-		
-		this.colorIndex = colorIndex;
-		
-		final Color color = ColorCache.get().get(colorIndex);
-		final Color ghosted = SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR, 0.5f));
-		this.ghostedColorIndex = ColorCache.get().get(ghosted);
+		this.color = color;
+		this.ghostedColor = SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR, 0.5f));
 	}
 	
 	@Override
 	public void reset() {
 		
 		ch = 0;
-		colorIndex = -1;
-		ghostedColorIndex = -1;
+		color = null;
+		ghostedColor = null;
 	}
 }

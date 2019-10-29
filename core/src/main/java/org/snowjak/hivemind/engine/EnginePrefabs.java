@@ -7,7 +7,6 @@ import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Materials;
 import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.RNG;
-import org.snowjak.hivemind.behavior.Behaviors;
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.CanSee;
 import org.snowjak.hivemind.engine.components.CopiesFOVTo;
@@ -100,7 +99,7 @@ public class EnginePrefabs {
 			worldMap.getEntities().set(hasLocation.getLocation(), e);
 			
 			final HasBehavior hasBehavior = eng.createComponent(HasBehavior.class);
-			hasBehavior.setBehavior(Behaviors.getDefault());
+			hasBehavior.setBehaviorName("default");
 			e.add(hasBehavior);
 			
 			eng.addEntity(e);

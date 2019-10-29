@@ -4,6 +4,7 @@
 package org.snowjak.hivemind.engine.components;
 
 import org.snowjak.hivemind.util.ExtGreasedRegion;
+import org.snowjak.hivemind.util.loaders.IgnoreSerialization;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.utils.Pool.Poolable;
  * @author snowjak88
  *
  */
+@IgnoreSerialization
 public class HasFOV implements Component, Poolable {
 	
 	private ExtGreasedRegion visible = new ExtGreasedRegion(0, 0);

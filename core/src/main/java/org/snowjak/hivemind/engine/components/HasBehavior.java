@@ -16,7 +16,18 @@ import com.badlogic.gdx.utils.Pool.Poolable;
  */
 public class HasBehavior implements Component, Poolable {
 	
-	private BehaviorTree<Entity> behavior = null;
+	private String behaviorName;
+	private transient BehaviorTree<Entity> behavior = null;
+	
+	public String getBehaviorName() {
+		
+		return behaviorName;
+	}
+	
+	public void setBehaviorName(String behaviorName) {
+		
+		this.behaviorName = behaviorName;
+	}
 	
 	public BehaviorTree<Entity> getBehavior() {
 		
@@ -31,6 +42,7 @@ public class HasBehavior implements Component, Poolable {
 	@Override
 	public void reset() {
 		
+		behaviorName = null;
 		behavior = null;
 	}
 }
