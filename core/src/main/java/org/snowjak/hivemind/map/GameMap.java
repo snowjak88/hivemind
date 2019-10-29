@@ -3,7 +3,10 @@
  */
 package org.snowjak.hivemind.map;
 
-import org.snowjak.hivemind.map.TerrainTypes.TerrainType;
+import org.snowjak.hivemind.Materials;
+import org.snowjak.hivemind.Materials.Material;
+import org.snowjak.hivemind.TerrainTypes;
+import org.snowjak.hivemind.TerrainTypes.TerrainType;
 import org.snowjak.hivemind.util.ArrayUtil;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.cache.ColorCache;
@@ -28,7 +31,7 @@ import squidpony.squidmath.GreasedRegion;
 public class GameMap {
 	
 	private int width = 0, height = 0;
-	private short[][] terrain = new short[0][0];
+	private short[][] terrain = new short[0][0], material = new short[0][0];
 	private double[][] modifiedVisibilityResistance = new double[0][0];
 	private ExtGreasedRegion known = new ExtGreasedRegion(0, 0);
 	
@@ -60,6 +63,7 @@ public class GameMap {
 			this.width = toCopy.width;
 			this.height = toCopy.height;
 			this.terrain = ArrayUtil.copy(toCopy.terrain);
+			this.material = ArrayUtil.copy(toCopy.material);
 			this.modifiedVisibilityResistance = ArrayUtil.copy(toCopy.modifiedVisibilityResistance);
 			this.known.remake(toCopy.known);
 			
@@ -83,8 +87,13 @@ public class GameMap {
 			this.width = toCopy.width;
 			this.height = toCopy.height;
 			this.terrain = new short[width][height];
+			this.material = new short[width][height];
+			
+			ArrayUtil.fill(terrain, (short) -1);
+			ArrayUtil.fill(material, (short) -1);
+			
 			this.modifiedVisibilityResistance = new double[width][height];
-			this.known.resizeAndEmpty(width, height);
+			this.known.resizeAndEmpty(width, height).or(onlyWithin);
 			
 			this.baseVisibility = new double[width][height];
 			this.totalVisibility = new double[width][height];
@@ -103,15 +112,17 @@ public class GameMap {
 	 *            if {@code true}, {@code chars[][]} will be matched against
 	 *            {@link TerrainType#getSquidChar()}; if {@code false}, against
 	 *            {@link TerrainType#getCh()}
+	 * @param materials
 	 * @throws IllegalArgumentException
 	 *             if the given {@code char[][]} is a jagged array
 	 */
-	public GameMap(char[][] chars, boolean useSquidMappings) {
+	public GameMap(char[][] chars, Material[][] materials, boolean useSquidMappings) {
 		
 		this.width = chars.length;
 		this.height = chars[0].length;
 		
 		terrain = new short[width][height];
+		material = new short[width][height];
 		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
@@ -123,6 +134,7 @@ public class GameMap {
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+				material[i][j] = Materials.get().getIndex(materials[i][j]);
 				
 				modifiedVisibilityResistance[i][j] = 0d;
 			}
@@ -144,11 +156,12 @@ public class GameMap {
 	 *            if {@code true}, {@code chars[][]} will be matched against
 	 *            {@link TerrainType#getSquidChar()}; if {@code false}, against
 	 *            {@link TerrainType#getCh()}
+	 * @param materials
 	 * @throws IllegalArgumentException
 	 *             if the sizes of {@code chars}, {@code foreground}, or
 	 *             {@code background} do not match
 	 */
-	public GameMap(char[][] chars, GreasedRegion known, boolean useSquidMappings) {
+	public GameMap(char[][] chars, Material[][] materials, GreasedRegion known, boolean useSquidMappings) {
 		
 		if (chars.length != known.width || chars[0].length != known.height)
 			throw new IllegalArgumentException("Cannot create a new GameMap -- given map-elements do not match sizes.");
@@ -157,6 +170,7 @@ public class GameMap {
 		this.height = chars[0].length;
 		
 		terrain = new short[width][height];
+		material = new short[width][height];
 		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
@@ -168,6 +182,7 @@ public class GameMap {
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
+				material[i][j] = Materials.get().getIndex(materials[i][j]);
 				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
@@ -224,6 +239,11 @@ public class GameMap {
 			this.height = height;
 			
 			terrain = new short[width][height];
+			material = new short[width][height];
+			
+			ArrayUtil.fill(terrain, (short) -1);
+			ArrayUtil.fill(material, (short) -1);
+			
 			modifiedVisibilityResistance = new double[width][height];
 			known.resizeAndEmpty(width, height);
 			
@@ -260,8 +280,9 @@ public class GameMap {
 				if (this.width != insertFrom.width || this.height != insertFrom.height)
 					resize(insertFrom.width, insertFrom.height, false);
 				
-				this.terrain = insertOnly.inverseMask(insertFrom.terrain, insertFrom.terrain);
-				this.modifiedVisibilityResistance = insertOnly.inverseMask(insertFrom.modifiedVisibilityResistance,
+				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
+				this.material = insertOnly.inverseMask(this.material, insertFrom.material);
+				this.modifiedVisibilityResistance = insertOnly.inverseMask(this.modifiedVisibilityResistance,
 						insertFrom.modifiedVisibilityResistance);
 				
 				this.known.or(insertOnly);
@@ -284,10 +305,13 @@ public class GameMap {
 	 * 
 	 * @param c
 	 * @param type
+	 *            {@code null} to leave unchanged
+	 * @param material
+	 *            {@code null} to leave unchanged
 	 */
-	public void set(Coord c, TerrainType type) {
+	public void set(Coord c, TerrainType type, Material material) {
 		
-		set(c.x, c.y, type);
+		set(c.x, c.y, type, material);
 	}
 	
 	/**
@@ -300,10 +324,13 @@ public class GameMap {
 	 * @param x
 	 * @param y
 	 * @param type
+	 *            {@code null} to leave unchanged
+	 * @param material
+	 *            {@code null} to leave unchanged
 	 */
-	public void set(int x, int y, TerrainType type) {
+	public void set(int x, int y, TerrainType type, Material material) {
 		
-		set(x, y, TerrainTypes.get().getIndexOf(type));
+		set(x, y, TerrainTypes.get().getIndexOf(type), Materials.get().getIndex(material));
 	}
 	
 	/**
@@ -316,16 +343,24 @@ public class GameMap {
 	 * @param x
 	 * @param y
 	 * @param terrainType
+	 *            {@code < 0} to leave unchanged
+	 * @param material
+	 *            {@code < 0} to leave unchanged
 	 */
-	public void set(int x, int y, short terrainType) {
+	public void set(int x, int y, short terrainType, short material) {
 		
 		synchronized (this) {
 			if (!isInMap(x, y))
 				return;
 			
-			this.terrain[x][y] = terrainType;
-			this.known.set((terrainType >= 0), x, y);
-			baseVisibility[x][y] = TerrainTypes.get().getAt(terrainType).getVisibilityResistance();
+			if (terrainType >= 0)
+				this.terrain[x][y] = terrainType;
+			if (material >= 0)
+				this.material[x][y] = material;
+			
+			this.known.set((this.terrain[x][y] >= 0), x, y);
+			baseVisibility[x][y] = TerrainTypes.get().getAt(this.terrain[x][y]).getVisibilityResistance()
+					* Materials.get().get(this.material[x][y]).getVisibilityResistance();
 			totalVisibility[x][y] = baseVisibility[x][y] + modifiedVisibilityResistance[x][y];
 			squidCharMap = null;
 			charMap = null;
@@ -350,6 +385,13 @@ public class GameMap {
 					}
 			}
 			return squidCharMap;
+		}
+	}
+	
+	public short[][] getMaterialIndexMap() {
+		
+		synchronized (this) {
+			return material;
 		}
 	}
 	
@@ -434,6 +476,60 @@ public class GameMap {
 	}
 	
 	/**
+	 * Get the active {@link Material} at the given location, or {@code null} if
+	 * there is no assigned Material or the location is outside the map.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public Material getMaterial(Coord c) {
+		
+		return getMaterial(c.x, c.y);
+	}
+	
+	/**
+	 * Get the active {@link Material} at the given location, or {@code null} if
+	 * there is no assigned Material or the location is outside the map.
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public Material getMaterial(int x, int y) {
+		
+		return Materials.get().get(getMaterialIndex(x, y));
+	}
+	
+	/**
+	 * Get the active {@link Material}-index at the given location, or {@code -1} if
+	 * there is no assigned Material or the location is outside the map.
+	 * 
+	 * @param c
+	 * @return
+	 */
+	public short getMaterialIndex(Coord c) {
+		
+		return getMaterialIndex(c.x, c.y);
+	}
+	
+	/**
+	 * Get the active {@link Material} at the given location, or {@code null} if
+	 * there is no assigned Material or the location is outside the map.
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	public short getMaterialIndex(int x, int y) {
+		
+		synchronized (this) {
+			if (!isInMap(x, y))
+				return -1;
+			return material[x][y];
+		}
+	}
+	
+	/**
 	 * Get the character at the given location, or {@code 0} if the given location
 	 * is either unknown or outside the map.
 	 * 
@@ -490,9 +586,11 @@ public class GameMap {
 	public Color getForeground(int x, int y) {
 		
 		synchronized (this) {
+			
 			final TerrainType tt = getTerrain(x, y);
 			if (tt == null)
 				return null;
+			
 			return tt.getForeground();
 		}
 	}
@@ -522,10 +620,11 @@ public class GameMap {
 	public Color getBackground(int x, int y) {
 		
 		synchronized (this) {
-			final TerrainType tt = getTerrain(x, y);
-			if (tt == null)
+			final Material mat = getMaterial(x, y);
+			if (mat == null)
 				return null;
-			return tt.getBackground();
+			
+			return mat.getColor();
 		}
 	}
 	
@@ -604,6 +703,7 @@ public class GameMap {
 		
 		synchronized (this) {
 			ArrayUtil.fill(terrain, (short) -1);
+			ArrayUtil.fill(material, (short) -1);
 			ArrayUtil.fill(modifiedVisibilityResistance, 0d);
 			known.clear();
 			ArrayUtil.fill(baseVisibility, 0d);
@@ -622,6 +722,7 @@ public class GameMap {
 		
 		synchronized (this) {
 			terrain = onlyWithin.inverseMask(terrain, (short) -1);
+			material = onlyWithin.inverseMask(material, (short) -1);
 			modifiedVisibilityResistance = onlyWithin.inverseMask(modifiedVisibilityResistance, 0d);
 			known.andNot(onlyWithin);
 			baseVisibility = onlyWithin.inverseMask(baseVisibility, 0d);
@@ -677,8 +778,12 @@ public class GameMap {
 		
 		synchronized (this) {
 			for (int i = 0; i < width; i++)
-				for (int j = 0; j < height; j++)
-					baseVisibility[i][j] = getTerrain(i, j).getVisibilityResistance();
+				for (int j = 0; j < height; j++) {
+					final TerrainType tt = getTerrain(i, j);
+					final Material mat = getMaterial(i, j);
+					baseVisibility[i][j] = ((tt == null) ? 1f : tt.getVisibilityResistance())
+							* ((mat == null) ? 1f : mat.getVisibilityResistance());
+				}
 		}
 	}
 	

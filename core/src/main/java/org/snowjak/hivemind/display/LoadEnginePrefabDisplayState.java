@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.display;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.EnginePrefabs;
 
@@ -26,6 +27,7 @@ public class LoadEnginePrefabDisplayState implements DisplayState {
 	@Override
 	public void update(Display entity) {
 		
+		Context.setEngine(new Engine());
 		EnginePrefabs.loadTest();
 		
 		entity.getDisplayStateMachine().changeState(new GameScreenDisplayState());

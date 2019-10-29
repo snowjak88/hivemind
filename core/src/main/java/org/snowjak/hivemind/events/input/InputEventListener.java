@@ -153,6 +153,17 @@ public abstract class InputEventListener {
 	 * it is updated (if it is "continuous").
 	 * 
 	 * @param event
+	 * @see #endReceive(InputEvent)
 	 */
 	public abstract void receive(InputEvent event);
+	
+	/**
+	 * Called whenever this event <em>stops</em> -- i.e., when this
+	 * InputEventListener is "deactivated".
+	 * 
+	 * @param event
+	 */
+	public void endReceive(InputEvent event) {
+		
+	}
 }

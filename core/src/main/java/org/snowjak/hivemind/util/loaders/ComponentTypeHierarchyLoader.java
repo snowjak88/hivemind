@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.logging.Logger;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
 
 import com.badlogic.ashley.core.Component;
@@ -21,8 +22,8 @@ import com.google.gson.JsonSerializationContext;
 
 /**
  * <strong>Note</strong>: this <strong>assumes</strong> that the
- * {@link Component} being de-/serialized belongs to {@link Engine#get() the
- * singleton Engine instance}.
+ * {@link Component} being de-/serialized belongs to the {@link Engine}
+ * currently held in the {@link Context}.
  * 
  * @author snowjak88
  *
@@ -79,7 +80,7 @@ public class ComponentTypeHierarchyLoader implements TypeHierarchyLoader<Compone
 			
 			try {
 				
-				final Object result = Engine.get().createComponent(clazz);
+				final Object result = Context.getEngine().createComponent(clazz);
 				
 				for (Field f : clazz.getDeclaredFields()) {
 					

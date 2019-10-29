@@ -4,7 +4,6 @@
 		"char": '#',
 		"squid-char": '#',
 		"foreground": "ffffffff",
-		"background": "22222222",
 		"navigable": false,
 		"visibility-resistance": 1.0
 	},
@@ -12,40 +11,14 @@
 		"name": "floor",
 		"char": '-',
 		"squid-char": '.',
-		"foreground": "C0C0C0FF",
-		"background": "404040FF",
+		"foreground": "ffffffff",
 		"navigable": true
 	},
 	{
 		"name": "floor",
 		"char": '=',
 		"squid-char": '.',
-		"foreground": "C0C0C0FF",
-		"background": "404040FF",
+		"foreground": "ffffffff",
 		"navigable": true
-	},
-	{
-		"name": "water",
-		"char": '-',
-		"squid-char": ',',
-		"foreground": "9BDDFF88",
-		"background": "ABCDEFFF",
-		"navigable": false
-	},
-	{
-		"name": "water",
-		"char": '~',
-		"squid-char": ',',
-		"foreground": "9BDDFF88",
-		"background": "ABCDEFFF",
-		"navigable": false
-	},
-	{
-		"name": "water",
-		"char": '=',
-		"squid-char": '~',
-		"foreground": "9BDDFF88",
-		"background": "ABCDEFFF",
-		"navigable": false
 	}
 ]

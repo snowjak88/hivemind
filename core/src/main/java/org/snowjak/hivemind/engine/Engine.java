@@ -50,25 +50,9 @@ public class Engine {
 	private static final String SAVE_FILE_NAME = App.class.getPackage().getName() + File.separator + "save"
 			+ File.separator + "world.json";
 	
-	private static Engine __INSTANCE = null;
-	
-	/**
-	 * @return the singleton {@link Engine} instance
-	 */
-	public static Engine get() {
-		
-		if (__INSTANCE == null)
-			synchronized (Engine.class) {
-				if (__INSTANCE == null)
-					__INSTANCE = new Engine();
-			}
-		
-		return __INSTANCE;
-	}
-	
 	private PooledEngine engine;
 	
-	private Engine() {
+	public Engine() {
 		
 		this.engine = new PooledEngine();
 		

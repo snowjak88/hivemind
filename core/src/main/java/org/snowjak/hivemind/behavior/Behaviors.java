@@ -9,9 +9,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.RNG;
+import org.snowjak.hivemind.TerrainTypes.TerrainType;
 import org.snowjak.hivemind.concurrent.Executor;
-import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.HasLocation;
@@ -21,7 +22,6 @@ import org.snowjak.hivemind.engine.components.HasPathfinder;
 import org.snowjak.hivemind.engine.components.IsMovingTo;
 import org.snowjak.hivemind.engine.components.NeedsUpdatedLocation;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
-import org.snowjak.hivemind.map.TerrainTypes.TerrainType;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
@@ -76,7 +76,7 @@ public class Behaviors {
 					if (nearbyPoint == null)
 						return Status.FAILED;
 					
-					final IsMovingTo moveTo = Engine.get().createComponent(IsMovingTo.class);
+					final IsMovingTo moveTo = Context.getEngine().createComponent(IsMovingTo.class);
 					moveTo.setDestination(nearbyPoint);
 					getObject().add(moveTo);
 					return Status.SUCCEEDED;
@@ -179,7 +179,7 @@ public class Behaviors {
 							return Status.FAILED;
 						}
 						
-						final HasMovementList movementList = Engine.get().createComponent(HasMovementList.class);
+						final HasMovementList movementList = Context.getEngine().createComponent(HasMovementList.class);
 						movementList.setMovementList(result);
 						getObject().add(movementList);
 						return Status.SUCCEEDED;
@@ -254,7 +254,7 @@ public class Behaviors {
 					if (timeRemaining <= 0f) {
 						isMoving = false;
 						timeRemaining = 0f;
-						final NeedsUpdatedLocation needsUpdatedLocation = Engine.get()
+						final NeedsUpdatedLocation needsUpdatedLocation = Context.getEngine()
 								.createComponent(NeedsUpdatedLocation.class);
 						needsUpdatedLocation.setNewLocation(movementList.getCurrentMovement());
 						getObject().add(needsUpdatedLocation);
@@ -280,7 +280,7 @@ public class Behaviors {
 				//
 				// If the current movement would place us inside a wall, we can't perform it.
 				//
-				final Entity worldMapEntity = Engine.get().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
+				final Entity worldMapEntity = Context.getEngine().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
 				if (worldMapEntity == null)
 					return Status.FAILED;
 				final ComponentMapper<HasMap> hasMapMapper = ComponentMapper.getFor(HasMap.class);

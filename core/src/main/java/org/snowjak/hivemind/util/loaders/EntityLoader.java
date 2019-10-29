@@ -5,6 +5,7 @@ package org.snowjak.hivemind.util.loaders;
 
 import java.lang.reflect.Type;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
@@ -24,8 +25,8 @@ import squidpony.squidmath.SquidID;
 
 /**
  * <strong>Note</strong>: this <strong>assumes</strong> that the {@link Entity}
- * being de-/serialized belongs to {@link Engine#get() the singleton Engine
- * instance}.
+ * being de-/serialized belongs to the {@link Engine} currently held in the
+ * {@link Context}.
  * 
  * @author snowjak88
  *
@@ -40,11 +41,13 @@ public class EntityLoader implements Loader<Entity> {
 		
 		final JsonObject obj = new JsonObject();
 		
-		final EntityRefManager ref = Engine.get().getSystem(EntityRefManager.class);
+		Context.get();
+		final EntityRefManager ref = Context.getEngine().getSystem(EntityRefManager.class);
 		if (ref != null)
 			obj.add("id", context.serialize(ref.get(src), SquidID.class));
 		
-		final UniqueTagManager utm = Engine.get().getSystem(UniqueTagManager.class);
+		Context.get();
+		final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
 		if (utm != null && utm.has(src))
 			obj.add("tag", new JsonPrimitive(utm.get(src)));
 		
@@ -70,16 +73,19 @@ public class EntityLoader implements Loader<Entity> {
 		
 		final JsonObject obj = json.getAsJsonObject();
 		
-		final Entity e = Engine.get().createEntity();
+		Context.get();
+		final Entity e = Context.getEngine().createEntity();
 		
 		if (obj.has("id")) {
-			final EntityRefManager erm = Engine.get().getSystem(EntityRefManager.class);
+			Context.get();
+			final EntityRefManager erm = Context.getEngine().getSystem(EntityRefManager.class);
 			if (erm != null)
 				erm.add(e, context.deserialize(obj.get("id"), SquidID.class));
 		}
 		
 		if (obj.has("tag")) {
-			final UniqueTagManager utm = Engine.get().getSystem(UniqueTagManager.class);
+			Context.get();
+			final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
 			if (utm != null)
 				utm.set(obj.get("tag").getAsString(), e);
 		}

@@ -28,7 +28,9 @@ public class SpatialMap<T> {
 	 */
 	public OrderedSet<T> getAt(Coord location) {
 		
-		return coordToObjects.computeIfAbsent(location, x -> new OrderedSet<>());
+		synchronized (this) {
+			return coordToObjects.computeIfAbsent(location, x -> new OrderedSet<>());
+		}
 	}
 	
 	/**
@@ -40,7 +42,9 @@ public class SpatialMap<T> {
 	 */
 	public Coord getLocation(T value) {
 		
-		return objectToCoord.get(value);
+		synchronized (this) {
+			return objectToCoord.get(value);
+		}
 	}
 	
 	/**
@@ -50,7 +54,9 @@ public class SpatialMap<T> {
 	 */
 	public OrderedSet<T> getValues() {
 		
-		return objectToCoord.keysAsOrderedSet();
+		synchronized (this) {
+			return objectToCoord.keysAsOrderedSet();
+		}
 	}
 	
 	/**
@@ -63,18 +69,20 @@ public class SpatialMap<T> {
 	 */
 	public void set(Coord location, T value) {
 		
-		final Coord prevLocation = objectToCoord.get(value);
-		if (prevLocation != null)
-			if (prevLocation == location)
+		synchronized (this) {
+			final Coord prevLocation = objectToCoord.get(value);
+			if (prevLocation != null)
+				if (prevLocation == location)
+					return;
+				else
+					coordToObjects.get(prevLocation).remove(value);
+				
+			if (location == null)
 				return;
-			else
-				coordToObjects.get(prevLocation).remove(value);
 			
-		if (location == null)
-			return;
-		
-		coordToObjects.computeIfAbsent(location, x -> new OrderedSet<>()).add(value);
-		objectToCoord.put(value, location);
+			coordToObjects.computeIfAbsent(location, x -> new OrderedSet<>()).add(value);
+			objectToCoord.put(value, location);
+		}
 	}
 	
 	/**
@@ -86,12 +94,14 @@ public class SpatialMap<T> {
 	 */
 	public Coord remove(T value) {
 		
-		final Coord location = objectToCoord.get(value);
-		if (location != null) {
-			objectToCoord.remove(value);
-			coordToObjects.get(location).remove(value);
+		synchronized (this) {
+			final Coord location = objectToCoord.get(value);
+			if (location != null) {
+				objectToCoord.remove(value);
+				coordToObjects.get(location).remove(value);
+			}
+			return location;
 		}
-		return location;
 	}
 	
 	/**
@@ -102,13 +112,26 @@ public class SpatialMap<T> {
 	 */
 	public OrderedSet<T> removeAll(Coord location) {
 		
-		final OrderedSet<T> values = coordToObjects.get(location);
-		if (values == null)
-			return new OrderedSet<>();
+		synchronized (this) {
+			final OrderedSet<T> values = coordToObjects.get(location);
+			if (values == null)
+				return new OrderedSet<>();
+			
+			for (int i = 0; i < values.size(); i++)
+				objectToCoord.remove(values.getAt(i));
+			
+			return values;
+		}
+	}
+	
+	/**
+	 * Remove all locations and values held in this map.
+	 */
+	public void clear() {
 		
-		for (int i = 0; i < values.size(); i++)
-			objectToCoord.remove(values.getAt(i));
-		
-		return values;
+		synchronized (this) {
+			coordToObjects.clear();
+			objectToCoord.clear();
+		}
 	}
 }

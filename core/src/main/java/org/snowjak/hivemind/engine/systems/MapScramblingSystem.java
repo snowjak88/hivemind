@@ -7,10 +7,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.snowjak.hivemind.RNG;
+import org.snowjak.hivemind.TerrainTypes;
+import org.snowjak.hivemind.TerrainTypes.TerrainType;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.map.TerrainTypes;
-import org.snowjak.hivemind.map.TerrainTypes.TerrainType;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 
 import com.badlogic.ashley.core.ComponentMapper;
@@ -82,13 +82,13 @@ public class MapScramblingSystem extends EntitySystem {
 			if (!hm.getEntities().getAt(pickLocation).isEmpty() || pickLocation == null
 					|| pickTT.getSquidChar() == '#') {
 				
-				hm.getMap().set(location, TerrainTypes.get().getRandomForSquidChar('#'));
+				hm.getMap().set(location, TerrainTypes.get().getRandomForSquidChar('#'), null);
 				continue;
 			}
 			
 			synchronized (hm.getMap()) {
-				hm.getMap().set(location, pickTT);
-				hm.getMap().set(pickLocation, tt);
+				hm.getMap().set(location, pickTT, null);
+				hm.getMap().set(pickLocation, tt, null);
 			}
 		}
 	}

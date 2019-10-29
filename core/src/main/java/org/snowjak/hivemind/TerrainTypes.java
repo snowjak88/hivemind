@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.map;
+package org.snowjak.hivemind;
 
 import java.io.File;
 import java.io.FileReader;
@@ -13,7 +13,6 @@ import org.eclipse.collections.api.map.primitive.MutableCharObjectMap;
 import org.eclipse.collections.api.map.primitive.MutableObjectShortMap;
 import org.eclipse.collections.impl.map.mutable.primitive.CharObjectHashMap;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectShortHashMap;
-import org.snowjak.hivemind.RNG;
 import org.snowjak.hivemind.json.Json;
 import org.snowjak.hivemind.util.loaders.Loader;
 
@@ -206,9 +205,8 @@ public class TerrainTypes {
 		@SerializedName("squid-char")
 		private char squidChar;
 		private Color foreground;
-		private Color background;
 		
-		private transient float foregroundFloat = 0f, backgroundFloat = 0f;
+		private transient float foregroundFloat = 0f;
 		
 		private boolean navigable = true;
 		@SerializedName("visibility-resistance")
@@ -261,24 +259,6 @@ public class TerrainTypes {
 		public void setForeground(Color foreground) {
 			
 			this.foreground = foreground;
-		}
-		
-		public Color getBackground() {
-			
-			return background;
-		}
-		
-		public float getBackgroundFloat() {
-			
-			if (backgroundFloat == 0f)
-				backgroundFloat = background.toFloatBits();
-			
-			return backgroundFloat;
-		}
-		
-		public void setBackground(Color background) {
-			
-			this.background = background;
 		}
 		
 		public boolean isNavigable() {

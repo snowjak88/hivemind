@@ -27,9 +27,12 @@ public class MapDeltaUpdate extends MapUpdate {
 		updateCoords = update.asCoords();
 		
 		synchronized (map) {
-			for (int i = 0; i < updateCoords.length; i++)
+			for (int i = 0; i < updateCoords.length; i++) {
 				terrain[updateCoords[i].x][updateCoords[i].y] = map.getTerrainIndex(updateCoords[i].x,
 						updateCoords[i].y);
+				material[updateCoords[i].x][updateCoords[i].y] = map.getMaterialIndex(updateCoords[i].x,
+						updateCoords[i].y);
+			}
 		}
 		
 		this.visible.remake(visible).and(update);
@@ -68,7 +71,7 @@ public class MapDeltaUpdate extends MapUpdate {
 	public void reset() {
 		
 		super.reset();
-		
+		update.clear();
 		updateCoords = null;
 	}
 }

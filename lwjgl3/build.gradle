@@ -6,10 +6,10 @@ eclipse.project.name = appName + '-lwjgl3'
 sourceCompatibility = 1.8
 
 dependencies {
-  api project(':core')
-  api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
-  api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-  api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+  implementation project(':core')
+  implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+  implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
 }
 
 import org.gradle.internal.os.OperatingSystem
@@ -38,8 +38,7 @@ jar {
 distributions {
 	main {
 		contents {
-			from rootProject.file('assets/config').path, { into 'config' }
-			from rootProject.file('assets/behavior').path, { into 'behavior' }
+			from rootProject.file('assets/data').path, { into 'data' }
 		}
 	}
 }

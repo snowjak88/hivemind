@@ -7,6 +7,7 @@ import java.lang.reflect.Type;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
 
@@ -22,7 +23,8 @@ import com.google.gson.JsonSerializationContext;
 import squidpony.squidmath.SquidID;
 
 /**
- * Special-case {@link Loader} to initialize the singleton {@link Engine}.
+ * Special-case {@link Loader} to initialize the {@link Engine} currently held
+ * in the {@link Context}.
  * 
  * @author snowjak88
  *
@@ -62,7 +64,8 @@ public class EngineLoader implements Loader<Engine> {
 		
 		final JsonObject obj = json.getAsJsonObject();
 		
-		final EntityRefManager erm = Engine.get().getSystem(EntityRefManager.class);
+		Context.get();
+		final EntityRefManager erm = Context.getEngine().getSystem(EntityRefManager.class);
 		
 		for (Entry<String, JsonElement> entry : obj.entrySet()) {
 			
@@ -71,7 +74,7 @@ public class EngineLoader implements Loader<Engine> {
 			
 			erm.add(e, id);
 			
-			Engine.get().addEntity(e);
+			Context.getEngine().addEntity(e);
 			
 		}
 		
@@ -80,6 +83,7 @@ public class EngineLoader implements Loader<Engine> {
 			LOG.info("Still resolving references ...");
 		}
 		
-		return Engine.get();
+		Context.get();
+		return Context.getEngine();
 	}
 }

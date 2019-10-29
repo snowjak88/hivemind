@@ -10,6 +10,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * Represents a process that should synchronize with the current frame-rate.
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class PerFrameProcess {
 	
+	private static final Logger LOG = Logger.getLogger(PerFrameProcess.class.getName());
 	private static final Collection<PerFrameProcess> processes = Collections.synchronizedList(new LinkedList<>());
 	
 	private static void register(PerFrameProcess process) {
@@ -49,7 +51,7 @@ public abstract class PerFrameProcess {
 	
 	private final BlockingQueue<Float> updateQueue = new ArrayBlockingQueue<>(1);
 	
-	private boolean isStarted = false, isStopped = false;
+	private Status status = Status.FRESH;
 	
 	/**
 	 * Start this {@link PerFrameProcess}. This process will immediately call its
@@ -63,12 +65,16 @@ public abstract class PerFrameProcess {
 	public Future<?> start() {
 		
 		synchronized (this) {
-			if (isStarted)
+			if (status == Status.STARTED)
 				throw new IllegalStateException("Cannot start this PerFrameProcess -- already started");
+			if (status == Status.RUNNING)
+				throw new IllegalStateException("Cannot start this PerFrameProcess -- already running");
+			if (status == Status.KILLED)
+				throw new IllegalStateException("Cannot start this PerFrameProcess -- is killed");
 			
-			isStarted = true;
+			status = Status.STARTED;
 			
-			return Executor.get().submit(() -> {
+			final Future<?> result = Executor.get().submit(() -> {
 				
 				starting();
 				
@@ -76,14 +82,15 @@ public abstract class PerFrameProcess {
 				
 				try {
 					
-					while (!Thread.interrupted() && !isStopped) {
+					while (!Thread.interrupted() && status != Status.STOPPED && status != Status.KILLED) {
 						final Float delta = updateQueue.poll(1, TimeUnit.SECONDS);
 						if (delta != null)
 							processFrame(delta);
 					}
 					
-				} catch (InterruptedException e) {
-					
+				} catch (Throwable t) {
+					LOG.severe("Unexpected exception! " + t.getClass().getSimpleName() + ": " + t.getMessage());
+					t.printStackTrace();
 				} finally {
 					
 					PerFrameProcess.unregister(this);
@@ -92,6 +99,10 @@ public abstract class PerFrameProcess {
 				}
 				
 			});
+			
+			status = Status.RUNNING;
+			
+			return result;
 		}
 	}
 	
@@ -110,12 +121,12 @@ public abstract class PerFrameProcess {
 	 */
 	public void update(float delta) {
 		
-		if (!isStarted)
-			throw new IllegalStateException("Cannot update this PerFrameProcess because it has not been started yet!");
+		if (status != Status.RUNNING)
+			throw new IllegalStateException("Cannot update this PerFrameProcess because it is not running!");
 		try {
 			updateQueue.put(delta);
 		} catch (InterruptedException e) {
-			isStopped = true;
+			status = Status.STOPPED;
 		}
 	}
 	
@@ -124,7 +135,12 @@ public abstract class PerFrameProcess {
 	 */
 	public void stop() {
 		
-		isStopped = true;
+		status = Status.STOPPED;
+	}
+	
+	public void kill() {
+		
+		status = Status.KILLED;
 	}
 	
 	/**
@@ -153,4 +169,12 @@ public abstract class PerFrameProcess {
 	 * </p>
 	 */
 	public abstract void stopping();
+	
+	public enum Status {
+		FRESH,
+		STARTED,
+		RUNNING,
+		STOPPED,
+		KILLED
+	}
 }

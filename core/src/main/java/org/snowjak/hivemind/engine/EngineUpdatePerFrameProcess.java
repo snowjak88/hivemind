@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.engine;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.concurrent.PerFrameProcess;
 
 /**
@@ -22,7 +23,7 @@ public class EngineUpdatePerFrameProcess extends PerFrameProcess {
 	@Override
 	public void processFrame(float delta) {
 		
-		Engine.get().update(delta);
+		Context.getEngine().update(delta);
 	}
 	
 	@Override

@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.display;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.concurrent.PerFrameProcess;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.EngineUpdatePerFrameProcess;
@@ -30,11 +31,13 @@ import com.google.common.eventbus.Subscribe;
 public class GameScreenDisplayState implements DisplayState {
 	
 	private final PerFrameProcess engineUpdateProcess = new EngineUpdatePerFrameProcess();
-	private final GameScreen gameScreen = GameScreen.get();
 	private boolean exitGame = false;
 	
 	@Override
 	public void enter(Display entity) {
+		
+		final GameScreen gameScreen = new GameScreen();
+		Context.setGameScreen(gameScreen);
 		
 		gameScreen.postGameScreenUpdate(new ClearMapUpdate());
 		gameScreen.postGameScreenUpdate(new RemoveAllGlyphsUpdate());
@@ -52,9 +55,7 @@ public class GameScreenDisplayState implements DisplayState {
 	@Override
 	public void update(Display entity) {
 		
-		final float delta = entity.getDelta();
-		engineUpdateProcess.update(delta);
-		gameScreen.update(delta);
+		Context.getGameScreen().update(entity.getDelta());
 		
 		if (exitGame)
 			entity.getDisplayStateMachine().changeState(new MainMenuDisplayState());
@@ -69,7 +70,13 @@ public class GameScreenDisplayState implements DisplayState {
 		entity.getStage().getCamera().position.x = entity.getStage().getViewport().getWorldWidth() / 2;
 		entity.getStage().getCamera().position.y = entity.getStage().getViewport().getWorldHeight() / 2;
 		
-		engineUpdateProcess.stop();
+		engineUpdateProcess.kill();
+		
+		Context.getGameScreen().dispose();
+		Context.getEngine().clear();
+		
+		Context.setGameScreen(null);
+		Context.setEngine(null);
 		
 		EventBus.get().unregister(this);
 	}

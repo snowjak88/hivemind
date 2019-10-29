@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.snowjak.hivemind.App;
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
@@ -62,19 +63,6 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	public static final SColor NOT_VISIBLE_DARKNESS = SColor.INK;
 	public static final float NOT_VISIBLE_DARKNESS_FLOAT = NOT_VISIBLE_DARKNESS.toFloatBits();
 	
-	private static GameScreen __INSTANCE = null;
-	
-	public static GameScreen get() {
-		
-		if (__INSTANCE == null)
-			synchronized (GameScreen.class) {
-				if (__INSTANCE == null)
-					__INSTANCE = new GameScreen();
-			}
-		
-		return __INSTANCE;
-	}
-	
 	private Container<SparseLayers> rootActor;
 	private SparseLayers sparseLayers;
 	private GameScreenInputProcessor inputProcessor;
@@ -92,7 +80,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	
 	private MouseHoverListener scrollLeftListener, scrollRightListener, scrollUpListener, scrollDownListener;
 	
-	private GameScreen() {
+	public GameScreen() {
 		
 		super();
 		
@@ -176,7 +164,6 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			
 			final TextCellFactory font = new TextCellFactory().font(Fonts.get().get(Fonts.FONT_MAP));
 			sparseLayers = new SparseLayers(width, height, getCellWidth(), getCellHeight(), font);
-			sparseLayers.fillBackground(SColor.AURORA_GRAPHITE);
 			
 			rootActor.setWidth(sparseLayers.getWidth());
 			rootActor.setHeight(sparseLayers.getHeight());
@@ -185,8 +172,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0);
 		}
 		
-		cameraX = (width * getCellWidth() - getWindowWidth()) / 2f;
-		cameraY = (width * getCellWidth() + getWindowWidth()) / 2f;
+		cameraX = (width * getCellWidth()) / 2f;
+		cameraY = (width * getCellWidth()) / 2f;
 	}
 	
 	/**
@@ -216,7 +203,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 					
 					doScroll(Direction.UP,
 							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 0f));
+									: 1f));
 				}
 			});
 			inputProcessor.registerInputListener(new InputEventListener(GameKey.DOWN) {
@@ -226,7 +213,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 					
 					doScroll(Direction.DOWN,
 							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 0f));
+									: 1f));
 				}
 			});
 			inputProcessor.registerInputListener(new InputEventListener(GameKey.LEFT) {
@@ -236,7 +223,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 					
 					doScroll(Direction.LEFT,
 							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 0f));
+									: 1f));
 				}
 			});
 			inputProcessor.registerInputListener(new InputEventListener(GameKey.RIGHT) {
@@ -246,7 +233,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 					
 					doScroll(Direction.RIGHT,
 							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 0f));
+									: 1f));
 				}
 			});
 			
@@ -255,7 +242,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				@Override
 				public void receive(InputEvent event) {
 					
-					Engine.get().getSystem(MapScramblingSystem.class).postScrambleLocation(event.getMapCursor());
+					Context.getEngine().getSystem(MapScramblingSystem.class).postScrambleLocation(event.getMapCursor());
 				}
 			});
 			
@@ -264,8 +251,14 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				@Override
 				public void receive(InputEvent event) {
 					
+				}
+				
+				@Override
+				public void endReceive(InputEvent event) {
+					
 					EventBus.get().post(ExitGameEvent.class);
 				}
+				
 			});
 		}
 		

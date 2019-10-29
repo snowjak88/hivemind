@@ -66,21 +66,23 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 		if (fov.getVisible() == null)
 			return;
 		
-		if (myMap.getMap() == null) {
-			myMap.setMap(new GameMap(worldMap.getMap(), fov.getVisible()));
-			myMap.setUpdatedLocations(
-					new ExtGreasedRegion(worldMap.getMap().getWidth(), worldMap.getMap().getHeight()));
-		} else {
-			myMap.getMap().insert(worldMap.getMap(), fov.getVisible());
+		final OrderedSet<Entity> worldEntities;
+		synchronized (myMap) {
+			if (myMap.getMap() == null) {
+				myMap.setMap(new GameMap(worldMap.getMap(), fov.getVisible()));
+				myMap.setUpdatedLocations(
+						new ExtGreasedRegion(worldMap.getMap().getWidth(), worldMap.getMap().getHeight()));
+			} else
+				myMap.getMap().insert(worldMap.getMap(), fov.getVisible());
+			
+			if (myMap.getEntities() == null) {
+				myMap.setEntities(new EntityMap());
+				worldEntities = worldMap.getEntities().getValues();
+			} else
+				worldEntities = worldMap.getEntities().getRecentlyUpdatedEntities();
+			
 			myMap.getUpdatedLocations().or(fov.getVisible());
 		}
-		
-		final OrderedSet<Entity> worldEntities;
-		if (myMap.getEntities() == null) {
-			myMap.setEntities(new EntityMap());
-			worldEntities = worldMap.getEntities().getValues();
-		} else
-			worldEntities = worldMap.getEntities().getRecentlyUpdatedEntities();
 		
 		for (int i = 0; i < worldEntities.size(); i++) {
 			final Entity worldEntity = worldEntities.getAt(i);

@@ -4,6 +4,7 @@
 package org.snowjak.hivemind.events.input;
 
 import java.util.EnumSet;
+import java.util.function.Consumer;
 
 import org.eclipse.collections.api.iterator.IntIterator;
 import org.eclipse.collections.api.iterator.MutableIntIterator;
@@ -204,6 +205,9 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			if (!activeKeys.equals(listener.getKeys())
 					|| (listener.getButton() == null || !activeButtons.contains(listener.getButton()))) {
+				
+				fireListener(listener, listener::endReceive);
+				
 				activeContinuousListeners.remove(index);
 				activeIterator.remove();
 			}
@@ -213,6 +217,11 @@ public class GameScreenInputProcessor extends InputAdapter
 	
 	protected void fireListener(InputEventListener listener) {
 		
+		fireListener(listener, listener::receive);
+	}
+	
+	protected void fireListener(InputEventListener listener, Consumer<InputEvent> endpoint) {
+		
 		final InputEvent event = EventPool.get().get(InputEvent.class);
 		event.setKeys(activeKeys);
 		event.setButton(listener.getButton());
@@ -221,7 +230,7 @@ public class GameScreenInputProcessor extends InputAdapter
 		event.setScreenCursor(screenCursor);
 		event.setMapCursor(gridTranslator.screenToMap(screenCursor));
 		
-		listener.receive(event);
+		endpoint.accept(event);
 	}
 	
 	private int toGridX(int worldX) {
@@ -341,5 +350,4 @@ public class GameScreenInputProcessor extends InputAdapter
 			}
 		}
 	}
-	
 }

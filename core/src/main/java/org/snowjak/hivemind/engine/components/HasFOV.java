@@ -43,7 +43,7 @@ public class HasFOV implements Component, Poolable {
 	@Override
 	public void reset() {
 		
-		visible.clear();
+		visible.resizeAndEmpty(0, 0);
 		lightLevels = new double[0][0];
 	}
 }

@@ -5,6 +5,7 @@ package org.snowjak.hivemind.engine.systems;
 
 import java.util.logging.Logger;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasAppearance;
 import org.snowjak.hivemind.engine.components.HasFOV;
@@ -20,6 +21,7 @@ import org.snowjak.hivemind.gamescreen.updates.GlyphMovedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphRemovedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.MapDeltaUpdate;
 import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
+import org.snowjak.hivemind.gamescreen.updates.MapUpdate;
 import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
@@ -47,6 +49,13 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 	@SuppressWarnings("unused")
 	private static final Logger LOG = Logger.getLogger(GameScreenUpdatingSystem.class.getName());
 	
+	/**
+	 * Ordinarily, this system issues {@link MapDeltaUpdate}s to the
+	 * {@link GameScreen}. However, periodically, this system will issue a (full)
+	 * {@link MapUpdate}, just in case of ... I know not what.
+	 */
+	private static final float INTERVAL_FULL_UPDATE = 5f;
+	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
@@ -57,6 +66,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 	
 	private final OrderedMap<Glyph, Entity> glyphToEntity = new OrderedMap<>();
 	private boolean resetAllGlyphs = false;
+	private float fullUpdateRemainingInterval = 0f;
 	
 	@Override
 	public void update(float deltaTime) {
@@ -73,10 +83,13 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 	
 	private void updateMap(Entity screenMapEntity, float deltaTime) {
 		
+		final GameScreen gameScreen = Context.getGameScreen();
+		if (gameScreen == null)
+			return;
 		//
 		// If the tagged Entity has no associated map, then just clear the screen.
 		if (!HAS_MAP.has(screenMapEntity)) {
-			GameScreen.get().postGameScreenUpdate(GameScreenUpdatePool.get().get(ClearMapUpdate.class));
+			gameScreen.postGameScreenUpdate(GameScreenUpdatePool.get().get(ClearMapUpdate.class));
 			
 			return;
 		}
@@ -95,12 +108,12 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 			
 		//
 		// Now -- does the GameScreen need to be resized?
-		if (GameScreen.get().getGridWidth() != hm.getMap().getWidth()
-				|| GameScreen.get().getGridHeight() != hm.getMap().getHeight()) {
+		if (gameScreen.getGridWidth() != hm.getMap().getWidth()
+				|| gameScreen.getGridHeight() != hm.getMap().getHeight()) {
 			final MapScreenSizeUpdate upd = GameScreenUpdatePool.get().get(MapScreenSizeUpdate.class);
 			upd.setWidth(hm.getMap().getWidth());
 			upd.setHeight(hm.getMap().getHeight());
-			GameScreen.get().postGameScreenUpdate(upd);
+			Context.getGameScreen().postGameScreenUpdate(upd);
 			resetAllGlyphs = true;
 		}
 		
@@ -125,9 +138,16 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 		
 		//
 		// Add updates for all recently-updated locations.
-		final MapDeltaUpdate upd = GameScreenUpdatePool.get().get(MapDeltaUpdate.class);
-		upd.setMap(hm.getMap(), visible, visibleDelta.or(hm.getUpdatedLocations()));
-		GameScreen.get().postGameScreenUpdate(upd);
+		if ((fullUpdateRemainingInterval -= deltaTime) <= 0f) {
+			final MapUpdate upd = GameScreenUpdatePool.get().get(MapUpdate.class);
+			upd.setMap(hm.getMap(), visible);
+			gameScreen.postGameScreenUpdate(upd);
+			fullUpdateRemainingInterval = INTERVAL_FULL_UPDATE;
+		} else {
+			final MapDeltaUpdate upd = GameScreenUpdatePool.get().get(MapDeltaUpdate.class);
+			upd.setMap(hm.getMap(), visible, visibleDelta.or(hm.getUpdatedLocations()));
+			gameScreen.postGameScreenUpdate(upd);
+		}
 		
 		//
 		// Now that we've queued up all updates, reset that list of updated locations.
@@ -135,6 +155,10 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 	}
 	
 	private void updateEntities(Entity screenMapEntity, float deltaTime) {
+		
+		final GameScreen gameScreen = Context.getGameScreen();
+		if (gameScreen == null)
+			return;
 		
 		if (!HAS_MAP.has(screenMapEntity))
 			return;
@@ -195,7 +219,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 					if (hg.getGlyph() != null) {
 						final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
 						upd.setGlyph(hg.getGlyph());
-						GameScreen.get().postGameScreenUpdate(upd);
+						gameScreen.postGameScreenUpdate(upd);
 					}
 					
 					final Coord location = entities.getLocation(e);
@@ -213,7 +237,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 							hg.setAwaitingCreation(false);
 						}
 					}));
-					GameScreen.get().postGameScreenUpdate(upd);
+					gameScreen.postGameScreenUpdate(upd);
 					
 				}
 				//
@@ -233,7 +257,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 					
 					final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
 					upd.setGlyph(hg.getGlyph());
-					GameScreen.get().postGameScreenUpdate(upd);
+					gameScreen.postGameScreenUpdate(upd);
 				} else {
 					//
 					// Has this entity's location been updated?
@@ -257,7 +281,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 							hg.setX(location.x);
 							hg.setY(location.y);
 						}));
-						GameScreen.get().postGameScreenUpdate(upd);
+						gameScreen.postGameScreenUpdate(upd);
 					}
 					
 					//
@@ -285,7 +309,7 @@ public class GameScreenUpdatingSystem extends EntitySystem {
 						else
 							upd.setNewColor(ha.getGhostedColor());
 						
-						GameScreen.get().postGameScreenUpdate(upd);
+						gameScreen.postGameScreenUpdate(upd);
 					}
 				}
 			}

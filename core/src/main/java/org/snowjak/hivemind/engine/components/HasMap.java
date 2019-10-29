@@ -21,8 +21,8 @@ import com.badlogic.gdx.utils.Pool.Poolable;
  */
 public class HasMap implements Component, Poolable {
 	
-	private GameMap map;
-	private EntityMap entities;
+	private GameMap map = null;
+	private EntityMap entities = new EntityMap();
 	private ExtGreasedRegion updatedLocations = new ExtGreasedRegion(1, 1);
 	
 	public GameMap getMap() {
@@ -59,7 +59,7 @@ public class HasMap implements Component, Poolable {
 	public void reset() {
 		
 		map = null;
-		entities = null;
-		updatedLocations.clear();
+		entities.clear();
+		updatedLocations.resizeAndEmpty(0, 0);
 	}
 }

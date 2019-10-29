@@ -3,6 +3,9 @@
  */
 package org.snowjak.hivemind.engine;
 
+import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.Materials;
+import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.RNG;
 import org.snowjak.hivemind.behavior.Behaviors;
 import org.snowjak.hivemind.engine.components.CanMove;
@@ -14,10 +17,7 @@ import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.EntityRefManager;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
-import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
-import org.snowjak.hivemind.map.TerrainTypes;
-import org.snowjak.hivemind.util.ExtGreasedRegion;
 
 import com.badlogic.ashley.core.Entity;
 
@@ -25,9 +25,14 @@ import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.mapping.DungeonGenerator;
 import squidpony.squidgrid.mapping.styled.TilesetType;
 import squidpony.squidmath.GreasedRegion;
+import squidpony.squidmath.PerlinNoise;
 
 /**
  * Holds entity-world prefabs in code.
+ * <p>
+ * By convention, these static methods will merely <em>reconfigure</em> whatever
+ * {@link Engine} you currently have held in your {@link Context}.
+ * </p>
  * 
  * @author snowjak88
  *
@@ -38,17 +43,21 @@ public class EnginePrefabs {
 		
 		final int width = 64, height = 64;
 		
-		final Engine eng = Engine.get();
+		final Engine eng = Context.getEngine();
 		eng.clear();
 		
 		final Entity worldMapEntity = eng.createEntity();
 		
 		final HasMap worldMap = eng.createComponent(HasMap.class);
-		worldMap.setUpdatedLocations(new ExtGreasedRegion(width, height));
-		worldMap.setEntities(new EntityMap());
 		
+		final Material[][] materials = new Material[width][height];
+		for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+				materials[x][y] = (PerlinNoise.noise((float) x / (float) width, (float) y / (float) height) + 1d)
+						/ 2d > 0.3 ? Materials.get().get("stone") : Materials.get().get("earth");
+			
 		final DungeonGenerator dg = new DungeonGenerator(width, height);
-		worldMap.setMap(new GameMap(dg.generate(TilesetType.CORNER_CAVES), true));
+		worldMap.setMap(new GameMap(dg.generate(TilesetType.CORNER_CAVES), materials, true));
 		
 		worldMapEntity.add(worldMap);
 		eng.addEntity(worldMapEntity);
