@@ -1,10 +1,9 @@
 /**
  * 
  */
-package org.snowjak.hivemind.events.input;
+package org.snowjak.hivemind.gamescreen;
 
 import java.util.EnumSet;
-import java.util.function.Consumer;
 
 import org.eclipse.collections.api.iterator.IntIterator;
 import org.eclipse.collections.api.iterator.MutableIntIterator;
@@ -13,9 +12,9 @@ import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.impl.list.mutable.primitive.BooleanArrayList;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.snowjak.hivemind.events.EventPool;
+import org.snowjak.hivemind.events.input.GameKey;
+import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
-import org.snowjak.hivemind.gamescreen.GameScreen;
-import org.snowjak.hivemind.gamescreen.ScreenMapTranslator;
 import org.snowjak.hivemind.ui.MouseHoverListener;
 import org.snowjak.hivemind.ui.MouseHoverListener.MouseHoverListenerRegistrar;
 
@@ -89,7 +88,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeKeys.set(key.getBitIndex());
 			
-			activateListeners();
+			activateListeners(false);
 			
 			return true;
 		}
@@ -121,7 +120,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeButtons.add(button);
 			
-			activateListeners();
+			activateListeners(false);
 			
 			return true;
 		}
@@ -154,13 +153,13 @@ public class GameScreenInputProcessor extends InputAdapter
 			mouseY = toGridY(screenY);
 			
 			if (mouseX != prevMouseX || mouseY != prevMouseY)
-				updateContinuousListeners();
+				activateListeners(true);
 			
 			return true;
 		}
 	}
 	
-	protected void activateListeners() {
+	protected void activateListeners(boolean onlyContinuous) {
 		
 		for (int i = 0; i < inputListeners.size(); i++) {
 			
@@ -168,30 +167,20 @@ public class GameScreenInputProcessor extends InputAdapter
 				continue;
 			
 			final InputEventListener listener = inputListeners.getAt(i);
-			if (activeKeys.equals(listener.getKeys())
-					&& (listener.getButton() == null || activeButtons.contains(listener.getButton()))) {
+			if (onlyContinuous && listener.isDiscrete())
+				continue;
+			
+			final InputEvent event = getInputEvent();
+			if (listener.matches(event)) {
 				
 				activeInputListeners.add(i);
 				
 				if (listener.isDiscrete()) {
 					listener.setRemainingInterval(REPEAT_INTERVAL);
-					fireListener(listener);
+					listener.receive(event);
 				} else
 					activeContinuousListeners.add(i);
 			}
-		}
-	}
-	
-	protected void updateContinuousListeners() {
-		
-		final IntIterator activeIterator = activeContinuousListeners.intIterator();
-		while (activeIterator.hasNext()) {
-			
-			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
-			
-			if (!listener.isDiscrete())
-				fireListener(listener);
-			
 		}
 	}
 	
@@ -202,11 +191,11 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			final int index = activeIterator.next();
 			final InputEventListener listener = inputListeners.getAt(index);
+			final InputEvent event = getInputEvent();
 			
-			if (!activeKeys.equals(listener.getKeys())
-					|| (listener.getButton() == null || !activeButtons.contains(listener.getButton()))) {
+			if (!listener.matches(event)) {
 				
-				fireListener(listener, listener::endReceive);
+				listener.endReceive(event);
 				
 				activeContinuousListeners.remove(index);
 				activeIterator.remove();
@@ -215,22 +204,24 @@ public class GameScreenInputProcessor extends InputAdapter
 		
 	}
 	
-	protected void fireListener(InputEventListener listener) {
-		
-		fireListener(listener, listener::receive);
-	}
-	
-	protected void fireListener(InputEventListener listener, Consumer<InputEvent> endpoint) {
+	/**
+	 * Construct an {@link InputEvent} representing the current keys, mouse-button,
+	 * and cursor-position.
+	 * 
+	 * @return
+	 */
+	protected InputEvent getInputEvent() {
 		
 		final InputEvent event = EventPool.get().get(InputEvent.class);
+		
 		event.setKeys(activeKeys);
-		event.setButton(listener.getButton());
+		event.setButtons(activeButtons);
 		
 		final Coord screenCursor = Coord.get(mouseX, mouseY);
 		event.setScreenCursor(screenCursor);
 		event.setMapCursor(gridTranslator.screenToMap(screenCursor));
 		
-		endpoint.accept(event);
+		return event;
 	}
 	
 	private int toGridX(int worldX) {
@@ -315,6 +306,7 @@ public class GameScreenInputProcessor extends InputAdapter
 		synchronized (this) {
 			updateHoverListeners(delta);
 			updateDiscreteListeners(delta);
+			updateContinuousListeners();
 		}
 	}
 	
@@ -345,9 +337,22 @@ public class GameScreenInputProcessor extends InputAdapter
 				listener.setRemainingInterval(listener.getRemainingInterval() - delta);
 				if (listener.getRemainingInterval() <= 0f) {
 					listener.setRemainingInterval(REPEAT_INTERVAL);
-					fireListener(listener);
+					listener.receive(getInputEvent());
 				}
 			}
+		}
+	}
+	
+	protected void updateContinuousListeners() {
+		
+		final IntIterator activeIterator = activeContinuousListeners.intIterator();
+		while (activeIterator.hasNext()) {
+			
+			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
+			
+			if (!listener.isDiscrete())
+				listener.receive(getInputEvent());
+			
 		}
 	}
 }

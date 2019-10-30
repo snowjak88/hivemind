@@ -71,6 +71,8 @@ public class EnginePrefabs {
 		for (int i = 0; i < 16; i++) {
 			final Entity e = eng.createEntity();
 			
+			e.add(eng.createComponent(HasMap.class));
+			
 			final HasAppearance ha = eng.createComponent(HasAppearance.class);
 			ha.setCh('@');
 			ha.setColor(SColor.AURORA_APRICOT);

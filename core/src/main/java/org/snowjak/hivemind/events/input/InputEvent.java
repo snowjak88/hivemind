@@ -3,6 +3,8 @@
  */
 package org.snowjak.hivemind.events.input;
 
+import java.util.EnumSet;
+
 import org.snowjak.hivemind.events.Event;
 
 import com.badlogic.gdx.Input.Buttons;
@@ -19,7 +21,7 @@ public class InputEvent implements Event {
 	
 	private Coord screenCursor;
 	private Coord mapCursor;
-	private MouseButton button;
+	private EnumSet<MouseButton> buttons = EnumSet.noneOf(MouseButton.class);
 	private Bits keys;
 	
 	public Coord getScreenCursor() {
@@ -42,14 +44,25 @@ public class InputEvent implements Event {
 		this.mapCursor = mapCursor;
 	}
 	
-	public MouseButton getButton() {
+	public EnumSet<MouseButton> getButtons() {
 		
-		return button;
+		return buttons;
 	}
 	
-	public void setButton(MouseButton button) {
+	public void setButtons(EnumSet<MouseButton> activeButtons) {
 		
-		this.button = button;
+		buttons.clear();
+		buttons.addAll(activeButtons);
+	}
+	
+	public void addButton(MouseButton button) {
+		
+		this.buttons.add(button);
+	}
+	
+	public void removeButton(MouseButton button) {
+		
+		this.buttons.remove(button);
 	}
 	
 	public Bits getKeys() {
@@ -67,7 +80,7 @@ public class InputEvent implements Event {
 		
 		screenCursor = null;
 		mapCursor = null;
-		button = null;
+		buttons = null;
 		keys.clear();
 	}
 	

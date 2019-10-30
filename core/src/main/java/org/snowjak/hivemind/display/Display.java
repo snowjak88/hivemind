@@ -5,7 +5,7 @@ package org.snowjak.hivemind.display;
 
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.config.Config;
-import org.snowjak.hivemind.events.input.UpdateableInputProcessor;
+import org.snowjak.hivemind.gamescreen.UpdateableInputProcessor;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;

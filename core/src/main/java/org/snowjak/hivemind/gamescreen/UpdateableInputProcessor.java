@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.events.input;
+package org.snowjak.hivemind.gamescreen;
 
 import com.badlogic.gdx.InputProcessor;
 

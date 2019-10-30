@@ -8,7 +8,7 @@ import java.util.LinkedList;
 
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.config.ConfigurationItem;
-import org.snowjak.hivemind.events.input.UpdateableInputAdapter;
+import org.snowjak.hivemind.gamescreen.UpdateableInputAdapter;
 import org.snowjak.hivemind.ui.Skin;
 
 import com.badlogic.gdx.Input.Keys;

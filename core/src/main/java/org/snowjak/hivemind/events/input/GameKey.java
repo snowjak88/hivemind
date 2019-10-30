@@ -194,7 +194,7 @@ public enum GameKey {
 		return keycode;
 	}
 	
-	public static Bits get(GameKey... keys) {
+	public static Bits getBits(GameKey... keys) {
 		
 		final Bits result = new Bits(MAX_BIT_INDEX);
 		for (int i = 0; i < keys.length; i++)

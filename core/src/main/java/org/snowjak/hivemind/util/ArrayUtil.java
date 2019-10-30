@@ -308,4 +308,26 @@ public class ArrayUtil {
 				value[i][j] += addend[i][j];
 		}
 	}
+	
+	/**
+	 * Construct a new array by appending the given {@code values} to the given
+	 * {@code array}.
+	 * 
+	 * @param lenFunction
+	 *            a function which constructs a type-specific array of the given
+	 *            length
+	 * @param array
+	 * @param values
+	 * @return
+	 */
+	@SafeVarargs
+	public static <T> T[] concat(IntFunction<T[]> lenFunction, T[] array, T... values) {
+		
+		final T[] result = lenFunction.apply(array.length + values.length);
+		for (int i = 0; i < array.length; i++)
+			result[i] = array[i];
+		for (int i = 0; i < values.length; i++)
+			result[i + array.length] = values[i];
+		return result;
+	}
 }

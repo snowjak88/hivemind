@@ -15,10 +15,7 @@ import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.events.input.GameKey;
-import org.snowjak.hivemind.events.input.GameScreenInputProcessor;
-import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
-import org.snowjak.hivemind.events.input.InputEventListener;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
@@ -33,6 +30,7 @@ import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.SparseLayers;
 import squidpony.squidgrid.gui.gdx.SquidInput;
 import squidpony.squidgrid.gui.gdx.TextCellFactory;
+import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 
 /**
  * Encapsulates logic surrounding the game-map display. Doesn't act as an
@@ -66,6 +64,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	private Container<SparseLayers> rootActor;
 	private SparseLayers sparseLayers;
 	private GameScreenInputProcessor inputProcessor;
+	
+	private Glyph cursor = null;
 	
 	private BlockingQueue<GameScreenUpdate> queuedUpdates = new LinkedBlockingQueue<>();
 	
@@ -169,6 +169,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			rootActor.setHeight(sparseLayers.getHeight());
 			rootActor.setActor(sparseLayers);
 			
+			cursor = sparseLayers.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.25f), 0, 0);
+			
 			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0);
 		}
 		
@@ -196,70 +198,33 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			
 			setupScrollHoverListeners();
 			
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.UP) {
+			inputProcessor.registerInputListener(InputEventListener.build().continuous().onEvent((e) -> {
+				if (cursor == null || sparseLayers == null)
+					return;
 				
-				@Override
-				public void receive(InputEvent event) {
-					
-					doScroll(Direction.UP,
-							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 1f));
-				}
-			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.DOWN) {
-				
-				@Override
-				public void receive(InputEvent event) {
-					
-					doScroll(Direction.DOWN,
-							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 1f));
-				}
-			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.LEFT) {
-				
-				@Override
-				public void receive(InputEvent event) {
-					
-					doScroll(Direction.LEFT,
-							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 1f));
-				}
-			});
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.RIGHT) {
-				
-				@Override
-				public void receive(InputEvent event) {
-					
-					doScroll(Direction.RIGHT,
-							16f * (event.getKeys().intersects(GameKey.get(GameKey.SHIFT_LEFT, GameKey.SHIFT_RIGHT)) ? 4f
-									: 1f));
-				}
-			});
+				final float x = sparseLayers.worldX(e.getMapCursor().x);
+				final float y = sparseLayers.worldY(e.getMapCursor().y);
+				cursor.setPosition(x, y);
+			}).get());
 			
-			inputProcessor.registerInputListener(new InputEventListener(MouseButton.LEFT_BUTTON, GameKey.ALT_LEFT) {
-				
-				@Override
-				public void receive(InputEvent event) {
-					
-					Context.getEngine().getSystem(ToyEntityRemovingSystem.class).postRequest(event.getMapCursor());
-				}
-			});
+			inputProcessor
+					.registerInputListener(
+							InputEventListener.build().button(MouseButton.LEFT_BUTTON)
+									.one(GameKey.ALT_LEFT, GameKey.ALT_RIGHT).onEvent((e) -> Context.getEngine()
+											.getSystem(ToyEntityRemovingSystem.class).postRequest(e.getMapCursor()))
+									.get());
 			
-			inputProcessor.registerInputListener(new InputEventListener(GameKey.ESCAPE, false, false, false) {
-				
-				@Override
-				public void receive(InputEvent event) {
-					
-				}
-				
-				@Override
-				public void endReceive(InputEvent event) {
-					
-					EventBus.get().post(ExitGameEvent.class);
-				}
-				
-			});
+			inputProcessor.registerInputListener(
+					InputEventListener.build().all(GameKey.UP).onEvent((e) -> doScroll(Direction.UP, 16f)).get());
+			inputProcessor.registerInputListener(
+					InputEventListener.build().all(GameKey.DOWN).onEvent((e) -> doScroll(Direction.DOWN, 16f)).get());
+			inputProcessor.registerInputListener(
+					InputEventListener.build().all(GameKey.LEFT).onEvent((e) -> doScroll(Direction.LEFT, 16f)).get());
+			inputProcessor.registerInputListener(
+					InputEventListener.build().all(GameKey.RIGHT).onEvent((e) -> doScroll(Direction.RIGHT, 16f)).get());
+			
+			inputProcessor.registerInputListener(InputEventListener.build().all(GameKey.ESCAPE)
+					.onEvent((e) -> EventBus.get().post(ExitGameEvent.class)).get());
 		}
 		
 		return inputProcessor;
