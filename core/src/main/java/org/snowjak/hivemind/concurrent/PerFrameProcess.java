@@ -121,8 +121,10 @@ public abstract class PerFrameProcess {
 	 */
 	public void update(float delta) {
 		
-		if (status != Status.RUNNING)
-			throw new IllegalStateException("Cannot update this PerFrameProcess because it is not running!");
+		if (status != Status.RUNNING) {
+			LOG.warning("Cannot update this PerFrameProcess because it is not running!");
+			return;
+		}
 		try {
 			updateQueue.put(delta);
 		} catch (InterruptedException e) {

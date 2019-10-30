@@ -30,12 +30,12 @@ import squidpony.squidmath.GreasedRegion;
  */
 public class GameMap {
 	
-	private int width = 0, height = 0;
-	private short[][] terrain = new short[0][0], material = new short[0][0];
-	private double[][] modifiedVisibilityResistance = new double[0][0];
-	private ExtGreasedRegion known = new ExtGreasedRegion(0, 0);
+	private int width = 1, height = 1;
+	private short[][] terrain = new short[0][0], material = new short[1][1];
+	private double[][] modifiedVisibilityResistance = new double[1][1];
+	private ExtGreasedRegion known = new ExtGreasedRegion(1, 1);
 	
-	private double[][] baseVisibility = new double[0][0], totalVisibility = new double[0][0];
+	private double[][] baseVisibility = new double[1][1], totalVisibility = new double[1][1];
 	private char[][] squidCharMap = null, charMap = null;
 	
 	/**
@@ -139,7 +139,7 @@ public class GameMap {
 				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
-		this.known.resizeAndEmpty(width, height).fill(true);
+		this.known.refill(terrain, 0, Short.MAX_VALUE);
 		
 		this.baseVisibility = new double[width][height];
 		this.totalVisibility = new double[width][height];

@@ -7,7 +7,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.EntitySystem;
 
 /**
@@ -21,10 +23,40 @@ import com.badlogic.ashley.core.EntitySystem;
  * @author snowjak88
  *
  */
-public class UniqueTagManager extends EntitySystem {
+public class UniqueTagManager extends EntitySystem implements EntityListener {
 	
 	private final Map<String, Entity> tagToEntity = new LinkedHashMap<>();
 	private final Map<Entity, String> entityToTag = new LinkedHashMap<>();
+	
+	@Override
+	public void addedToEngine(Engine engine) {
+		
+		super.addedToEngine(engine);
+		engine.addEntityListener(this);
+	}
+	
+	@Override
+	public void removedFromEngine(Engine engine) {
+		
+		engine.removeEntityListener(this);
+		super.removedFromEngine(engine);
+	}
+	
+	@Override
+	public void entityAdded(Entity entity) {
+		
+		// Nothing to do.
+	}
+	
+	@Override
+	public void entityRemoved(Entity entity) {
+		
+		synchronized (this) {
+			final String tag = entityToTag.remove(entity);
+			if (tag != null)
+				tagToEntity.remove(tag);
+		}
+	}
 	
 	/**
 	 * @return the set of active tags
@@ -82,7 +114,8 @@ public class UniqueTagManager extends EntitySystem {
 	 * @return {@code true} if this manager contains the given {@link Entity}
 	 */
 	public boolean has(Entity entity) {
-		synchronized(this) {
+		
+		synchronized (this) {
 			return entityToTag.containsKey(entity);
 		}
 	}

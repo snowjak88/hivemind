@@ -10,7 +10,7 @@ import squidpony.squidmath.Coord;
 import squidpony.squidmath.GreasedRegion;
 
 /**
- * A {@link MapUpdate} which only updates <em>part</em> of the screen.
+ * A {@link MapUpdate} which only updates <em>part</em> of the map.
  * 
  * @author snowjak88
  *

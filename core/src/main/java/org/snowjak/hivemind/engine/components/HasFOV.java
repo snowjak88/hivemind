@@ -19,8 +19,8 @@ import com.badlogic.gdx.utils.Pool.Poolable;
 @IgnoreSerialization
 public class HasFOV implements Component, Poolable {
 	
-	private ExtGreasedRegion visible = new ExtGreasedRegion(0, 0);
-	private double[][] lightLevels = new double[0][0];
+	private ExtGreasedRegion visible = new ExtGreasedRegion(1, 1);
+	private double[][] lightLevels = new double[1][1];
 	
 	public ExtGreasedRegion getVisible() {
 		
@@ -45,7 +45,7 @@ public class HasFOV implements Component, Poolable {
 	@Override
 	public void reset() {
 		
-		visible.resizeAndEmpty(0, 0);
-		lightLevels = new double[0][0];
+		visible.resizeAndEmpty(1, 1);
+		lightLevels = new double[1][1];
 	}
 }

@@ -7,7 +7,6 @@ import org.snowjak.hivemind.concurrent.ParallelRunner;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.map.GameMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 
@@ -16,6 +15,7 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
+import squidpony.squidmath.Coord;
 import squidpony.squidmath.OrderedSet;
 
 /**
@@ -34,6 +34,9 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 	
 	private final ParallelRunner parallel = new ParallelRunner();
 	
+	private UniqueTagManager utm = null;
+	private HasMap worldMap = null;
+	
 	public OwnMapFOVInsertingSystem() {
 		
 		super(Family.all(HasMap.class, HasFOV.class).get());
@@ -42,23 +45,27 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 	@Override
 	public void update(float deltaTime) {
 		
-		super.update(deltaTime);
-		parallel.awaitAll();
-	}
-	
-	@Override
-	protected void processEntity(Entity entity, float deltaTime) {
+		utm = getEngine().getSystem(UniqueTagManager.class);
 		
-		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
 		if (!utm.has(Tags.WORLD_MAP))
 			return;
 		final Entity worldMapEntity = utm.get(Tags.WORLD_MAP);
 		if (!HAS_MAP.has(worldMapEntity))
 			return;
-		final HasMap worldMap = HAS_MAP.get(worldMapEntity);
+		worldMap = HAS_MAP.get(worldMapEntity);
 		
 		if (worldMap.getMap() == null)
 			return;
+		
+		super.update(deltaTime);
+		parallel.awaitAll();
+		
+		utm = null;
+		worldMap = null;
+	}
+	
+	@Override
+	protected void processEntity(Entity entity, float deltaTime) {
 		
 		final HasMap myMap = HAS_MAP.get(entity);
 		final HasFOV fov = HAS_FOV.get(entity);
@@ -66,7 +73,8 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 		if (fov.getVisible() == null)
 			return;
 		
-		final OrderedSet<Entity> worldEntities;
+		final Coord[] visibleCoords = fov.getVisible().asCoords();
+		
 		synchronized (myMap) {
 			if (myMap.getMap() == null)
 				myMap.setMap(new GameMap(worldMap.getMap(), fov.getVisible()));
@@ -80,18 +88,13 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 					|| myMap.getUpdatedLocations().height != worldMap.getMap().getHeight())
 				myMap.getUpdatedLocations().resizeAndEmpty(worldMap.getMap().getWidth(), worldMap.getMap().getHeight());
 			
-			if (myMap.getEntities() == null) {
-				myMap.setEntities(new EntityMap());
-				worldEntities = worldMap.getEntities().getValues();
-			} else
-				worldEntities = worldMap.getEntities().getRecentlyUpdatedEntities();
-			
 			myMap.getUpdatedLocations().or(fov.getVisible());
-		}
-		
-		for (int i = 0; i < worldEntities.size(); i++) {
-			final Entity worldEntity = worldEntities.getAt(i);
-			myMap.getEntities().set(worldMap.getEntities().getLocation(worldEntity), worldEntity);
+			
+			for (int i = 0; i < visibleCoords.length; i++) {
+				final OrderedSet<Entity> onWorldMap = worldMap.getEntities().getAt(visibleCoords[i]);
+				for (int j = 0; j < onWorldMap.size(); j++)
+					myMap.getEntities().set(visibleCoords[i], onWorldMap.getAt(j));
+			}
 		}
 	}
 }

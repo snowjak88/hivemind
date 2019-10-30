@@ -11,6 +11,7 @@ import java.util.Base64;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonSerializer;
 
+import squidpony.squidmath.CoordPacker;
 import squidpony.squidmath.GreasedRegion;
 
 /**
@@ -35,6 +36,24 @@ public interface Loader<T> extends JsonSerializer<T>, JsonDeserializer<T> {
 		final CharBuffer valueBuffer = buffer.asCharBuffer();
 		for (int i = 0; i < values.length; i++)
 			valueBuffer.put(values[i]);
+		
+		buffer.rewind();
+		
+		return Base64.getEncoder().encodeToString(buffer.array());
+	}
+	
+	/**
+	 * Convert the given {@code short[]} to a {@link Base64}-encoded String.
+	 * 
+	 * @param values
+	 * @return
+	 */
+	public default String toBase64(short[] values) {
+		
+		final ByteBuffer buffer = ByteBuffer.allocate(values.length * Short.BYTES);
+		final ShortBuffer valueBuffer = buffer.asShortBuffer();
+		
+		valueBuffer.put(values);
 		
 		buffer.rewind();
 		
@@ -71,27 +90,7 @@ public interface Loader<T> extends JsonSerializer<T>, JsonDeserializer<T> {
 	 */
 	public default String toBase64(GreasedRegion region) {
 		
-		final boolean[][] decoded = region.decode();
-		final ByteBuffer buffer = ByteBuffer.allocate((int) Math.ceil((float) region.height / 8f) * region.width);
-		
-		for (int i = 0; i < decoded.length; i++) {
-			byte scratch = 0;
-			for (int j = 0; j < decoded[i].length; j++) {
-				if (scratch > 0 && scratch % 8 == 7) {
-					buffer.put(scratch);
-					scratch = 0;
-				} else {
-					scratch += (decoded[i][j]) ? (byte) 1 : (byte) 0;
-					scratch = (byte) (scratch << 1);
-				}
-			}
-			if (scratch > 0)
-				buffer.put(scratch);
-		}
-		
-		buffer.rewind();
-		
-		return Base64.getEncoder().encodeToString(buffer.array());
+		return toBase64(CoordPacker.packSeveral(region));
 	}
 	
 	/**
@@ -117,6 +116,24 @@ public interface Loader<T> extends JsonSerializer<T>, JsonDeserializer<T> {
 	}
 	
 	/**
+	 * Convert the given {@link Base64}-encoded String to a {@code short[]}.
+	 * 
+	 * @param base64
+	 * @return
+	 */
+	public default short[] toShortArray(String base64) {
+		
+		final ShortBuffer buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).asShortBuffer();
+		
+		buffer.rewind();
+		
+		final short[] result = new short[buffer.limit()];
+		for (int i = 0; i < result.length; i++)
+			result[i] = buffer.get();
+		return result;
+	}
+	
+	/**
 	 * Convert the given {@link Base64}-encoded String to a (non-jagged)
 	 * {@code short[][]} with the given dimensions.
 	 * 
@@ -125,7 +142,7 @@ public interface Loader<T> extends JsonSerializer<T>, JsonDeserializer<T> {
 	 * @param height
 	 * @return
 	 */
-	public default short[][] toShortArray(String base64, int width, int height) {
+	public default short[][] toShort2DArray(String base64, int width, int height) {
 		
 		final short[][] result = new short[width][height];
 		final ShortBuffer buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).asShortBuffer();
@@ -149,20 +166,6 @@ public interface Loader<T> extends JsonSerializer<T>, JsonDeserializer<T> {
 	 */
 	public default GreasedRegion toGreasedRegion(String base64, int width, int height) {
 		
-		final ByteBuffer buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64));
-		
-		buffer.rewind();
-		
-		final boolean[][] result = new boolean[width][height];
-		for (int i = 0; i < width; i++) {
-			byte scratch = 0;
-			for (int j = 0; j < result[i].length; j++) {
-				if (j % 8 == 0)
-					scratch = buffer.get();
-				result[i][j] = (scratch & (byte) 1) > 0 ? true : false;
-			}
-		}
-		
-		return new GreasedRegion(result);
+		return CoordPacker.unpackGreasedRegion(toShortArray(base64), width, height);
 	}
 }

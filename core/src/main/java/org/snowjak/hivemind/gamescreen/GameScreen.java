@@ -11,7 +11,7 @@ import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.engine.systems.MapScramblingSystem;
+import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.events.input.GameKey;
@@ -242,7 +242,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				@Override
 				public void receive(InputEvent event) {
 					
-					Context.getEngine().getSystem(MapScramblingSystem.class).postScrambleLocation(event.getMapCursor());
+					Context.getEngine().getSystem(ToyEntityRemovingSystem.class).postRequest(event.getMapCursor());
 				}
 			});
 			

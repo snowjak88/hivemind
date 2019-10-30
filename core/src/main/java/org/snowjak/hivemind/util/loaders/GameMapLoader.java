@@ -150,7 +150,7 @@ public class GameMapLoader implements Loader<GameMap> {
 		if (!obj.has("materials"))
 			throw new JsonParseException("Cannot parse GameMap from JSON -- missing [materials]!");
 		try {
-			materialsMap = toShortArray(obj.get("materials").getAsString(), width, height);
+			materialsMap = toShort2DArray(obj.get("materials").getAsString(), width, height);
 			
 			for (int i = 0; i < width; i++)
 				for (int j = 0; j < height; j++)

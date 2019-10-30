@@ -53,7 +53,7 @@ public class EnginePrefabs {
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
 				materials[x][y] = (PerlinNoise.noise((float) x / (float) width, (float) y / (float) height) + 1d)
-						/ 2d > 0.3 ? Materials.get().get("stone") : Materials.get().get("earth");
+						/ 2d > 0.5 ? Materials.get().get("stone") : Materials.get().get("earth");
 			
 		final DungeonGenerator dg = new DungeonGenerator(width, height);
 		worldMap.setMap(new GameMap(dg.generate(TilesetType.CORNER_CAVES), materials, true));
@@ -62,10 +62,8 @@ public class EnginePrefabs {
 		eng.addEntity(worldMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.WORLD_MAP, worldMapEntity);
 		
-		final HasMap screenMap = eng.createComponent(HasMap.class);
-		
 		final Entity screenMapEntity = eng.createEntity();
-		screenMapEntity.add(screenMap);
+		screenMapEntity.add(eng.createComponent(HasMap.class));
 		eng.addEntity(screenMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
 		
@@ -73,11 +71,9 @@ public class EnginePrefabs {
 		for (int i = 0; i < 16; i++) {
 			final Entity e = eng.createEntity();
 			
-			e.add(screenMap);
-			
 			final HasAppearance ha = eng.createComponent(HasAppearance.class);
 			ha.setCh('@');
-			ha.setColor(SColor.WHITE);
+			ha.setColor(SColor.AURORA_APRICOT);
 			e.add(ha);
 			
 			final CanMove canMove = eng.createComponent(CanMove.class);

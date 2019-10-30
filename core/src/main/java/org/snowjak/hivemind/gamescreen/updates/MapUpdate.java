@@ -72,5 +72,6 @@ public class MapUpdate implements GameScreenUpdate {
 		
 		ArrayUtil.fill(terrain, (short) -1);
 		ArrayUtil.fill(material, (short) -1);
+		visible.clear();
 	}
 }

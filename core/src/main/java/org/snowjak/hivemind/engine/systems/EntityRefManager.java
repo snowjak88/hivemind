@@ -4,7 +4,6 @@
 package org.snowjak.hivemind.engine.systems;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -16,10 +15,10 @@ import java.util.logging.Logger;
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.EntitySystem;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Maps;
 
 import squidpony.squidmath.SquidID;
 
@@ -46,14 +45,43 @@ import squidpony.squidmath.SquidID;
  * @author snowjak88
  *
  */
-public class EntityRefManager extends EntitySystem {
+public class EntityRefManager extends EntitySystem implements EntityListener {
 	
 	private static final Logger LOG = Logger.getLogger(EntityRefManager.class.getName());
 	
-	private final BiMap<SquidID, Entity> references = Maps.synchronizedBiMap(HashBiMap.create());
+	private final BiMap<SquidID, Entity> references = HashBiMap.create();
 	
-	private final Map<SquidID, Queue<Consumer<Entity>>> referenceResolvers = Collections
-			.synchronizedMap(new LinkedHashMap<>());
+	private final Map<SquidID, Queue<Consumer<Entity>>> referenceResolvers = new LinkedHashMap<>();
+	
+	@Override
+	public void addedToEngine(Engine engine) {
+		
+		super.addedToEngine(engine);
+		engine.addEntityListener(this);
+	}
+	
+	@Override
+	public void removedFromEngine(Engine engine) {
+		
+		engine.removeEntityListener(this);
+		super.removedFromEngine(engine);
+	}
+	
+	@Override
+	public void entityAdded(Entity entity) {
+		
+		// Nothing to do.
+	}
+	
+	@Override
+	public void entityRemoved(Entity entity) {
+		
+		synchronized (this) {
+			final SquidID id = references.inverse().remove(entity);
+			if (id != null)
+				referenceResolvers.remove(id);
+		}
+	}
 	
 	/**
 	 * Add an {@link Entity} to this ref-manager, associated it with a new random
@@ -63,7 +91,9 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public void add(Entity entity) {
 		
-		references.put(SquidID.randomUUID(), entity);
+		synchronized (this) {
+			references.put(SquidID.randomUUID(), entity);
+		}
 	}
 	
 	/**
@@ -75,7 +105,9 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public void add(Entity entity, SquidID id) {
 		
-		references.put(id, entity);
+		synchronized (this) {
+			references.put(id, entity);
+		}
 	}
 	
 	/**
@@ -87,7 +119,9 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public Entity get(SquidID id) {
 		
-		return references.get(id);
+		synchronized (this) {
+			return references.get(id);
+		}
 	}
 	
 	/**
@@ -102,7 +136,9 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public SquidID get(Entity entity) {
 		
-		return references.inverse().computeIfAbsent(entity, e -> SquidID.randomUUID());
+		synchronized (this) {
+			return references.inverse().computeIfAbsent(entity, e -> SquidID.randomUUID());
+		}
 	}
 	
 	/**
@@ -113,7 +149,11 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public boolean has(Entity entity) {
 		
-		return references.containsValue(entity);
+		synchronized (this) {
+			if (entity == null)
+				return false;
+			return references.containsValue(entity);
+		}
 	}
 	
 	/**
@@ -125,7 +165,11 @@ public class EntityRefManager extends EntitySystem {
 	 */
 	public boolean has(SquidID id) {
 		
-		return references.containsKey(id);
+		synchronized (this) {
+			if (id == null)
+				return false;
+			return references.containsKey(id);
+		}
 	}
 	
 	/**
@@ -175,8 +219,9 @@ public class EntityRefManager extends EntitySystem {
 					successfullyResolved.add(id);
 					
 				} else {
-//					LOG.severe("Cannot resolve reference to entity (ID = [" + id.a + "/" + id.b + "/" + id.c + "/"
-//							+ id.d + "])");
+					// LOG.severe("Cannot resolve reference to entity (ID = [" + id.a + "/" + id.b +
+					// "/" + id.c + "/"
+					// + id.d + "])");
 					allSuccessful = false;
 				}
 			
