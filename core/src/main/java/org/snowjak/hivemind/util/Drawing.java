@@ -70,8 +70,10 @@ public class Drawing {
 	 */
 	public static void drawBox(BoxStyle style, SparseTextMap layer, Coord from, Coord to, float color) {
 		
-		if (from.equals(to))
+		if (from.equals(to)) {
 			layer.place(from.x, from.y, '#', color);
+			return;
+		}
 		
 		final int startX = (from.x < to.x) ? from.x : to.x;
 		final int startY = (from.y < to.y) ? from.y : to.y;

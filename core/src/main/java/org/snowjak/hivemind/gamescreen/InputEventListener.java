@@ -3,11 +3,15 @@
  */
 package org.snowjak.hivemind.gamescreen;
 
+import java.util.function.Consumer;
+
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 
 import com.badlogic.gdx.utils.Bits;
+
+import squidpony.squidmath.Coord;
 
 /**
  * Entry-point for {@link InputEvent}-handling.
@@ -48,11 +52,18 @@ public class InputEventListener {
 	private boolean isActive = false;
 	private float remainingInterval = 0f;
 	
+	private Coord windowStart = null, windowEnd = null;
+	
 	private Bits allKeys = new Bits(), oneOfKeys = new Bits(), excludeKeys = new Bits();
 	private MouseButton button = null;
-	private EventHandler onEvent = null;
-	private EndEventHandler onEventEnd = null;
+	private Consumer<InputEvent> onEvent = null;
+	private Consumer<InputEvent> onEventEnd = null;
 	
+	/**
+	 * Start building a new {@link InputEventListener}.
+	 * 
+	 * @return the new {@link Builder}
+	 */
 	public static InputEventListener.Builder build() {
 		
 		return new Builder(new InputEventListener());
@@ -60,6 +71,16 @@ public class InputEventListener {
 	
 	private InputEventListener() {
 		
+	}
+	
+	public Coord getWindowStart() {
+		
+		return windowStart;
+	}
+	
+	public Coord getWindowEnd() {
+		
+		return windowEnd;
 	}
 	
 	public Bits getAllKeys() {
@@ -118,10 +139,14 @@ public class InputEventListener {
 	 */
 	public boolean matches(InputEvent event) {
 		
+		//@formatter:off
 		return ((this.button == null || event.getButtons().contains(this.button))
-				&& (this.allKeys.isEmpty() || event.getKeys().containsAll(this.allKeys))
-				&& (this.oneOfKeys.isEmpty() || event.getKeys().intersects(oneOfKeys))
-				&& (this.excludeKeys.isEmpty() || !event.getKeys().intersects(excludeKeys)));
+			&& (this.windowStart == null || (event.getScreenCursor().x >= this.windowStart.x && event.getScreenCursor().y >= this.windowStart.y))
+			&& (this.windowEnd == null || (event.getScreenCursor().x <= this.windowEnd.x && event.getScreenCursor().y <= this.windowEnd.y))
+			&& (this.allKeys.isEmpty() || event.getKeys().containsAll(this.allKeys))
+			&& (this.oneOfKeys.isEmpty() || event.getKeys().intersects(oneOfKeys))
+			&& (this.excludeKeys.isEmpty() || !event.getKeys().intersects(excludeKeys)));
+		//@formatter:on
 	}
 	
 	/**
@@ -134,7 +159,7 @@ public class InputEventListener {
 	public void receive(InputEvent event) {
 		
 		if (onEvent != null)
-			onEvent.receive(event);
+			onEvent.accept(event);
 	}
 	
 	/**
@@ -146,31 +171,35 @@ public class InputEventListener {
 	public void endReceive(InputEvent event) {
 		
 		if (onEventEnd != null)
-			onEventEnd.endReceive(event);
+			onEventEnd.accept(event);
 	}
 	
-	@FunctionalInterface
-	public interface EventHandler {
+	/**
+	 * Interface providing both the "ongoing" and "ending"
+	 * {@link InputEvent}-handlers at once.
+	 * 
+	 * @author snowjak88
+	 *
+	 */
+	public static class InputEventHandlers {
 		
-		/**
-		 * Called whenever this event occurs (if it is configured as "discrete") or when
-		 * it is updated (if it is "continuous").
-		 * 
-		 * @param event
-		 */
-		public void receive(InputEvent event);
-	}
-	
-	@FunctionalInterface
-	public interface EndEventHandler {
+		private final Consumer<InputEvent> eventHandler, endEventHandler;
 		
-		/**
-		 * Called whenever this event <em>stops</em> -- i.e., when this
-		 * InputEventListener is "deactivated".
-		 * 
-		 * @param event
-		 */
-		public void endReceive(InputEvent event);
+		public InputEventHandlers(Consumer<InputEvent> eventHandler, Consumer<InputEvent> endEventHandler) {
+			
+			this.eventHandler = eventHandler;
+			this.endEventHandler = endEventHandler;
+		}
+		
+		public Consumer<InputEvent> getEventHandler() {
+			
+			return eventHandler;
+		}
+		
+		public Consumer<InputEvent> getEndEventHandler() {
+			
+			return endEventHandler;
+		}
 	}
 	
 	public static class Builder {
@@ -182,18 +211,42 @@ public class InputEventListener {
 			this.listener = listener;
 		}
 		
+		/**
+		 * Incoming {@link InputEvent}s must have <em>all</em> the given {@link GameKey
+		 * keys} for this listener to be activated. (Overrides any previously-specified
+		 * {@code all(...)} keys.)
+		 * 
+		 * @param keys
+		 * @return
+		 */
 		public Builder all(GameKey... keys) {
 			
 			listener.allKeys = GameKey.getBits(keys);
 			return this;
 		}
 		
+		/**
+		 * Incoming {@link InputEvent}s must have <em>at least one</em> of the given
+		 * {@link GameKey keys} for this listener to be activated. (Overrides any
+		 * previously-specified {@code one(...)} keys.)
+		 * 
+		 * @param keys
+		 * @return
+		 */
 		public Builder one(GameKey... keys) {
 			
 			listener.oneOfKeys = GameKey.getBits(keys);
 			return this;
 		}
 		
+		/**
+		 * Incoming {@link InputEvent}s must have <em>none</em> the given {@link GameKey
+		 * keys} for this listener to be activated. (Overrides any previously-specified
+		 * {@code exclude(...)} keys.)
+		 * 
+		 * @param keys
+		 * @return
+		 */
 		public Builder exclude(GameKey... keys) {
 			
 			listener.excludeKeys = GameKey.getBits(keys);
@@ -201,8 +254,9 @@ public class InputEventListener {
 		}
 		
 		/**
-		 * Configure the InputEventListener to trigger when the given
-		 * {@link MouseButton} is pressed.
+		 * Incoming {@link InputEvent}s must include the given {@link MouseButton} for
+		 * this listener to be activated. (Overrides any previously-specified
+		 * {@code button(...)} keys.)
 		 * 
 		 * @param button
 		 * @return
@@ -213,29 +267,94 @@ public class InputEventListener {
 			return this;
 		}
 		
+		/**
+		 * Indicates that this listener will be "continuous" -- i.e., it will receive
+		 * InputHandlers continuously every time the active-keys or cursor-position
+		 * change.
+		 * 
+		 * @return
+		 */
 		public Builder continuous() {
 			
 			return continuous(true);
 		}
 		
+		/**
+		 * Sets whether or not this listener will be "continuous" -- i.e., it will
+		 * receive InputHandlers continuously every time the active-keys or
+		 * cursor-position change.
+		 * 
+		 * @param isContinuous
+		 * @return
+		 */
 		public Builder continuous(boolean isContinuous) {
 			
 			listener.isDiscrete = !isContinuous;
 			return this;
 		}
 		
-		public Builder onEvent(EventHandler handler) {
+		/**
+		 * Sets the window (in screen-grid coordinates) that the mouse-cursor must be
+		 * within for an {@link InputEvent} to be accepted by this listener.
+		 * 
+		 * @param start
+		 * @param end
+		 * @return
+		 */
+		public Builder inWindow(Coord start, Coord end) {
+			
+			listener.windowStart = (start.x < end.x || start.y < end.y) ? start : end;
+			listener.windowEnd = (start.x < end.x || start.y < end.y) ? end : start;
+			return this;
+		}
+		
+		/**
+		 * Set the handler that should handle all incoming {@link InputEvent}s while
+		 * this listener is active.
+		 * 
+		 * @param handler
+		 * @return
+		 */
+		public Builder onEvent(Consumer<InputEvent> handler) {
 			
 			listener.onEvent = handler;
 			return this;
 		}
 		
-		public Builder onEventEnd(EndEventHandler handler) {
+		/**
+		 * Set the handler that should handle the {@link InputEvent} sent to this
+		 * listener whenever it is deactivated.
+		 * 
+		 * @param handler
+		 * @return
+		 */
+		public Builder onEventEnd(Consumer<InputEvent> handler) {
 			
 			listener.onEventEnd = handler;
 			return this;
 		}
 		
+		/**
+		 * Set both the active- and end-event handlers at once -- e.g., using one of the
+		 * functions in {@link InputHandlers}.
+		 * 
+		 * @param handlers
+		 * @return
+		 * @see #onEvent(Consumer)
+		 * @see #onEventEnd(Consumer)
+		 */
+		public Builder handlers(InputEventHandlers handlers) {
+			
+			listener.onEvent = handlers.getEventHandler();
+			listener.onEventEnd = handlers.getEndEventHandler();
+			return this;
+		}
+		
+		/**
+		 * Get the constructed {@link InputEventListener} instance.
+		 * 
+		 * @return
+		 */
 		public InputEventListener get() {
 			
 			return listener;

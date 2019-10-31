@@ -15,17 +15,16 @@ import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
-import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.events.input.GameKey;
+import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
 
-import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.utils.Disposable;
@@ -42,13 +41,21 @@ import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
  * Encapsulates logic surrounding the game-map display. Doesn't act as an
  * {@link Actor} in the scene-graph itself, but provides a configured Actor and
  * {@link SquidInput} upon request.
+ * <h3>Input-Handling</h3>
  * <p>
- * Note that this class is implemented as a <strong>singleton</strong>. This is
- * necessitated because the various {@link Engine} modules --
- * {@link EntitySystem}s, mostly -- require a reference to the active
- * {@link GameScreen} to post {@link GameScreenUpdate}s against. This
- * <em>probably</em> won't be a problem, because the {@link Engine} itself is a
- * singleton -- we won't ever have more than one active world at a time.
+ * The GameScreen will set up {@link InputEventListener}s for the following
+ * events:
+ * <ul>
+ * <li>Mouse-hover to scroll the map</li>
+ * <li>Arrow-keys to scroll the map</li>
+ * <li>{@code ESCAPE} to close the GameScreen</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Additional {@link InputEvent}s may be listened-for by calling
+ * {@link #getInputProcessor()}.
+ * {@link GameScreenInputProcessor#registerInputListener(InputEventListener)
+ * registerInputListener(InputEventListener)}.
  * </p>
  * 
  * @author snowjak88

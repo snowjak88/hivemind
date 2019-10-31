@@ -3,13 +3,12 @@
  */
 package org.snowjak.hivemind.engine.systems.input;
 
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.gamescreen.InputEventListener;
+import org.snowjak.hivemind.gamescreen.InputHandlers;
 import org.snowjak.hivemind.gamescreen.updates.FreeLayer;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.gamescreen.updates.LayerUpdate;
@@ -37,9 +36,9 @@ public class BaseInputState implements InputSystemState {
 	
 	private static final float SELECTION_BOX_COLOR_FLOAT = SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.5f);
 	private static final String SELECTION_LAYER_NAME = BaseInputState.class.getName();
-	private final ReentrantLock updateLock = new ReentrantLock();
 	
-	private Coord beginClickLocation = null, endClickLocation = null, prevEndClickLocation = null;
+	private Coord beginSelection = null, endSelection = null;
+	private boolean updateSelectionBox = false;
 	private boolean clickComplete = false;
 	
 	private InputEventListener clickListener = null;
@@ -47,38 +46,30 @@ public class BaseInputState implements InputSystemState {
 	@Override
 	public void enter(InputEventProcessingSystem entity) {
 		
+		//@formatter:off
+		clickListener = InputEventListener.build()
+							.button(MouseButton.LEFT_BUTTON)
+							.exclude(GameKey.ALT_LEFT, GameKey.ALT_RIGHT)
+							.continuous()
+							.handlers(InputHandlers.drag((e) -> {
+								beginSelection = e.getMapCursor();
+							}, (e,s,f) -> {
+								endSelection = f;
+								updateSelectionBox = true;
+							}, (e,s,f) -> {
+								endSelection = f;
+								clickComplete = true;
+							}))
+							.get();
+		//@formatter:on
+		
+		final RegisterInputEventListener upd = GameScreenUpdatePool.get().get(RegisterInputEventListener.class);
+		upd.setListener(clickListener);
+		Context.getGameScreen().postGameScreenUpdate(upd);
 	}
 	
 	@Override
 	public void update(InputEventProcessingSystem entity) {
-		
-		if (clickListener == null && Context.getGameScreen() != null) {
-			
-			clickListener = InputEventListener.build().button(MouseButton.LEFT_BUTTON)
-					.exclude(GameKey.ALT_LEFT, GameKey.ALT_RIGHT).continuous().onEvent((e) -> {
-						updateLock.lock();
-						
-						if (beginClickLocation == null)
-							beginClickLocation = e.getMapCursor();
-						else if (beginClickLocation.x != e.getMapCursor().x
-								|| beginClickLocation.y != e.getMapCursor().y)
-							endClickLocation = e.getMapCursor();
-						
-						updateLock.unlock();
-					}).onEventEnd((e) -> {
-						updateLock.lock();
-						
-						clickComplete = true;
-						
-						updateLock.unlock();
-					}).get();
-			
-			final RegisterInputEventListener upd = GameScreenUpdatePool.get().get(RegisterInputEventListener.class);
-			upd.setListener(clickListener);
-			Context.getGameScreen().postGameScreenUpdate(upd);
-		}
-		
-		updateLock.lock();
 		
 		if (clickComplete) {
 			
@@ -107,9 +98,9 @@ public class BaseInputState implements InputSystemState {
 			//
 			// TODO
 			
-			beginClickLocation = null;
-			endClickLocation = null;
-			prevEndClickLocation = null;
+			beginSelection = null;
+			endSelection = null;
+			updateSelectionBox = false;
 			clickComplete = false;
 			
 		} else {
@@ -119,8 +110,7 @@ public class BaseInputState implements InputSystemState {
 			// changed since we last wrote it, we'd better (re-)draw the selection-box.
 			//
 			
-			if (beginClickLocation != null && endClickLocation != null && (prevEndClickLocation == null
-					|| endClickLocation.x != prevEndClickLocation.x || endClickLocation.y != prevEndClickLocation.y)) {
+			if (beginSelection != null && endSelection != null && updateSelectionBox) {
 				
 				{
 					final LayerUpdate upd = GameScreenUpdatePool.get().get(LayerUpdate.class);
@@ -128,21 +118,18 @@ public class BaseInputState implements InputSystemState {
 					upd.setProcedure((l) -> {
 						
 						l.clear();
-						Drawing.drawBox(BoxStyle.SINGLE_LINE, l, beginClickLocation, endClickLocation,
+						Drawing.drawBox(BoxStyle.SINGLE_LINE, l, beginSelection, endSelection,
 								SELECTION_BOX_COLOR_FLOAT);
 					});
 					Context.getGameScreen().postGameScreenUpdate(upd);
 				}
 				
 				//
-				// Be sure to record the current selection-region, so we can avoid re-drawing
-				// the selection-box unnecessarily.
-				prevEndClickLocation = endClickLocation;
+				//
+				updateSelectionBox = false;
 				
 			}
 		}
-		
-		updateLock.unlock();
 	}
 	
 	@Override

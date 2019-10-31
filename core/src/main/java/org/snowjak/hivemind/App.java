@@ -57,7 +57,9 @@ public class App extends ApplicationAdapter {
 			secondsSinceFrame = ((float) Duration.between(lastFrame, thisFrame).toNanos()) * 1e-9f;
 		}
 		
-		GdxAI.getTimepiece().update(secondsSinceFrame);
+		final float clockMultiplier = Context.getClock().isPaused() ? 0 : Context.getClock().getMultiplier();
+		
+		GdxAI.getTimepiece().update(secondsSinceFrame * clockMultiplier);
 		MessageManager.getInstance().update();
 		
 		PerFrameProcess.getActiveProcesses().forEach(p -> p.update(secondsSinceFrame));

@@ -30,9 +30,15 @@ public class Context {
 	
 	private Engine engine = null;
 	private GameScreen gameScreen = null;
+	private final ClockControl clock = new ClockControl();
 	
 	private Context() {
 		
+	}
+	
+	public static ClockControl getClock() {
+		
+		return get().clock;
 	}
 	
 	public static Engine getEngine() {

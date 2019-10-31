@@ -95,7 +95,7 @@ public class Display implements Disposable {
 		if (inputProcessor == null)
 			inputMultiplexer.setProcessors(stage);
 		else
-			inputMultiplexer.setProcessors(inputProcessor, stage);
+			inputMultiplexer.setProcessors(stage, inputProcessor);
 		
 		this.inputProcessor = inputProcessor;
 	}

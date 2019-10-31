@@ -18,8 +18,7 @@ import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 public class GlyphMovedUpdate implements GameScreenUpdate {
 	
 	private Glyph glyph;
-	private int fromX, fromY, toX, toY;
-	private float movementDuration;
+	private int toX, toY;
 	private Runnable afterMove;
 	
 	public Glyph getGlyph() {
@@ -30,26 +29,6 @@ public class GlyphMovedUpdate implements GameScreenUpdate {
 	public void setGlyph(Glyph glyph) {
 		
 		this.glyph = glyph;
-	}
-	
-	public int getFromX() {
-		
-		return fromX;
-	}
-	
-	public void setFromX(int fromX) {
-		
-		this.fromX = fromX;
-	}
-	
-	public int getFromY() {
-		
-		return fromY;
-	}
-	
-	public void setFromY(int fromY) {
-		
-		this.fromY = fromY;
 	}
 	
 	public int getToX() {
@@ -72,16 +51,6 @@ public class GlyphMovedUpdate implements GameScreenUpdate {
 		this.toY = toY;
 	}
 	
-	public float getMovementDuration() {
-		
-		return movementDuration;
-	}
-	
-	public void setMovementDuration(float movementDuration) {
-		
-		this.movementDuration = movementDuration;
-	}
-	
 	public Runnable getAfterMove() {
 		
 		return afterMove;
@@ -95,17 +64,14 @@ public class GlyphMovedUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		gameScreen.getSurface().slide(glyph, fromX, fromY, toX, toY, movementDuration, afterMove);
+		glyph.setPosition(gameScreen.getSurface().worldX(toX), gameScreen.getSurface().worldY(toY));
 	}
 	
 	@Override
 	public void reset() {
 		
-		this.fromX = 0;
-		this.fromY = 0;
 		this.toX = 0;
 		this.toY = 0;
-		this.movementDuration = 0;
 		this.afterMove = null;
 	}
 }

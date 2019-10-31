@@ -29,15 +29,15 @@ public class InputEventProcessingSystem extends EntitySystem {
 		
 		super();
 		stateMachine = new StackStateMachine<InputEventProcessingSystem, InputSystemState>(this);
-		
-		stateMachine.changeState(new BaseInputState());
-		
 	}
 	
 	@Override
 	public void update(float deltaTime) {
 		
 		super.update(deltaTime);
+		
+		if (stateMachine.getCurrentState() == null)
+			stateMachine.changeState(new BaseInputState());
 		
 		stateMachine.update();
 	}

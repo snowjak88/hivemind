@@ -309,12 +309,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				
 				{
 					final GlyphMovedUpdate upd = GameScreenUpdatePool.get().get(GlyphMovedUpdate.class);
-					upd.setFromX(hg.getX());
-					upd.setFromY(hg.getY());
 					upd.setToX(knownLocation.x);
 					upd.setToY(knownLocation.y);
 					upd.setGlyph(hg.getGlyph());
-					upd.setMovementDuration(deltaTime);
 					Context.getGameScreen().postGameScreenUpdate(upd);
 				}
 				
