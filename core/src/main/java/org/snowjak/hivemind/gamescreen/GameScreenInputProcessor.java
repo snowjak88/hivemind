@@ -143,6 +143,12 @@ public class GameScreenInputProcessor extends InputAdapter
 	}
 	
 	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer) {
+		
+		return mouseMoved(screenX, screenY);
+	}
+	
+	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
 		
 		synchronized (this) {
@@ -153,7 +159,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			mouseY = toGridY(screenY);
 			
 			if (mouseX != prevMouseX || mouseY != prevMouseY)
-				activateListeners(true);
+				updateContinuousListeners();
 			
 			return true;
 		}
@@ -243,6 +249,8 @@ public class GameScreenInputProcessor extends InputAdapter
 		
 		synchronized (this) {
 			inputListeners.add(listener);
+			
+			activateListeners(false);
 		}
 	}
 	
@@ -345,13 +353,14 @@ public class GameScreenInputProcessor extends InputAdapter
 	
 	protected void updateContinuousListeners() {
 		
+		final InputEvent event = getInputEvent();
 		final IntIterator activeIterator = activeContinuousListeners.intIterator();
 		while (activeIterator.hasNext()) {
 			
 			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
 			
 			if (!listener.isDiscrete())
-				listener.receive(getInputEvent());
+				listener.receive(event);
 			
 		}
 	}

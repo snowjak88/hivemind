@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Bits;
 import squidpony.squidmath.Coord;
 
 /**
+ * Represents the state of the input-devices at a single instant.
  * 
  * @author snowjak88
  *

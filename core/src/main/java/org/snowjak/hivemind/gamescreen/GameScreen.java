@@ -6,6 +6,11 @@ package org.snowjak.hivemind.gamescreen;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.eclipse.collections.api.iterator.MutableIntIterator;
+import org.eclipse.collections.api.map.primitive.MutableObjectIntMap;
+import org.eclipse.collections.api.set.primitive.MutableIntSet;
+import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.config.Config;
@@ -28,6 +33,7 @@ import com.badlogic.gdx.utils.Disposable;
 import squidpony.squidgrid.Direction;
 import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.SparseLayers;
+import squidpony.squidgrid.gui.gdx.SparseTextMap;
 import squidpony.squidgrid.gui.gdx.SquidInput;
 import squidpony.squidgrid.gui.gdx.TextCellFactory;
 import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
@@ -64,6 +70,11 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	private Container<SparseLayers> rootActor;
 	private SparseLayers sparseLayers;
 	private GameScreenInputProcessor inputProcessor;
+	
+	private float gridScreenWidth = -1, gridScreenHeight = -1;
+	
+	private final MutableObjectIntMap<String> layerNamesToIndices = new ObjectIntHashMap<>();
+	private final MutableIntSet freeLayerIndices = new IntHashSet();
 	
 	private Glyph cursor = null;
 	
@@ -171,7 +182,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			
 			cursor = sparseLayers.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.25f), 0, 0);
 			
-			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWidth(), getGridHeight(), 0, 0);
+			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWorldWidth(), getGridWorldHeight(), 0,
+					0);
 		}
 		
 		cameraX = (width * getCellWidth()) / 2f;
@@ -193,8 +205,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	public GameScreenInputProcessor getInputProcessor() {
 		
 		if (inputProcessor == null) {
-			inputProcessor = new GameScreenInputProcessor(0, 0, getCellWidth(), getCellHeight(), getGridWidth(),
-					getGridHeight(), this);
+			inputProcessor = new GameScreenInputProcessor(0, 0, getCellWidth(), getCellHeight(), getGridWorldWidth(),
+					getGridWorldHeight(), this);
 			
 			setupScrollHoverListeners();
 			
@@ -253,7 +265,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		final float newX = cameraX + ((float) direction.deltaX) * scale;
 		final float newY = cameraY - ((float) direction.deltaY) * scale;
 		
-		final float worldWidth = getGridWidth() * getCellWidth(), worldHeight = getGridHeight() * getCellHeight();
+		final float worldWidth = getGridWorldWidth() * getCellWidth(),
+				worldHeight = getGridWorldHeight() * getCellHeight();
 		
 		final float minX = 0 + (getWindowWidth() / 2f), minY = 0 + (getWindowHeight() / 2f);
 		final float maxX = worldWidth - getWindowWidth() / 2f;
@@ -314,6 +327,63 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		queuedUpdates.offer(update);
 	}
 	
+	/**
+	 * Get the {@link SparseTextMap layer} associated with the given {@code name},
+	 * or {@code null} if {@code name == null}.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public SparseTextMap getNamedLayer(String name) {
+		
+		if (name == null)
+			return null;
+		
+		return sparseLayers.addLayer(getNamedLayerIndex(name));
+	}
+	
+	protected int getNamedLayerIndex(String name) {
+		
+		if (layerNamesToIndices.containsKey(name))
+			return layerNamesToIndices.get(name);
+		
+		final int freeIndex;
+		if (!freeLayerIndices.isEmpty()) {
+			
+			final MutableIntIterator iterator = freeLayerIndices.intIterator();
+			freeIndex = iterator.next();
+			iterator.remove();
+			
+		} else
+			freeIndex = sparseLayers.getLayerCount();
+		
+		layerNamesToIndices.put(name, freeIndex);
+		return freeIndex;
+	}
+	
+	/**
+	 * If the given {@code name} is associated with a {@link SparseTextMap layer},
+	 * removes that association. Also clears the associated layer.
+	 * 
+	 * @param name
+	 */
+	public void unassociateNamedLayer(String name) {
+		
+		if (name == null)
+			return;
+		
+		if (!layerNamesToIndices.containsKey(name))
+			return;
+		
+		final int index = layerNamesToIndices.get(name);
+		final SparseTextMap layer = sparseLayers.getLayer(index);
+		if (layer != null)
+			layer.clear();
+		
+		layerNamesToIndices.remove(name);
+		freeLayerIndices.add(index);
+	}
+	
 	public float getWindowWidth() {
 		
 		return Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH);
@@ -334,7 +404,21 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		return Config.get().getFloat(PREFERENCE_CELL_HEIGHT);
 	}
 	
-	public int getGridWidth() {
+	public float getGridScreenWidth() {
+		
+		if (gridScreenWidth < 0)
+			gridScreenWidth = getWindowWidth() / getCellWidth();
+		return gridScreenWidth;
+	}
+	
+	public float getGridScreenHeight() {
+		
+		if (gridScreenHeight < 0)
+			gridScreenHeight = getWindowHeight() / getCellHeight();
+		return gridScreenHeight;
+	}
+	
+	public int getGridWorldWidth() {
 		
 		if (sparseLayers != null)
 			return sparseLayers.getGridWidth();
@@ -342,7 +426,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		return 0;
 	}
 	
-	public int getGridHeight() {
+	public int getGridWorldHeight() {
 		
 		if (sparseLayers != null)
 			return sparseLayers.getGridHeight();
