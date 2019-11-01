@@ -150,8 +150,8 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 			
 		//
 		// Now -- does the GameScreen need to be resized?
-		if (gameScreen.getGridWorldWidth() != hm.getMap().getWidth()
-				|| gameScreen.getGridWorldHeight() != hm.getMap().getHeight()) {
+		if (gameScreen.getMapGridWorldCellWidth() != hm.getMap().getWidth()
+				|| gameScreen.getMapGridWorldCellHeight() != hm.getMap().getHeight()) {
 			final MapScreenSizeUpdate upd = GameScreenUpdatePool.get().get(MapScreenSizeUpdate.class);
 			upd.setWidth(hm.getMap().getWidth());
 			upd.setHeight(hm.getMap().getHeight());

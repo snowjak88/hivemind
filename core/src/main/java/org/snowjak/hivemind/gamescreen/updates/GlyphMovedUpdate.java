@@ -64,7 +64,7 @@ public class GlyphMovedUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		glyph.setPosition(gameScreen.getSurface().worldX(toX), gameScreen.getSurface().worldY(toY));
+		glyph.setPosition(gameScreen.getMapSurface().worldX(toX), gameScreen.getMapSurface().worldY(toY));
 	}
 	
 	@Override

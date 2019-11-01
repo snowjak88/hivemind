@@ -17,7 +17,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Disposable;
-import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import squidpony.squidgrid.gui.gdx.FilterBatch;
@@ -50,8 +50,9 @@ public class Display implements Disposable {
 	public void created() {
 		
 		batch = new FilterBatch(FloatFilters.identityFilter);
-		mainViewport = new StretchViewport(Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH),
-				Config.get().getInt(App.PREFERENCE_WINDOW_HEIGHT));
+		mainViewport = new ScreenViewport();
+		mainViewport.update(Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH),
+				Config.get().getInt(App.PREFERENCE_WINDOW_HEIGHT), false);
 		stage = new Stage(mainViewport, batch);
 		
 		displayStateMachine = new DefaultStateMachine<>(this);

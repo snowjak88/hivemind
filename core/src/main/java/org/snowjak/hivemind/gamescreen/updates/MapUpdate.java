@@ -63,7 +63,7 @@ public class MapUpdate implements GameScreenUpdate {
 		final TerrainType tt = TerrainTypes.get().getAt(terrain[x][y]);
 		final Material mat = Materials.get().get(material[x][y]);
 		if (tt != null && mat != null)
-			gameScreen.getSurface().putWithReverseLight(x, y, tt.getCh(), tt.getForegroundFloat(), mat.getColorFloat(),
+			gameScreen.getMapSurface().putWithReverseLight(x, y, tt.getCh(), tt.getForegroundFloat(), mat.getColorFloat(),
 					GameScreen.NOT_VISIBLE_DARKNESS_FLOAT, (visible.contains(x, y)) ? 0f : 1f);
 	}
 	

@@ -78,7 +78,7 @@ public class GlyphAddedUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		final Glyph g = gameScreen.getSurface().glyph(ch, color, x, y);
+		final Glyph g = gameScreen.getMapSurface().glyph(ch, color, x, y);
 		if (consumer != null)
 			consumer.accept(g);
 	}

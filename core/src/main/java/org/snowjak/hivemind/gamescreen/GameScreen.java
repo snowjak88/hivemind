@@ -25,9 +25,15 @@ import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
 
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Container;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.HorizontalGroup;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.Scaling;
+import com.badlogic.gdx.utils.viewport.ScalingViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 import squidpony.squidgrid.Direction;
 import squidpony.squidgrid.gui.gdx.SColor;
@@ -64,21 +70,26 @@ import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 public class GameScreen implements Disposable, ScreenMapTranslator {
 	
 	public static final String PREFERENCE_CELL_WIDTH = "game-screen.cell-width",
-			PREFERENCE_CELL_HEIGHT = "game-screen.cell-height", PREFERENCE_MOUSE_SCROLL = "game-screen.mouse-scroll";
+			PREFERENCE_CELL_HEIGHT = "game-screen.cell-height", PREFERENCE_SIDEBAR_WIDTH = "game-screen.sidebar-width",
+			PREFERENCE_MOUSE_SCROLL = "game-screen.mouse-scroll";
 	{
 		Config.get().register(PREFERENCE_CELL_WIDTH, "Width (in pixels) of each game-map cell", 16f, true, true);
 		Config.get().register(PREFERENCE_CELL_HEIGHT, "Height (in pixels) of each game-map cell", 16f, true, true);
+		Config.get().register(PREFERENCE_SIDEBAR_WIDTH, "Width (in cells) of the sidebar", 16, false, true);
 		Config.get().register(PREFERENCE_MOUSE_SCROLL, "Use mouse to scroll game-map screen?", true, true, false);
 	}
 	
 	public static final SColor NOT_VISIBLE_DARKNESS = SColor.INK;
 	public static final float NOT_VISIBLE_DARKNESS_FLOAT = NOT_VISIBLE_DARKNESS.toFloatBits();
 	
-	private Container<SparseLayers> rootActor;
-	private SparseLayers sparseLayers;
+	private HorizontalGroup rootActor;
+	private Stage mapStage, sidebarStage;
+	private Viewport mapViewport, sidebarViewport;
+	private SparseLayers mapGrid, sidebarGrid;
 	private GameScreenInputProcessor inputProcessor;
 	
-	private float gridScreenWidth = -1, gridScreenHeight = -1;
+	private float mapGridScreenCellWidth = -1, mapGridScreenCellHeight = -1;
+	private int sidebarCellHeight = -1;
 	
 	private final MutableObjectIntMap<String> layerNamesToIndices = new ObjectIntHashMap<>();
 	private final MutableIntSet freeLayerIndices = new IntHashSet();
@@ -102,7 +113,29 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		
 		super();
 		
-		rootActor = new Container<>();
+		rootActor = new HorizontalGroup() {
+			
+			@Override
+			public void draw(Batch batch, float parentAlpha) {
+				
+				GameScreen.this.draw(batch, parentAlpha);
+			}
+		};
+		
+		final TextCellFactory font = new TextCellFactory().font(Fonts.get().get(Fonts.FONT_MAP));
+		font.resetSize(getCellWidth(), getCellHeight());
+		sidebarGrid = new SparseLayers(getSidebarCellWidth(), getSidebarCellHeight(), getCellWidth(), getCellHeight(),
+				font);
+		
+		sidebarViewport = new ScalingViewport(Scaling.none, getSidebarPixelWidth(), getSidebarPixelHeight());
+		sidebarViewport.setScreenBounds((int) (getWindowPixelWidth() - getSidebarPixelWidth()), 0,
+				(int) getSidebarPixelWidth(), (int) getSidebarPixelHeight());
+		
+		for (int x = 0; x < getSidebarCellWidth(); x++)
+			for (int y = 0; y < getSidebarCellHeight(); y++)
+				sidebarGrid.put(x, y, (x + y) % 2 == 0 ? 'X' : ' ', SColor.WHITE_FLOAT_BITS);
+			
+		rootActor.setFillParent(true);
 		
 		this.cameraX = 0;
 		this.cameraY = 0;
@@ -143,22 +176,61 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				GameScreenUpdatePool.get().retire(queuedUpdate);
 			}
 		}
+	}
+	
+	private void draw(Batch batch, float parentAlpha) {
 		
-		if (sparseLayers == null)
-			return;
+		final Viewport oldViewport;
+		if (rootActor.getStage() != null) {
+			oldViewport = rootActor.getStage().getViewport();
+			batch.end();
+			batch.begin();
+		} else
+			oldViewport = null;
 		
-		if (sparseLayers.getStage() != null) {
-			sparseLayers.getStage().getCamera().position.x = cameraX;
-			sparseLayers.getStage().getCamera().position.y = cameraY;
+		if (mapViewport != null && mapGrid != null) {
+			
+			mapViewport.getCamera().position.x = cameraX;
+			mapViewport.getCamera().position.y = cameraY;
+			
+			mapViewport.apply(false);
+			batch.setProjectionMatrix(mapViewport.getCamera().combined);
+			mapGrid.font.configureShader(batch);
+			
+			if (rootActor.getStage() != null)
+				rootActor.getStage().setViewport(mapViewport);
+			
+			mapGrid.draw(batch, parentAlpha);
+			
+			batch.end();
+			batch.begin();
+		}
+		
+		sidebarViewport.getCamera().position.x = (int) getSidebarPixelWidth() / 2f;
+		sidebarViewport.getCamera().position.y = (int) getSidebarPixelHeight() / 2f;
+		
+		sidebarViewport.apply(false);
+		batch.setProjectionMatrix(sidebarViewport.getCamera().combined);
+		sidebarGrid.font.configureShader(batch);
+		
+		if (rootActor.getStage() != null)
+			rootActor.getStage().setViewport(sidebarViewport);
+		
+		sidebarGrid.draw(batch, parentAlpha);
+		
+		if (rootActor.getStage() != null) {
+			batch.end();
+			batch.begin();
+			rootActor.getStage().setViewport(oldViewport);
 		}
 	}
 	
 	/**
-	 * @return the "drawing surface" -- i.e., the {@link SparseLayers} instance
+	 * @return the "map-screen surface"
 	 */
-	public SparseLayers getSurface() {
+	public SparseLayers getMapSurface() {
 		
-		return sparseLayers;
+		return mapGrid;
 	}
 	
 	/**
@@ -174,23 +246,26 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	 */
 	public void resizeSurface(int width, int height) {
 		
-		if (sparseLayers != null && width == sparseLayers.getGridWidth() && height == sparseLayers.getGridHeight())
-			sparseLayers.clear();
+		if (mapGrid != null && width == mapGrid.getGridWidth() && height == mapGrid.getGridHeight())
+			mapGrid.clear();
 		else {
-			if (sparseLayers != null)
-				sparseLayers.remove();
+			if (mapGrid != null)
+				mapGrid.remove();
 			
 			final TextCellFactory font = new TextCellFactory().font(Fonts.get().get(Fonts.FONT_MAP));
-			sparseLayers = new SparseLayers(width, height, getCellWidth(), getCellHeight(), font);
+			font.resetSize(getCellWidth(), getCellHeight());
 			
-			rootActor.setWidth(sparseLayers.getWidth());
-			rootActor.setHeight(sparseLayers.getHeight());
-			rootActor.setActor(sparseLayers);
+			mapGrid = new SparseLayers(width, height, getCellWidth(), getCellHeight(), font);
 			
-			cursor = sparseLayers.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.25f), 0, 0);
+			mapViewport = new ScreenViewport();
+			mapViewport.setWorldSize((int) getMapGridOnscreenPixelWidth(), (int) getMapGridOnscreenPixelHeight());
+			mapViewport.setScreenBounds(0, 0, (int) getMapGridOnscreenPixelWidth(),
+					(int) getMapGridOnscreenPixelHeight());
 			
-			getInputProcessor().resize(getCellWidth(), getCellHeight(), getGridWorldWidth(), getGridWorldHeight(), 0,
-					0);
+			cursor = mapGrid.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.25f), 0, 0);
+			
+			getInputProcessor().resize(getCellWidth(), getCellHeight(), getMapGridWorldCellWidth(),
+					getMapGridWorldCellHeight(), 0, 0);
 		}
 		
 		cameraX = (width * getCellWidth()) / 2f;
@@ -212,17 +287,17 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	public GameScreenInputProcessor getInputProcessor() {
 		
 		if (inputProcessor == null) {
-			inputProcessor = new GameScreenInputProcessor(0, 0, getCellWidth(), getCellHeight(), getGridWorldWidth(),
-					getGridWorldHeight(), this);
+			inputProcessor = new GameScreenInputProcessor(0, 0, getCellWidth(), getCellHeight(),
+					getMapGridWorldCellWidth(), getMapGridWorldCellHeight(), this);
 			
 			setupScrollHoverListeners();
 			
 			inputProcessor.registerInputListener(InputEventListener.build().continuous().onEvent((e) -> {
-				if (cursor == null || sparseLayers == null)
+				if (cursor == null || mapGrid == null)
 					return;
 				
-				final float x = sparseLayers.worldX(e.getMapCursor().x);
-				final float y = sparseLayers.worldY(e.getMapCursor().y);
+				final float x = mapGrid.worldX(e.getMapCursor().x);
+				final float y = mapGrid.worldY(e.getMapCursor().y);
 				cursor.setPosition(x, y);
 			}).get());
 			
@@ -272,12 +347,12 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		final float newX = cameraX + ((float) direction.deltaX) * scale;
 		final float newY = cameraY - ((float) direction.deltaY) * scale;
 		
-		final float worldWidth = getGridWorldWidth() * getCellWidth(),
-				worldHeight = getGridWorldHeight() * getCellHeight();
+		final float worldWidth = getMapGridWorldCellWidth() * getCellWidth(),
+				worldHeight = getMapGridWorldCellHeight() * getCellHeight();
 		
-		final float minX = 0 + (getWindowWidth() / 2f), minY = 0 + (getWindowHeight() / 2f);
-		final float maxX = worldWidth - getWindowWidth() / 2f;
-		final float maxY = worldHeight - getWindowHeight() / 2f;
+		final float minX = 0 + (getMapGridOnscreenPixelWidth() / 2f), minY = 0 + (getMapGridOnscreenPixelHeight() / 2f);
+		final float maxX = worldWidth - getMapGridOnscreenPixelWidth() / 2f;
+		final float maxY = worldHeight - getMapGridOnscreenPixelHeight() / 2f;
 		
 		cameraX = Math.min(Math.max(newX, minX), maxX);
 		cameraY = Math.min(Math.max(newY, minY), maxY);
@@ -289,8 +364,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	 */
 	private void setupScrollHoverListeners() {
 		
-		final int onscreenGridWidth = (int) (getWindowWidth() / getCellWidth());
-		final int onscreenGridHeight = (int) (getWindowHeight() / getCellHeight());
+		final int onscreenGridWidth = (int) (getWindowPixelWidth() / getCellWidth());
+		final int onscreenGridHeight = (int) (getWindowPixelHeight() / getCellHeight());
 		
 		if (scrollLeftListener != null)
 			getInputProcessor().unregisterHoverListener(scrollLeftListener);
@@ -346,7 +421,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		if (name == null)
 			return null;
 		
-		return sparseLayers.addLayer(getNamedLayerIndex(name));
+		return mapGrid.addLayer(getNamedLayerIndex(name));
 	}
 	
 	protected int getNamedLayerIndex(String name) {
@@ -362,7 +437,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			iterator.remove();
 			
 		} else
-			freeIndex = sparseLayers.getLayerCount();
+			freeIndex = mapGrid.getLayerCount();
 		
 		layerNamesToIndices.put(name, freeIndex);
 		return freeIndex;
@@ -383,7 +458,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			return;
 		
 		final int index = layerNamesToIndices.get(name);
-		final SparseTextMap layer = sparseLayers.getLayer(index);
+		final SparseTextMap layer = mapGrid.getLayer(index);
 		if (layer != null)
 			layer.clear();
 		
@@ -391,12 +466,12 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		freeLayerIndices.add(index);
 	}
 	
-	public float getWindowWidth() {
+	public float getWindowPixelWidth() {
 		
 		return Config.get().getInt(App.PREFERENCE_WINDOW_WIDTH);
 	}
 	
-	public float getWindowHeight() {
+	public float getWindowPixelHeight() {
 		
 		return Config.get().getInt(App.PREFERENCE_WINDOW_HEIGHT);
 	}
@@ -411,73 +486,105 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		return Config.get().getFloat(PREFERENCE_CELL_HEIGHT);
 	}
 	
-	public float getGridScreenWidth() {
+	public float getSidebarPixelWidth() {
 		
-		if (gridScreenWidth < 0)
-			gridScreenWidth = getWindowWidth() / getCellWidth();
-		return gridScreenWidth;
+		return getSidebarCellWidth() * getCellWidth();
 	}
 	
-	public float getGridScreenHeight() {
+	public float getSidebarPixelHeight() {
 		
-		if (gridScreenHeight < 0)
-			gridScreenHeight = getWindowHeight() / getCellHeight();
-		return gridScreenHeight;
+		return getSidebarCellHeight() * getCellHeight();
 	}
 	
-	public int getGridWorldWidth() {
+	public int getSidebarCellWidth() {
 		
-		if (sparseLayers != null)
-			return sparseLayers.getGridWidth();
+		return Config.get().getInt(PREFERENCE_SIDEBAR_WIDTH);
+	}
+	
+	public int getSidebarCellHeight() {
+		
+		if (sidebarCellHeight < 0)
+			sidebarCellHeight = (int) (getWindowPixelHeight() / getCellHeight());
+		return sidebarCellHeight;
+	}
+	
+	public float getMapGridOnscreenCellWidth() {
+		
+		if (mapGridScreenCellWidth < 0)
+			mapGridScreenCellWidth = getWindowPixelWidth() / getCellWidth() - getSidebarCellWidth();
+		return mapGridScreenCellWidth;
+	}
+	
+	public float getMapGridOnscreenCellHeight() {
+		
+		if (mapGridScreenCellHeight < 0)
+			mapGridScreenCellHeight = getWindowPixelHeight() / getCellHeight();
+		return mapGridScreenCellHeight;
+	}
+	
+	public int getMapGridWorldCellWidth() {
+		
+		if (mapGrid != null)
+			return mapGrid.getGridWidth();
 		
 		return 0;
 	}
 	
-	public int getGridWorldHeight() {
+	public int getMapGridWorldCellHeight() {
 		
-		if (sparseLayers != null)
-			return sparseLayers.getGridHeight();
+		if (mapGrid != null)
+			return mapGrid.getGridHeight();
 		
 		return 0;
+	}
+	
+	public float getMapGridOnscreenPixelWidth() {
+		
+		return getMapGridOnscreenCellWidth() * getCellWidth();
+	}
+	
+	public float getMapGridOnscreenPixelHeight() {
+		
+		return getMapGridOnscreenCellHeight() * getCellHeight();
 	}
 	
 	@Override
 	public int screenToMapX(int screenX) {
 		
-		if (sparseLayers == null)
+		if (mapGrid == null)
 			return 0;
 		
-		final int leftGridCell = sparseLayers.gridX(cameraX - getWindowWidth() / 2f);
+		final int leftGridCell = mapGrid.gridX(cameraX - getMapGridOnscreenPixelWidth() / 2f);
 		return screenX + leftGridCell;
 	}
 	
 	@Override
 	public int screenToMapY(int screenY) {
 		
-		if (sparseLayers == null)
+		if (mapGrid == null)
 			return 0;
 		
-		final int topGridCell = sparseLayers.gridY(cameraY + getWindowHeight() / 2f);
+		final int topGridCell = mapGrid.gridY(cameraY + getMapGridOnscreenPixelHeight() / 2f);
 		return screenY + topGridCell;
 	}
 	
 	@Override
 	public int mapToScreenX(int mapX) {
 		
-		if (sparseLayers == null)
+		if (mapGrid == null)
 			return 0;
 		
-		final int leftGridCell = sparseLayers.gridX(cameraX - getWindowWidth() / 2f);
+		final int leftGridCell = mapGrid.gridX(cameraX - getMapGridOnscreenPixelWidth() / 2f);
 		return mapX - leftGridCell;
 	}
 	
 	@Override
 	public int mapToScreenY(int mapY) {
 		
-		if (sparseLayers == null)
+		if (mapGrid == null)
 			return 0;
 		
-		final int topGridCell = sparseLayers.gridY(cameraY + getWindowHeight() / 2f);
+		final int topGridCell = mapGrid.gridY(cameraY + getMapGridOnscreenPixelHeight() / 2f);
 		return mapY - topGridCell;
 	}
 	

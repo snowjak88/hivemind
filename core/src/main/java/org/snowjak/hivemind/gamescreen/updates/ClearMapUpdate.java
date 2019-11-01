@@ -18,10 +18,10 @@ public class ClearMapUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		if (gameScreen.getSurface() == null)
+		if (gameScreen.getMapSurface() == null)
 			return;
 		
-		gameScreen.getSurface().clear();
+		gameScreen.getMapSurface().clear();
 	}
 	
 	@Override

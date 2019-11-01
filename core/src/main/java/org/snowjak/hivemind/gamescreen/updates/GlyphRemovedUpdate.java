@@ -30,7 +30,7 @@ public class GlyphRemovedUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		gameScreen.getSurface().removeGlyph(glyph);
+		gameScreen.getMapSurface().removeGlyph(glyph);
 	}
 	
 	@Override

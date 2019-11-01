@@ -20,12 +20,12 @@ public class RemoveAllGlyphsUpdate implements GameScreenUpdate {
 	@Override
 	public void execute(GameScreen gameScreen) {
 		
-		if (gameScreen.getSurface() == null)
+		if (gameScreen.getMapSurface() == null)
 			return;
-		if (gameScreen.getSurface().glyphs == null)
+		if (gameScreen.getMapSurface().glyphs == null)
 			return;
 		
-		final Iterator<Glyph> iterator = gameScreen.getSurface().glyphs.iterator();
+		final Iterator<Glyph> iterator = gameScreen.getMapSurface().glyphs.iterator();
 		while (iterator.hasNext()) {
 			iterator.next().clearActions();
 			iterator.remove();
