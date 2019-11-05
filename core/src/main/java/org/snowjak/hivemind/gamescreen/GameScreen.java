@@ -27,7 +27,6 @@ import org.snowjak.hivemind.ui.MouseHoverListener;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.HorizontalGroup;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Scaling;
@@ -83,7 +82,6 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	public static final float NOT_VISIBLE_DARKNESS_FLOAT = NOT_VISIBLE_DARKNESS.toFloatBits();
 	
 	private HorizontalGroup rootActor;
-	private Stage mapStage, sidebarStage;
 	private Viewport mapViewport, sidebarViewport;
 	private SparseLayers mapGrid, sidebarGrid;
 	private GameScreenInputProcessor inputProcessor;
@@ -226,7 +224,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	}
 	
 	/**
-	 * @return the "map-screen surface"
+	 * @return the map-screen grid
 	 */
 	public SparseLayers getMapSurface() {
 		
@@ -234,9 +232,16 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	}
 	
 	/**
-	 * Clears the {@link SparseLayers} "drawing-surface". If its current size does
-	 * not match the given size, removes and re-creates the SparseLayers instance to
-	 * match.
+	 * @return the sidebar grid
+	 */
+	public SparseLayers getSidebarSurface() {
+		
+		return sidebarGrid;
+	}
+	
+	/**
+	 * Clears the {@link SparseLayers} map-grid. If its current size does not match
+	 * the given size, removes and re-creates the SparseLayers instance to match.
 	 * <p>
 	 * This method will center the GameScreen's camera at the middle of the map.
 	 * </p>

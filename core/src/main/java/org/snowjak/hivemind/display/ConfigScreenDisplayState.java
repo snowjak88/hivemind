@@ -7,9 +7,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import org.snowjak.hivemind.config.Config;
-import org.snowjak.hivemind.config.ConfigurationItem;
 import org.snowjak.hivemind.gamescreen.UpdateableInputAdapter;
 import org.snowjak.hivemind.ui.Skin;
+import org.snowjak.hivemind.util.TypedStore.TypedStoreItem;
 
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ai.fsm.State;
@@ -48,8 +48,8 @@ public class ConfigScreenDisplayState implements DisplayState {
 	private Table root;
 	private boolean backToMainMenu = false;
 	
-	private final Collection<ConfigurationItem<?>> configurations = new LinkedList<>();
-	private final Collection<ConfigurationItem<?>> modified = new LinkedList<>();
+	private final Collection<TypedStoreItem<?>> configurations = new LinkedList<>();
+	private final Collection<TypedStoreItem<?>> modified = new LinkedList<>();
 	
 	public ConfigScreenDisplayState() {
 		
@@ -66,11 +66,11 @@ public class ConfigScreenDisplayState implements DisplayState {
 				new Label("Type", headingLabelStyle), new Label("Default", headingLabelStyle),
 				new Label("Value", headingLabelStyle));
 		
-		for (ConfigurationItem<?> ci : Config.get().getConfigurations())
+		for (TypedStoreItem<?> ci : Config.get().getItems())
 			if (ci.isConfigurable())
-				this.configurations.add(new ConfigurationItem<>(ci));
+				this.configurations.add(new TypedStoreItem<>(ci));
 			
-		for (ConfigurationItem<?> ci : this.configurations)
+		for (TypedStoreItem<?> ci : this.configurations)
 			addRow(ci);
 		
 		final BitmapFont buttonFont = Fonts.get().get(Fonts.FONT_NORMAL);
@@ -86,7 +86,7 @@ public class ConfigScreenDisplayState implements DisplayState {
 			public void clicked(InputEvent event, float x, float y) {
 				
 				boolean requiresRestart = false;
-				for (ConfigurationItem<?> ci : modified) {
+				for (TypedStoreItem<?> ci : modified) {
 					Config.get().set(ci.getKey(), ci.getValue());
 					if (ci.isRequiresRestart())
 						requiresRestart = true;
@@ -130,7 +130,7 @@ public class ConfigScreenDisplayState implements DisplayState {
 		backToMainMenu = false;
 	}
 	
-	private void addRow(ConfigurationItem<?> item) {
+	private void addRow(TypedStoreItem<?> item) {
 		
 		final TextField keyLabel = new TextField(item.getKey(), textFieldStyle);
 		keyLabel.setDisabled(true);
@@ -154,7 +154,7 @@ public class ConfigScreenDisplayState implements DisplayState {
 				public void changed(ChangeEvent event, Actor actor) {
 					
 					final TextField field = (TextField) actor;
-					((ConfigurationItem<String>) item).setValue(field.getText());
+					((TypedStoreItem<String>) item).setValue(field.getText());
 					modified.add(item);
 				}
 			});
@@ -180,7 +180,7 @@ public class ConfigScreenDisplayState implements DisplayState {
 				public void changed(ChangeEvent event, Actor actor) {
 					
 					final CheckBox field = (CheckBox) actor;
-					((ConfigurationItem<Boolean>) item).setValue(field.isChecked());
+					((TypedStoreItem<Boolean>) item).setValue(field.isChecked());
 				}
 			});
 		} else {

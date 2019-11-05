@@ -1,5 +1,19 @@
+plugins {
+	id 'groovy'
+}
+
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
+
+//
+// Here, we force the Java plugin to compile nothing,
+// and the Groovy plugin to compile everything.
+sourceSets {
+	main {
+		java { srcDirs = [] }
+		groovy { srcDirs = [ "src/main/java" ] }
+	}
+}
 
 dependencies {
 	implementation "com.badlogicgames.gdx:gdx:$gdxVersion"

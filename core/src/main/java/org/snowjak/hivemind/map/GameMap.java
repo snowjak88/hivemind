@@ -362,7 +362,7 @@ public class GameMap {
 			baseVisibility[x][y] = TerrainTypes.get().getAt(this.terrain[x][y]).getVisibilityResistance()
 					* Materials.get().get(this.material[x][y]).getVisibilityResistance();
 			totalVisibility[x][y] = baseVisibility[x][y] + modifiedVisibilityResistance[x][y];
-			squidCharMap = null;
+			getSquidCharMap()[x][y] = (terrainType < 0) ? 0 : TerrainTypes.get().getAt(terrainType).getSquidChar();
 			charMap = null;
 		}
 	}

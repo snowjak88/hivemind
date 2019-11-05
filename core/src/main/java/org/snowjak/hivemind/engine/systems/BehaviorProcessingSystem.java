@@ -3,13 +3,14 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
-import org.snowjak.hivemind.behavior.Behaviors;
+import org.snowjak.hivemind.behavior.support.BehaviorScript;
 import org.snowjak.hivemind.engine.components.HasBehavior;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
+import com.badlogic.gdx.ai.btree.BehaviorTree;
 
 /**
  * For each {@link Entity} that {@link HasBehavior has an associated behavior}
@@ -38,7 +39,7 @@ public class BehaviorProcessingSystem extends IteratingSystem {
 		if (behavior.getBehavior() == null)
 			switch (behavior.getBehaviorName()) {
 			case "default":
-				behavior.setBehavior(Behaviors.getDefault());
+				behavior.setBehavior(new BehaviorTree<>(BehaviorScript.byName("wander")));
 				break;
 			default:
 				return;
