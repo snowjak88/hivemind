@@ -17,10 +17,36 @@ allprojects {
 }
 
 configure(subprojects) {
+	
 	apply plugin: 'java-library'
+	apply plugin: 'groovy'
+	
+	dependencies {
+		implementation "org.codehaus.groovy:groovy:2.+"
+	}
+	
 	sourceCompatibility = 1.8
 	compileJava {
 		options.incremental = true
+	}
+	compileGroovy {
+		options.incremental = true
+	}
+	
+	[compileJava, compileTestJava, compileGroovy, compileTestGroovy]*.options*.encoding = 'UTF-8'
+	
+	//
+	// Here, we force the Java plugin to compile nothing,
+	// and the Groovy plugin to compile everything.
+	sourceSets {
+		main {
+			java {
+				srcDirs = []
+			}
+			groovy { srcDirs = [ "src/main/java" ] }
+			
+			java.outputDir = groovy.outputDir
+		}
 	}
 }
 
