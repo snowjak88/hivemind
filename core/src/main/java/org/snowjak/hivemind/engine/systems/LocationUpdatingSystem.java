@@ -12,7 +12,9 @@ import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
@@ -30,7 +32,7 @@ import com.badlogic.ashley.systems.IteratingSystem;
  * @author snowjak88
  *
  */
-public class LocationUpdatingSystem extends IteratingSystem {
+public class LocationUpdatingSystem extends IteratingSystem implements EntityListener {
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<NeedsUpdatedLocation> NEED_UPDATED_LOC = ComponentMapper
@@ -43,7 +45,48 @@ public class LocationUpdatingSystem extends IteratingSystem {
 		super(Family.all(HasLocation.class, NeedsUpdatedLocation.class).get());
 	}
 	
+	@Override
+	public void addedToEngine(Engine engine) {
+		
+		super.addedToEngine(engine);
+		engine.addEntityListener(Family.all(HasLocation.class).get(), this);
+	}
 	
+	@Override
+	public void removedFromEngine(Engine engine) {
+		
+		engine.removeEntityListener(this);
+		super.removedFromEngine(engine);
+	}
+	
+	@Override
+	public void entityAdded(Entity entity) {
+		
+		if (!ComponentMapper.getFor(HasLocation.class).has(entity))
+			return;
+		final HasLocation loc = ComponentMapper.getFor(HasLocation.class).get(entity);
+		
+		final Entity worldMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
+		if (worldMapEntity == null)
+			return;
+		if (!ComponentMapper.getFor(HasMap.class).has(worldMapEntity))
+			return;
+		final HasMap worldMap = ComponentMapper.getFor(HasMap.class).get(worldMapEntity);
+		
+		worldMap.getEntities().set(loc.getLocation(), entity);
+	}
+	
+	@Override
+	public void entityRemoved(Entity entity) {
+		
+		final Entity worldMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
+		if (worldMapEntity == null)
+			return;
+		if (!ComponentMapper.getFor(HasMap.class).has(worldMapEntity))
+			return;
+		final HasMap worldMap = ComponentMapper.getFor(HasMap.class).get(worldMapEntity);
+		worldMap.getEntities().remove(entity);
+	}
 	
 	@Override
 	public void update(float deltaTime) {
@@ -54,9 +97,7 @@ public class LocationUpdatingSystem extends IteratingSystem {
 		
 		timer.stop();
 	}
-
-
-
+	
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		
