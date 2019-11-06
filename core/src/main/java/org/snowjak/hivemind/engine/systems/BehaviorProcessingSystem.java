@@ -39,18 +39,16 @@ public class BehaviorProcessingSystem extends IteratingSystem {
 			return;
 		
 		if (behavior.getBehavior() == null)
-			switch (behavior.getBehaviorName()) {
-			case "default":
-				behavior.setBehavior(new BehaviorTree<>(BehaviorScript.byName("wander")));
-				break;
-			default:
-				return;
-			}
+			behavior.setBehavior(new BehaviorTree<>(BehaviorScript.byName(behavior.getBehaviorName())));
 		
 		final ProfilerTimer behaviorStepTimer = Profiler.get().start("BehaviorProcessingSystem - behavior.step()");
 		
-		behavior.getBehavior().setObject(entity);
-		behavior.getBehavior().step();
+		if (behavior.getBehavior() != null) {
+			
+			behavior.getBehavior().setObject(entity);
+			behavior.getBehavior().step();
+			
+		}
 		
 		behaviorStepTimer.stop();
 	}

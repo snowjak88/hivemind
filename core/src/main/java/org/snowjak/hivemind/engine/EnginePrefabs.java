@@ -6,24 +6,15 @@ package org.snowjak.hivemind.engine;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Materials;
 import org.snowjak.hivemind.Materials.Material;
-import org.snowjak.hivemind.RNG;
-import org.snowjak.hivemind.engine.components.CanMove;
-import org.snowjak.hivemind.engine.components.CanSee;
-import org.snowjak.hivemind.engine.components.CopiesFOVTo;
-import org.snowjak.hivemind.engine.components.HasAppearance;
-import org.snowjak.hivemind.engine.components.HasBehavior;
-import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.prefab.PrefabScript;
 import org.snowjak.hivemind.engine.systems.UniqueTagManager;
 import org.snowjak.hivemind.map.GameMap;
 
 import com.badlogic.ashley.core.Entity;
 
-import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.mapping.DungeonGenerator;
 import squidpony.squidgrid.mapping.styled.TilesetType;
-import squidpony.squidmath.GreasedRegion;
 import squidpony.squidmath.PerlinNoise;
 
 /**
@@ -67,40 +58,11 @@ public class EnginePrefabs {
 		eng.addEntity(screenMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
 		
-		final GreasedRegion floors = new GreasedRegion(worldMap.getMap().getSquidCharMap(), '.');
 		for (int i = 0; i < 16; i++) {
-			final Entity e = eng.createEntity();
-			
-			e.add(eng.createComponent(HasMap.class));
-			
-			final HasAppearance ha = eng.createComponent(HasAppearance.class);
-			ha.setCh('@');
-			ha.setColor(SColor.AURORA_APRICOT);
-			e.add(ha);
-			
-			final CanMove canMove = eng.createComponent(CanMove.class);
-			canMove.setSpeed(1f);
-			e.add(canMove);
-			
-			final CanSee canSee = eng.createComponent(CanSee.class);
-			canSee.setRadius(8);
-			e.add(canSee);
-			
-			final CopiesFOVTo copyFOV = eng.createComponent(CopiesFOVTo.class);
-			copyFOV.setCopyTo(eng.getSystem(EntityRefManager.class).get(screenMapEntity));
-			e.add(copyFOV);
-			
-			final HasLocation hasLocation = eng.createComponent(HasLocation.class);
-			hasLocation.setLocation(floors.singleRandom(RNG.get()));
-			e.add(hasLocation);
-			
-			worldMap.getEntities().set(hasLocation.getLocation(), e);
-			
-			final HasBehavior hasBehavior = eng.createComponent(HasBehavior.class);
-			hasBehavior.setBehaviorName("default");
-			e.add(hasBehavior);
-			
-			eng.addEntity(e);
+			final PrefabScript ps = PrefabScript.byName("wanderer");
+			ps.run();
+			if (i % 2 == 0)
+				ps.include("mixin/screen-fov-sharing");
 		}
 	}
 }
