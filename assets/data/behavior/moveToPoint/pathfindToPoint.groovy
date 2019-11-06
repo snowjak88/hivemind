@@ -1,21 +1,15 @@
-import java.util.List
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
-import org.snowjak.hivemind.concurrent.Executor
-import squidpony.squidmath.Coord
-
 label = "pathfind to point"
 behavior = task {
 	
 	try {
 		
-		if(prop["pathfind-result"] != null) {
-			def pathfindFuture = (Future<List<Coord>>) prop["pathfind-result"]
-			if(!pathfindFuture.isDone())
+		if(prop["pathfind-task"] != null) {
+			def pathfindTask = prop["pathfind-task"]
+			if(!pathfindTask.isDone())
 				return Status.RUNNING
 			
-			def result = pathfindFuture.get()
-			prop["pathfind-result"] = null
+			def result = pathfindTask.get()
+			prop["pathfind-task"] = null
 			
 			if(result == null)
 				return Status.FAILED
@@ -42,13 +36,12 @@ behavior = task {
 		
 		def pathfinder = get(HasPathfinder)
 		
-		def pathfindFuture = Executor.get().submit({
+		prop["pathfind-task"] = schedule({
 			pathfinder.lock.acquireUninterruptibly()
 			def result = pathfinder.pathfinder.findPath(3, 16, null, null, loc.location, moveTo.destination)
 			pathfinder.lock.release()
 			result
-		} as Callable<List<Coord>>)
-		prop["pathfind-result"] = pathfindFuture
+		})
 		
 		return Status.RUNNING;
 	} catch(Throwable t) {

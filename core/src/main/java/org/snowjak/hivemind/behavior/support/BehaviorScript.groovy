@@ -4,10 +4,14 @@
 package org.snowjak.hivemind.behavior.support
 
 import java.nio.file.Path
+import java.util.concurrent.Callable
+import java.util.concurrent.Future
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.snowjak.hivemind.Context
+import org.snowjak.hivemind.RNG
+import org.snowjak.hivemind.concurrent.Executor
 import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
 import org.snowjak.hivemind.engine.systems.UniqueTagManager
@@ -24,9 +28,12 @@ import com.badlogic.gdx.ai.btree.branch.Sequence
 import com.badlogic.gdx.ai.btree.decorator.Invert
 import com.badlogic.gdx.ai.btree.decorator.Repeat
 import com.badlogic.gdx.ai.btree.decorator.UntilFail
+
 import com.google.common.io.MoreFiles
 
 import io.github.classgraph.ClassGraph
+
+import squidpony.squidmath.GreasedRegion
 
 /**
  * @author snowjak88
@@ -53,7 +60,9 @@ public abstract class BehaviorScript extends Script {
 				
 				if(COMPILER_CONFIG == null) {
 					def icz = new ImportCustomizer()
+					icz.addImport "GreasedRegion", GreasedRegion.class.name
 					icz.addImport "Status", Status.class.name
+					icz.addImport "RNG", RNG.class.name
 					def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
 					sr.getClassesImplementing(Component.class.name).filter({!it.isAbstract() && !it.isInterfaceOrAnnotation()}).forEach {
 						icz.addImports(it.loadClass().name)
@@ -178,6 +187,10 @@ public abstract class BehaviorScript extends Script {
 						if(worldEntity == null || !ComponentMapper.getFor(HasMap).has(worldEntity))
 							return null
 						ComponentMapper.getFor(HasMap).get(worldEntity)
+					}
+					
+					public Future<?> schedule(Closure task) {
+						Executor.get().submit(task as Callable<?>)
 					}
 				}
 	}
