@@ -102,9 +102,17 @@ public class Profiler {
 		
 		synchronized (this) {
 			
-			int maxLabelLength = Integer.MIN_VALUE;
-			for (String label : this.record.keys())
+			int maxLabelLength = Integer.MIN_VALUE, maxTextLength = Integer.MIN_VALUE;
+			for (String label : this.record.keys()) {
 				maxLabelLength = Math.max(maxLabelLength, label.length());
+				maxTextLength = Math.max(maxTextLength, this.record.get(label).toString().length());
+			}
+			
+			Duration totalDuration = Duration.ZERO;
+			for (Duration thisDuration : record.values())
+				totalDuration = totalDuration.plus(thisDuration);
+			
+			final long totalMillis = totalDuration.toMillis();
 			
 			System.out.println();
 			System.out.println("-=-=-=-=-=-=-=-=- PROFILING RESULTS -=-=-=-=-=-=-=-=-");
@@ -118,11 +126,19 @@ public class Profiler {
 				System.out.println("    (no results)");
 			else
 				for (String label : labels) {
+					
+					final Duration currentDuration = this.record.get(label);
+					final long currentMillis = currentDuration.toMillis();
+					
 					System.out.print("   [");
 					System.out.print(label);
 					System.out.print("]");
 					System.out.print(Strings.repeat(" ", maxLabelLength - label.length() + 3));
-					System.out.println(this.record.get(label).toString());
+					System.out.print(currentDuration.toString());
+					System.out.print(Strings.repeat(" ", maxTextLength - currentDuration.toString().length() + 1));
+					System.out.print("(");
+					System.out.printf("%2.4f", (double) currentMillis / (double) totalMillis * 100.0);
+					System.out.println("%)");
 				}
 			System.out.println();
 			System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");

@@ -5,6 +5,8 @@ package org.snowjak.hivemind.engine.systems;
 
 import org.snowjak.hivemind.behavior.support.BehaviorScript;
 import org.snowjak.hivemind.engine.components.HasBehavior;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -45,7 +47,11 @@ public class BehaviorProcessingSystem extends IteratingSystem {
 				return;
 			}
 		
+		final ProfilerTimer behaviorStepTimer = Profiler.get().start("BehaviorProcessingSystem - behavior.step()");
+		
 		behavior.getBehavior().setObject(entity);
 		behavior.getBehavior().step();
+		
+		behaviorStepTimer.stop();
 	}
 }

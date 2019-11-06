@@ -9,6 +9,8 @@ import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.map.GameMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -45,6 +47,8 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 	@Override
 	public void update(float deltaTime) {
 		
+		final ProfilerTimer timer = Profiler.get().start("OwnMapFOVInsertingSystem (overall)");
+		
 		utm = getEngine().getSystem(UniqueTagManager.class);
 		
 		if (!utm.has(Tags.WORLD_MAP))
@@ -62,6 +66,8 @@ public class OwnMapFOVInsertingSystem extends IteratingSystem {
 		
 		utm = null;
 		worldMap = null;
+		
+		timer.stop();
 	}
 	
 	@Override

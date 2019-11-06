@@ -26,6 +26,8 @@ import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
 import org.snowjak.hivemind.gamescreen.updates.MapUpdate;
 import org.snowjak.hivemind.map.EntityMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 import org.snowjak.hivemind.util.SpatialMap.SpatialOperation;
 
 import com.badlogic.ashley.core.ComponentMapper;
@@ -110,7 +112,7 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 	
 	@Override
 	public void update(float deltaTime) {
-		
+		final ProfilerTimer timer = Profiler.get().start("GameScreenUpdatingSystem (overall)");
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
@@ -121,6 +123,8 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 		
 		updateMap(e, deltaTime);
 		updateEntities(e, deltaTime);
+		
+		timer.stop();
 	}
 	
 	private void updateMap(Entity screenMapEntity, float deltaTime) {

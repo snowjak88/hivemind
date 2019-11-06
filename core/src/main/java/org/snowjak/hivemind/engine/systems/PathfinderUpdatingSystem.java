@@ -6,6 +6,8 @@ package org.snowjak.hivemind.engine.systems;
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasPathfinder;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
@@ -62,10 +64,23 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 	}
 	
 	@Override
+	public void update(float deltaTime) {
+		
+		final ProfilerTimer timer = Profiler.get().start("PathfinderUpdatingSystem (overall)");
+		
+		super.update(deltaTime);
+		
+		timer.stop();
+	}
+	
+	@Override
 	protected void processEntity(Entity entity, float delta) {
 		
 		final HasMap hasMap = HAS_MAP.get(entity);
 		if (hasMap.getMap() == null)
+			return;
+		
+		if (hasMap.getUpdatedLocations().isEmpty())
 			return;
 		
 		final HasPathfinder hasPathfinder;
@@ -75,24 +90,26 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 		} else
 			hasPathfinder = HAS_PATHFINDER.get(entity);
 		
-		if (hasPathfinder.getLock().tryAcquire()) {
-			
-			if (hasPathfinder.getPathfinder() != null) {
+		if (hasPathfinder.getPathfinder() == null || hasPathfinder.getPathfinder().width != hasMap.getMap().getWidth()
+				|| hasPathfinder.getPathfinder().height != hasMap.getMap().getHeight())
+			if (hasPathfinder.getLock().tryAcquire()) {
 				
-				//
-				// Reinitialize an existing pathfinder if width/height don't match OR if HasMap
-				// has any recently-updated cells
-				//
+				if (hasPathfinder.getPathfinder() != null) {
+					
+					//
+					// Reinitialize an existing pathfinder if width/height don't match OR if HasMap
+					// has any recently-updated cells
+					//
+					
+					final DijkstraMap pf = hasPathfinder.getPathfinder();
+					if (pf.width != hasMap.getMap().getWidth() || pf.height != hasMap.getMap().getHeight()
+							|| !hasMap.getUpdatedLocations().isEmpty())
+						pf.initialize(hasMap.getMap().getSquidCharMap());
+					
+				} else
+					hasPathfinder.setPathfinder(new DijkstraMap(hasMap.getMap().getSquidCharMap()));
 				
-				final DijkstraMap pf = hasPathfinder.getPathfinder();
-				if (pf.width != hasMap.getMap().getWidth() || pf.height != hasMap.getMap().getHeight()
-						|| !hasMap.getUpdatedLocations().isEmpty())
-					pf.initialize(hasMap.getMap().getSquidCharMap());
-				
-			} else
-				hasPathfinder.setPathfinder(new DijkstraMap(hasMap.getMap().getSquidCharMap()));
-			
-			hasPathfinder.getLock().release();
-		}
+				hasPathfinder.getLock().release();
+			}
 	}
 }

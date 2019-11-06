@@ -8,6 +8,8 @@ import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.util.ArrayUtil;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
@@ -76,6 +78,18 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		copyToMap.getUpdatedLocations().or(fov.getVisible());
 	}
 	
+	
+	
+	@Override
+	public void update(float deltaTime) {
+		
+		final ProfilerTimer timer = Profiler.get().start("FOVCopyingSystem (overall)");
+		
+		super.update(deltaTime);
+		
+		timer.stop();
+	}
+
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		

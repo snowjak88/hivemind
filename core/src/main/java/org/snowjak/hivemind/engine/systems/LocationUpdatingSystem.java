@@ -8,6 +8,8 @@ import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasUpdatedLocation;
 import org.snowjak.hivemind.engine.components.NeedsUpdatedLocation;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -41,6 +43,20 @@ public class LocationUpdatingSystem extends IteratingSystem {
 		super(Family.all(HasLocation.class, NeedsUpdatedLocation.class).get());
 	}
 	
+	
+	
+	@Override
+	public void update(float deltaTime) {
+		
+		final ProfilerTimer timer = Profiler.get().start("LocationUpdatingSystem (overall)");
+		
+		super.update(deltaTime);
+		
+		timer.stop();
+	}
+
+
+
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		

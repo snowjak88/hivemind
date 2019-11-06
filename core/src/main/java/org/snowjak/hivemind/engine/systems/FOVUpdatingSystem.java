@@ -10,6 +10,8 @@ import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -46,10 +48,13 @@ public class FOVUpdatingSystem extends IteratingSystem {
 	
 	@Override
 	public void update(float deltaTime) {
+		final ProfilerTimer timer = Profiler.get().start("FOVUpdatingSystem (overall)");
 		
 		super.update(deltaTime);
 		
 		parallel.awaitAll();
+		
+		timer.stop();
 	}
 	
 	@Override

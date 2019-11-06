@@ -5,6 +5,8 @@ package org.snowjak.hivemind.engine.systems;
 
 import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.util.ArrayUtil;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
@@ -27,6 +29,20 @@ public class FOVResettingSystem extends IteratingSystem {
 		super(Family.all(HasFOV.class).get());
 	}
 	
+	
+	
+	@Override
+	public void update(float deltaTime) {
+		
+		final ProfilerTimer timer = Profiler.get().start("FOVResettingSystem (overall)");
+		
+		super.update(deltaTime);
+		
+		timer.stop();
+	}
+
+
+
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		

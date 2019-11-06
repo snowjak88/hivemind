@@ -7,6 +7,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
+
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.EntitySystem;
 
@@ -25,6 +28,7 @@ public class RunnableExecutingSystem extends EntitySystem {
 	
 	@Override
 	public void update(float deltaTime) {
+		final ProfilerTimer timer = Profiler.get().start("RunnableExecutingSystem (overall)");
 		
 		super.update(deltaTime);
 		
@@ -35,6 +39,8 @@ public class RunnableExecutingSystem extends EntitySystem {
 			
 			update.run();
 		}
+		
+		timer.stop();
 	}
 	
 	/**

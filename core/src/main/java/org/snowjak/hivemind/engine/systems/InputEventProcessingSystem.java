@@ -7,6 +7,8 @@ import org.snowjak.hivemind.engine.systems.input.BaseInputState;
 import org.snowjak.hivemind.engine.systems.input.InputSystemState;
 import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.gamescreen.InputEventListener;
+import org.snowjak.hivemind.util.Profiler;
+import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
 import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.gdx.ai.fsm.StackStateMachine;
@@ -33,6 +35,7 @@ public class InputEventProcessingSystem extends EntitySystem {
 	
 	@Override
 	public void update(float deltaTime) {
+		final ProfilerTimer timer = Profiler.get().start("InputEventProcessingSystem (overall)");
 		
 		super.update(deltaTime);
 		
@@ -40,6 +43,8 @@ public class InputEventProcessingSystem extends EntitySystem {
 			stateMachine.changeState(new BaseInputState());
 		
 		stateMachine.update();
+		
+		timer.stop();
 	}
 	
 	public StackStateMachine<InputEventProcessingSystem, InputSystemState> getStateMachine() {
