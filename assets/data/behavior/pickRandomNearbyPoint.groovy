@@ -25,20 +25,37 @@ behavior = task {
 		
 		def loc = get(HasLocation)
 		def hm = get(HasMap)
+		def myMap = hm.getMap()
+		
+		if(myMap == null)
+			return Status.RUNNING
 		
 		prop["nearbyPoint-task"] = schedule({
-			def floors = new GreasedRegion(hm.getMap().getSquidCharMap(), (char) '#').not()
-			def known = hm.getMap().getKnown()
-			def nearby = new GreasedRegion(hm.getMap().getWidth(), hm.getMap().getHeight())
-							.insert(loc.getLocation())
-							.flood(floors.and(known), 8)
+			def floors = prop["floors-cache"]
+			if(floors == null) {
+				floors = new GreasedRegion(myMap.getWidth(), myMap.getHeight())
+				prop["floors-cache"] = floors
+			}
+			floors.refill(myMap.getSquidCharMap(), (char) '#').not()
+			
+			def known = myMap.getKnown()
+			
+			def nearby = prop["nearby-cache"]
+			if(nearby == null) {
+				nearby = new GreasedRegion(myMap.getWidth(), myMap.getHeight())
+				prop["nearby-cache"] = nearby
+			}
+			nearby.fill(false)
+					.insert(loc.getLocation())
+					.flood(floors.and(known), 8)
+			
 			nearby.singleRandom(RNG.get())
 		})
 		
 		return Status.RUNNING
 		
 	} catch (Throwable t) {
-		
+		println "Exception while picking random point -- ${t.class.simpleName} -- ${t.getMessage()}"
 		return Status.FAILED
 	}
 }

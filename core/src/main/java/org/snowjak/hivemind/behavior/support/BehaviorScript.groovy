@@ -49,36 +49,31 @@ public abstract class BehaviorScript extends Script {
 		
 		if(!CACHED_SCRIPTS.containsKey(name)) {
 			
-			for(Path p : MoreFiles.fileTraverser().breadthFirst(Gdx.files.local(ROOT_PATH).file.toPath())) {
-				def f = p.toFile()
-				if(!f.exists())
-					continue
-				if(!f.isFile())
-					continue
-				if(!f.name.equalsIgnoreCase(name + ".groovy"))
-					continue
-				
-				if(COMPILER_CONFIG == null) {
-					def icz = new ImportCustomizer()
-					icz.addImport "GreasedRegion", GreasedRegion.class.name
-					icz.addImport "Status", Status.class.name
-					icz.addImport "RNG", RNG.class.name
-					def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
-					sr.getClassesImplementing(Component.class.name).filter({!it.isAbstract() && !it.isInterfaceOrAnnotation()}).forEach {
-						icz.addImports(it.loadClass().name)
-					}
-					
-					COMPILER_CONFIG = new CompilerConfiguration()
-					COMPILER_CONFIG.scriptBaseClass = BehaviorScript.class.name
-					COMPILER_CONFIG.compilationCustomizers << icz
+			def f = Gdx.files.local(ROOT_PATH + name + ".groovy").file
+			
+			if(!f.exists())
+				throw new RuntimeException("Cannot load behavior-script [$name] -- does not exist at $f.path")
+			if(!f.isFile())
+				throw new RuntimeException("Cannot load behavior-script [$name] -- $f.path is not a file")
+			
+			if(COMPILER_CONFIG == null) {
+				def icz = new ImportCustomizer()
+				icz.addImport "GreasedRegion", GreasedRegion.class.name
+				icz.addImport "Status", Status.class.name
+				icz.addImport "RNG", RNG.class.name
+				def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
+				sr.getClassesImplementing(Component.class.name).filter({!it.isAbstract() && !it.isInterfaceOrAnnotation()}).forEach {
+					icz.addImports(it.loadClass().name)
 				}
 				
-				def shell = new GroovyShell(this.class.classLoader, new Binding(), COMPILER_CONFIG)
-				
-				CACHED_SCRIPTS.put name, shell.parse(f)
-				
-				break;
+				COMPILER_CONFIG = new CompilerConfiguration()
+				COMPILER_CONFIG.scriptBaseClass = BehaviorScript.class.name
+				COMPILER_CONFIG.compilationCustomizers << icz
 			}
+			
+			def shell = new GroovyShell(this.class.classLoader, new Binding(), COMPILER_CONFIG)
+			
+			CACHED_SCRIPTS.put name, shell.parse(f)
 		}
 		
 		def bs = CACHED_SCRIPTS.get(name);
@@ -92,6 +87,16 @@ public abstract class BehaviorScript extends Script {
 		
 		def label = binding.variables["label"]
 		def behavior = binding.variables["behavior"]
+		
+		if(behavior == null) {
+			println "[behavior] is null!"
+			throw new RuntimeException("Cannot load behavior-script -- [behavior] is required!")
+		}
+		
+		if(!(behavior instanceof Task)) {
+			println "[behavior] is not a Task!"
+			throw new RuntimeException("Cannot load behavior-script -- [behavior] has not been initialized as a task")
+		}
 		
 		behavior
 	}
