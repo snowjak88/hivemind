@@ -4,6 +4,7 @@
 package org.snowjak.hivemind.util;
 
 import java.util.EnumSet;
+import java.util.function.Consumer;
 
 import org.eclipse.collections.api.map.primitive.MutableObjectCharMap;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectCharHashMap;
@@ -33,6 +34,15 @@ public class Drawing {
 	 * @param color
 	 */
 	public static void drawBox(BoxStyle style, SparseLayers surface, Coord from, Coord to, float color) {
+		
+		if (style == null)
+			return;
+		if (surface == null)
+			return;
+		if (from == null)
+			return;
+		if (to == null)
+			return;
 		
 		if (from.equals(to))
 			surface.put(from.x, from.y, '#', color);
@@ -69,6 +79,15 @@ public class Drawing {
 	 * @param color
 	 */
 	public static void drawBox(BoxStyle style, SparseTextMap layer, Coord from, Coord to, float color) {
+		
+		if (style == null)
+			return;
+		if (layer == null)
+			return;
+		if (from == null)
+			return;
+		if (to == null)
+			return;
 		
 		if (from.equals(to)) {
 			layer.place(from.x, from.y, '#', color);
