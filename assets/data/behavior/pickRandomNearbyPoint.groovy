@@ -33,7 +33,7 @@ behavior = task {
 		prop["nearbyPoint-task"] = schedule({
 			def floors = prop["floors-cache"]
 			if(floors == null) {
-				floors = new GreasedRegion(myMap.getWidth(), myMap.getHeight())
+				floors = new Region(myMap.getWidth(), myMap.getHeight())
 				prop["floors-cache"] = floors
 			}
 			floors.refill(myMap.getSquidCharMap(), (char) '#').not()
@@ -42,7 +42,7 @@ behavior = task {
 			
 			def nearby = prop["nearby-cache"]
 			if(nearby == null) {
-				nearby = new GreasedRegion(myMap.getWidth(), myMap.getHeight())
+				nearby = new Region(myMap.getWidth(), myMap.getHeight())
 				prop["nearby-cache"] = nearby
 			}
 			nearby.fill(false)

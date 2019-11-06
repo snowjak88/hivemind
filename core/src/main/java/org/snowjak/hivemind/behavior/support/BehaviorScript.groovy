@@ -3,7 +3,6 @@
  */
 package org.snowjak.hivemind.behavior.support
 
-import java.nio.file.Path
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 
@@ -15,6 +14,7 @@ import org.snowjak.hivemind.concurrent.Executor
 import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
 import org.snowjak.hivemind.engine.systems.UniqueTagManager
+import org.snowjak.hivemind.util.ExtGreasedRegion
 
 import com.badlogic.ashley.core.Component
 import com.badlogic.ashley.core.ComponentMapper
@@ -29,11 +29,7 @@ import com.badlogic.gdx.ai.btree.decorator.Invert
 import com.badlogic.gdx.ai.btree.decorator.Repeat
 import com.badlogic.gdx.ai.btree.decorator.UntilFail
 
-import com.google.common.io.MoreFiles
-
 import io.github.classgraph.ClassGraph
-
-import squidpony.squidmath.GreasedRegion
 
 /**
  * @author snowjak88
@@ -58,7 +54,7 @@ public abstract class BehaviorScript extends Script {
 			
 			if(COMPILER_CONFIG == null) {
 				def icz = new ImportCustomizer()
-				icz.addImport "GreasedRegion", GreasedRegion.class.name
+				icz.addImport "Region", ExtGreasedRegion.class.name
 				icz.addImport "Status", Status.class.name
 				icz.addImport "RNG", RNG.class.name
 				def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
