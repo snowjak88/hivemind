@@ -65,7 +65,7 @@ public class GameMap {
 			this.material = ArrayUtil.copy(toCopy.material);
 			this.known.remake(toCopy.known);
 			
-			this.visibility = new double[width][height];
+			this.visibility = ArrayUtil.copy(toCopy.visibility);
 		}
 	}
 	
@@ -90,6 +90,7 @@ public class GameMap {
 			this.known.resizeAndEmpty(width, height).or(onlyWithin);
 			
 			this.visibility = new double[width][height];
+			onlyWithin.inverseMask(toCopy.visibility, 0);
 			
 			this.insert(toCopy, onlyWithin);
 		}
@@ -116,6 +117,7 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
+		this.visibility = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -125,13 +127,11 @@ public class GameMap {
 				
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
-				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
-				material[i][j] = Materials.get().getIndex(materials[i][j]);
+				
+				set(i, j, TerrainTypes.get().getIndexOf(tt), Materials.get().getIndex(materials[i][j]));
 			}
 		}
 		this.known.refill(terrain, 0, Short.MAX_VALUE);
-		
-		this.visibility = new double[width][height];
 	}
 	
 	/**
@@ -158,6 +158,7 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
+		this.visibility = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -167,14 +168,11 @@ public class GameMap {
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				
-				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
-				material[i][j] = Materials.get().getIndex(materials[i][j]);
+				set(i, j, TerrainTypes.get().getIndexOf(tt), Materials.get().getIndex(materials[i][j]));
 			}
 		}
 		
 		this.known = new ExtGreasedRegion(known);
-		
-		this.visibility = new double[width][height];
 	}
 	
 	/**
@@ -260,6 +258,7 @@ public class GameMap {
 				
 				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
 				this.material = insertOnly.inverseMask(this.material, insertFrom.material);
+				this.visibility = insertOnly.inverseMask(this.visibility, insertFrom.visibility);
 				
 				this.known.or(insertOnly);
 				
