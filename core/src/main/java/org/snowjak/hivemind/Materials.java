@@ -145,8 +145,11 @@ public class Materials {
 		private transient float colorFloat = 0f;
 		@SerializedName("visibility-resistance")
 		private float visibilityResistance = 0f;
-		@SerializedName("additive-visibility")
-		private boolean additiveVisibilityResistance = false;
+		@SerializedName("is-fluid")
+		private boolean isFluid = false;
+		@SerializedName("max-depth")
+		private int maxDepth = 1;
+		@SerializedName("flow-speed")
 		private float flowSpeed = 0f;
 		
 		public String getName() {
@@ -187,14 +190,24 @@ public class Materials {
 			this.visibilityResistance = visibilityResistance;
 		}
 		
-		public boolean isAdditiveVisibilityResistance() {
+		public boolean isFluid() {
 			
-			return additiveVisibilityResistance;
+			return isFluid;
 		}
 		
-		public void setAdditiveVisibilityResistance(boolean additiveVisibilityResistance) {
+		public void setFluid(boolean isFluid) {
 			
-			this.additiveVisibilityResistance = additiveVisibilityResistance;
+			this.isFluid = isFluid;
+		}
+		
+		public int getMaxDepth() {
+			
+			return maxDepth;
+		}
+		
+		public void setMaxDepth(int maxDepth) {
+			
+			this.maxDepth = maxDepth;
 		}
 		
 		public float getFlowSpeed() {

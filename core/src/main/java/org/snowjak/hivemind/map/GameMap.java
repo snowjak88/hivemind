@@ -32,10 +32,9 @@ public class GameMap {
 	
 	private int width = 1, height = 1;
 	private short[][] terrain = new short[0][0], material = new short[1][1];
-	private double[][] modifiedVisibilityResistance = new double[1][1];
 	private ExtGreasedRegion known = new ExtGreasedRegion(1, 1);
 	
-	private double[][] baseVisibility = new double[1][1], totalVisibility = new double[1][1];
+	private double[][] visibility = new double[1][1];
 	private char[][] squidCharMap = null, charMap = null;
 	
 	/**
@@ -64,13 +63,9 @@ public class GameMap {
 			this.height = toCopy.height;
 			this.terrain = ArrayUtil.copy(toCopy.terrain);
 			this.material = ArrayUtil.copy(toCopy.material);
-			this.modifiedVisibilityResistance = ArrayUtil.copy(toCopy.modifiedVisibilityResistance);
 			this.known.remake(toCopy.known);
 			
-			this.baseVisibility = new double[width][height];
-			this.totalVisibility = new double[width][height];
-			recalculateBaseVisibility();
-			recalculateTotalVisibility();
+			this.visibility = new double[width][height];
 		}
 	}
 	
@@ -92,11 +87,9 @@ public class GameMap {
 			ArrayUtil.fill(terrain, (short) -1);
 			ArrayUtil.fill(material, (short) -1);
 			
-			this.modifiedVisibilityResistance = new double[width][height];
 			this.known.resizeAndEmpty(width, height).or(onlyWithin);
 			
-			this.baseVisibility = new double[width][height];
-			this.totalVisibility = new double[width][height];
+			this.visibility = new double[width][height];
 			
 			this.insert(toCopy, onlyWithin);
 		}
@@ -123,7 +116,6 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
-		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -135,16 +127,11 @@ public class GameMap {
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
 				material[i][j] = Materials.get().getIndex(materials[i][j]);
-				
-				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
 		this.known.refill(terrain, 0, Short.MAX_VALUE);
 		
-		this.baseVisibility = new double[width][height];
-		this.totalVisibility = new double[width][height];
-		recalculateBaseVisibility();
-		recalculateTotalVisibility();
+		this.visibility = new double[width][height];
 	}
 	
 	/**
@@ -171,7 +158,6 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
-		modifiedVisibilityResistance = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -183,16 +169,12 @@ public class GameMap {
 				
 				terrain[i][j] = TerrainTypes.get().getIndexOf(tt);
 				material[i][j] = Materials.get().getIndex(materials[i][j]);
-				modifiedVisibilityResistance[i][j] = 0d;
 			}
 		}
 		
 		this.known = new ExtGreasedRegion(known);
 		
-		this.baseVisibility = new double[width][height];
-		this.totalVisibility = new double[width][height];
-		recalculateBaseVisibility();
-		recalculateTotalVisibility();
+		this.visibility = new double[width][height];
 	}
 	
 	/**
@@ -244,13 +226,9 @@ public class GameMap {
 			ArrayUtil.fill(terrain, (short) -1);
 			ArrayUtil.fill(material, (short) -1);
 			
-			modifiedVisibilityResistance = new double[width][height];
 			known.resizeAndEmpty(width, height);
 			
-			this.baseVisibility = new double[width][height];
-			this.totalVisibility = new double[width][height];
-			recalculateBaseVisibility();
-			recalculateTotalVisibility();
+			this.visibility = new double[width][height];
 			
 			squidCharMap = null;
 			charMap = null;
@@ -282,13 +260,8 @@ public class GameMap {
 				
 				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
 				this.material = insertOnly.inverseMask(this.material, insertFrom.material);
-				this.modifiedVisibilityResistance = insertOnly.inverseMask(this.modifiedVisibilityResistance,
-						insertFrom.modifiedVisibilityResistance);
 				
 				this.known.or(insertOnly);
-				
-				recalculateBaseVisibility();
-				recalculateTotalVisibility();
 				
 				squidCharMap = null;
 				charMap = null;
@@ -359,9 +332,8 @@ public class GameMap {
 				this.material[x][y] = material;
 			
 			this.known.set((this.terrain[x][y] >= 0), x, y);
-			baseVisibility[x][y] = TerrainTypes.get().getAt(this.terrain[x][y]).getVisibilityResistance()
+			visibility[x][y] = TerrainTypes.get().getAt(this.terrain[x][y]).getVisibilityResistance()
 					* Materials.get().get(this.material[x][y]).getVisibilityResistance();
-			totalVisibility[x][y] = baseVisibility[x][y] + modifiedVisibilityResistance[x][y];
 			getSquidCharMap()[x][y] = (terrainType < 0) ? 0 : TerrainTypes.get().getAt(terrainType).getSquidChar();
 			charMap = null;
 		}
@@ -396,28 +368,16 @@ public class GameMap {
 	}
 	
 	/**
-	 * Compile a {@code double[][]} representing the <em>base</em>
-	 * visibility-resistance of the Map (before any modifiers are applied).
+	 * Compile a {@code double[][]} representing the visibility-resistance of the
+	 * Map (being the product of the terrain-type and material
+	 * visibility-resistances).
 	 * 
 	 * @return
 	 */
-	public double[][] getBaseVisibilityResistance() {
+	public double[][] getVisibilityResistance() {
 		
 		synchronized (this) {
-			return baseVisibility;
-		}
-	}
-	
-	/**
-	 * Compile a {@code double[][]} representing the <em>total</em>
-	 * visibility-resistance of the Map (after any modifiers are applied).
-	 * 
-	 * @return
-	 */
-	public double[][] getTotalVisibilityResistance() {
-		
-		synchronized (this) {
-			return totalVisibility;
+			return visibility;
 		}
 	}
 	
@@ -704,10 +664,8 @@ public class GameMap {
 		synchronized (this) {
 			ArrayUtil.fill(terrain, (short) -1);
 			ArrayUtil.fill(material, (short) -1);
-			ArrayUtil.fill(modifiedVisibilityResistance, 0d);
 			known.clear();
-			ArrayUtil.fill(baseVisibility, 0d);
-			ArrayUtil.fill(totalVisibility, 0d);
+			ArrayUtil.fill(visibility, 0d);
 			squidCharMap = null;
 			charMap = null;
 		}
@@ -723,10 +681,8 @@ public class GameMap {
 		synchronized (this) {
 			terrain = onlyWithin.inverseMask(terrain, (short) -1);
 			material = onlyWithin.inverseMask(material, (short) -1);
-			modifiedVisibilityResistance = onlyWithin.inverseMask(modifiedVisibilityResistance, 0d);
 			known.andNot(onlyWithin);
-			baseVisibility = onlyWithin.inverseMask(baseVisibility, 0d);
-			totalVisibility = onlyWithin.inverseMask(totalVisibility, 0d);
+			visibility = onlyWithin.inverseMask(visibility, 0d);
 			squidCharMap = null;
 			charMap = null;
 		}
@@ -772,27 +728,5 @@ public class GameMap {
 			for (int y = 0; y < colorIndices[x].length; y++)
 				result[x][y] = ColorCache.get().get(colorIndices[x][y]);
 		return result;
-	}
-	
-	private void recalculateBaseVisibility() {
-		
-		synchronized (this) {
-			for (int i = 0; i < width; i++)
-				for (int j = 0; j < height; j++) {
-					final TerrainType tt = getTerrain(i, j);
-					final Material mat = getMaterial(i, j);
-					baseVisibility[i][j] = ((tt == null) ? 1f : tt.getVisibilityResistance())
-							* ((mat == null) ? 1f : mat.getVisibilityResistance());
-				}
-		}
-	}
-	
-	private void recalculateTotalVisibility() {
-		
-		synchronized (this) {
-			for (int i = 0; i < width; i++)
-				for (int j = 0; j < height; j++)
-					totalVisibility[i][j] = baseVisibility[i][j] + modifiedVisibilityResistance[i][j];
-		}
 	}
 }

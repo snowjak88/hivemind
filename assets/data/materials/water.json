@@ -1,0 +1,8 @@
+{
+	"name": "water",
+	"color": "4682B424",
+	"visibility-resistance": 0.1,
+	"is-fluid": true,
+	"max-depth": 10,
+	"flow-speed": 1.0
+}
