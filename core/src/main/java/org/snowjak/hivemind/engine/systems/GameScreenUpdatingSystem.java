@@ -370,33 +370,31 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 			// Finally -- check on entities which are in "previously-visible" and not in
 			// "visible". These entities should be drawn as "ghosted".
 			//
-			final Coord[] noLongerVisibleLocations = noLongerVisible.asCoords();
-			for (int i = 0; i < noLongerVisibleLocations.length; i++) {
-				final OrderedSet<Entity> noLongerVisibleEntities = entities.getAt(noLongerVisibleLocations[i]);
-				for (int j = 0; j < noLongerVisibleEntities.size(); j++) {
-					final Entity e = noLongerVisibleEntities.getAt(j);
-					
-					if (!HAS_APPEARANCE.has(e) || !HAS_LOCATION.has(e))
-						continue;
-					
-					if (!HAS_GLYPH.has(e))
-						continue;
-					
-					final HasGlyph hg = HAS_GLYPH.get(e);
-					if (hg.isAwaitingCreation())
-						continue;
-					
-					final HasAppearance ha = HAS_APPEARANCE.get(e);
-					
-					final Color color = SColor.colorFromFloat(SColor.lerpFloatColors(ha.getColor().toFloatBits(),
-							ha.getGhostedColor().toFloatBits(), 0.75f));
-					
-					{
-						final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
-						upd.setGlyph(hg.getGlyph());
-						upd.setNewColor(color);
-						Context.getGameScreen().postGameScreenUpdate(upd);
-					}
+			final OrderedSet<Entity> noLongerVisibleEntities = entities.getWithin(noLongerVisible);
+			
+			for (int i = 0; i < noLongerVisibleEntities.size(); i++) {
+				final Entity e = noLongerVisibleEntities.getAt(i);
+				
+				if (!HAS_APPEARANCE.has(e) || !HAS_LOCATION.has(e))
+					continue;
+				
+				if (!HAS_GLYPH.has(e))
+					continue;
+				
+				final HasGlyph hg = HAS_GLYPH.get(e);
+				if (hg.isAwaitingCreation())
+					continue;
+				
+				final HasAppearance ha = HAS_APPEARANCE.get(e);
+				
+				final Color color = SColor.colorFromFloat(
+						SColor.lerpFloatColors(ha.getColor().toFloatBits(), ha.getGhostedColor().toFloatBits(), 0.75f));
+				
+				{
+					final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
+					upd.setGlyph(hg.getGlyph());
+					upd.setNewColor(color);
+					Context.getGameScreen().postGameScreenUpdate(upd);
 				}
 			}
 		}

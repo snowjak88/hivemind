@@ -5,13 +5,19 @@ package org.snowjak.hivemind.map;
 
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
+import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.systems.EntityMapMaintenanceSystem;
 import org.snowjak.hivemind.util.SpatialMap;
 
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.PooledEngine;
 
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.GreasedRegion;
+import squidpony.squidmath.OrderedSet;
 
 /**
  * Being a mapping between {@link Entity Entities} and {@link Coord locations}.
@@ -29,6 +35,10 @@ import squidpony.squidmath.Coord;
  *    {@link Context#getEngine()}.{@link Engine#addEntityListener(EntityListener) addEntityListener(myEntities)};
  *    ...
  * </pre>
+ * 
+ * Note that this registration will <em>probably</em> be handled automatically
+ * by {@link EntityMapMaintenanceSystem}, at least for {@link Entity Entities}
+ * that become associated with {@link HasMap} instances.
  * </p>
  * 
  * @author snowjak88
@@ -53,4 +63,29 @@ public class EntityMap extends SpatialMap<Entity> implements EntityListener {
 		}
 	}
 	
+	/**
+	 * Get the set of held {@link Entity Entities) at the given {@link Coord
+	 * location}, that are associated with the given {@link Component}-type.
+	 * 
+	 * @param region
+	 * @param clazz
+	 * @return
+	 */
+	public OrderedSet<Entity> getWithin(GreasedRegion region, Class<? extends Component> clazz) {
+		
+		return getWithin(region, (e) -> ComponentMapper.getFor(clazz).has(e));
+	}
+	
+	/**
+	 * Get the set of held {@link Entity Entities} at the given {@link Coord
+	 * location}, that are associated with the given {@link Component}-type.
+	 * 
+	 * @param location
+	 * @param clazz
+	 * @return
+	 */
+	public OrderedSet<Entity> getAt(Coord location, Class<? extends Component> clazz) {
+		
+		return getAt(location, (e) -> ComponentMapper.getFor(clazz).has(e));
+	}
 }

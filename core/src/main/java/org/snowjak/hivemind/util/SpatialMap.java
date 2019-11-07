@@ -4,8 +4,11 @@
 package org.snowjak.hivemind.util;
 
 import java.util.EnumMap;
+import java.util.Iterator;
+import java.util.function.Predicate;
 
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.GreasedRegion;
 import squidpony.squidmath.OrderedMap;
 import squidpony.squidmath.OrderedSet;
 
@@ -24,6 +27,65 @@ public class SpatialMap<T> {
 	
 	private final EnumMap<SpatialOperation, OrderedSet<T>> recentUpdates = new EnumMap<>(SpatialOperation.class);
 	private final OrderedSet<T> recentlyUpdated = new OrderedSet<>();
+	
+	/**
+	 * Get the set of objects held within the given {@link GreasedRegion region},
+	 * that also satisfy the given {@link Predicate predicate}.
+	 * 
+	 * @param region
+	 * @return
+	 */
+	public OrderedSet<T> getWithin(GreasedRegion region, Predicate<T> predicate) {
+		
+		synchronized (this) {
+			final Coord[] coords = region.asCoords();
+			final OrderedSet<T> result = new OrderedSet<>();
+			for (int i = 0; i < coords.length; i++)
+				result.addAll(getAt(coords[i], predicate));
+			
+			return result;
+		}
+	}
+	
+	/**
+	 * Get the set of objects held within the given {@link GreasedRegion region}.
+	 * 
+	 * @param region
+	 * @return
+	 */
+	public OrderedSet<T> getWithin(GreasedRegion region) {
+		
+		synchronized (this) {
+			final Coord[] coords = region.asCoords();
+			final OrderedSet<T> result = new OrderedSet<>();
+			for (int i = 0; i < coords.length; i++)
+				result.addAll(getAt(coords[i]));
+			
+			return result;
+		}
+	}
+	
+	/**
+	 * Get the set of objects held at the given {@link Coord location}, which also
+	 * satisfy the given {@link Predicate predicate}.
+	 * 
+	 * @param location
+	 * @param predicate
+	 * @return
+	 */
+	public OrderedSet<T> getAt(Coord location, Predicate<T> predicate) {
+		
+		synchronized (this) {
+			@SuppressWarnings("unchecked")
+			final OrderedSet<T> values = (OrderedSet<T>) getAt(location).clone();
+			
+			final Iterator<T> iterator = values.iterator();
+			while (iterator.hasNext())
+				if (!predicate.test(iterator.next()))
+					iterator.remove();
+			return values;
+		}
+	}
 	
 	/**
 	 * Get the set of objects held at the given {@link Coord location}.
