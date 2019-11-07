@@ -18,6 +18,8 @@ import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
+import squidpony.squidmath.Coord;
+
 /**
  * System which handles {@link Entity Entities} flagged as having updated
  * locations.
@@ -79,13 +81,8 @@ public class LocationUpdatingSystem extends IteratingSystem implements EntityLis
 	@Override
 	public void entityRemoved(Entity entity) {
 		
-		final Entity worldMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.WORLD_MAP);
-		if (worldMapEntity == null)
-			return;
-		if (!ComponentMapper.getFor(HasMap.class).has(worldMapEntity))
-			return;
-		final HasMap worldMap = ComponentMapper.getFor(HasMap.class).get(worldMapEntity);
-		worldMap.getEntities().remove(entity);
+		for (Entity mapEntity : getEngine().getEntitiesFor(Family.all(HasMap.class).get()))
+			HAS_MAP.get(mapEntity).getEntities().remove(entity);
 	}
 	
 	@Override
@@ -109,9 +106,11 @@ public class LocationUpdatingSystem extends IteratingSystem implements EntityLis
 		//
 		
 		final NeedsUpdatedLocation updatedLocation = NEED_UPDATED_LOC.get(entity);
-		
 		final HasLocation location = ComponentMapper.getFor(HasLocation.class).get(entity);
-		location.setLocation(updatedLocation.getNewLocation());
+		
+		final Coord newLocation = updatedLocation.getNewLocation();
+		
+		location.setLocation(newLocation);
 		entity.add(getEngine().createComponent(HasUpdatedLocation.class));
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
