@@ -18,7 +18,7 @@ import squidpony.squidgrid.gui.gdx.SColor;
  */
 public class HasAppearance implements Component, Poolable {
 	
-	private static final float GHOST_COLOR = SColor.AURORA_CLOUD.cpy().mul(1f, 1f, 1f, 0.25f).toFloatBits();
+	private static final float GHOST_COLOR = SColor.AURORA_CLOUD.cpy().mul(1f, 1f, 1f, 0.5f).toFloatBits();
 	
 	private char ch;
 	private Color color = null, ghostedColor = null;
@@ -46,7 +46,7 @@ public class HasAppearance implements Component, Poolable {
 	public void setColor(Color color) {
 		
 		this.color = color;
-		this.ghostedColor = SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR, 0.5f));
+		this.ghostedColor = SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR, 0.75f));
 	}
 	
 	@Override

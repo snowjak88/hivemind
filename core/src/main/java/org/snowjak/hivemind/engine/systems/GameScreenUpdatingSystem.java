@@ -70,8 +70,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMapper.getFor(HasGlyph.class);
 	
-	private static final ExtGreasedRegion emptyVisible = new ExtGreasedRegion(0, 0),
-			visibleDelta = new ExtGreasedRegion(0, 0), prevVisible = new ExtGreasedRegion(0, 0);
+	private static final ExtGreasedRegion emptyVisible = new ExtGreasedRegion(1, 1),
+			visibleDelta = new ExtGreasedRegion(1, 1), prevVisible = new ExtGreasedRegion(1, 1),
+			noLongerVisible = new ExtGreasedRegion(1, 1);
 	
 	private BatchedRunner batched = new BatchedRunner();
 	
@@ -112,6 +113,7 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 	
 	@Override
 	public void update(float deltaTime) {
+		
 		final ProfilerTimer timer = Profiler.get().start("GameScreenUpdatingSystem (overall)");
 		batched.runUpdates();
 		
@@ -197,7 +199,12 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 			if (visibleDelta.width != visible.width || visibleDelta.height != visible.height)
 				visibleDelta.resizeAndEmpty(visible.width, visible.height);
 			
+			if (noLongerVisible.width != visible.width || noLongerVisible.height != visible.height)
+				noLongerVisible.resizeAndEmpty(visible.width, visible.height);
+			
 			visibleDelta.remake(visible).xor(prevVisible);
+			
+			noLongerVisible.remake(prevVisible).andNot(visible);
 			
 			prevVisible.remake(visible);
 			
@@ -355,6 +362,42 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				e.remove(HasGlyph.class);
 				
 				entities.resetRecentlyUpdated(SpatialOperation.REMOVED, e);
+			}
+		}
+		
+		{
+			//
+			// Finally -- check on entities which are in "previously-visible" and not in
+			// "visible". These entities should be drawn as "ghosted".
+			//
+			final Coord[] noLongerVisibleLocations = noLongerVisible.asCoords();
+			for (int i = 0; i < noLongerVisibleLocations.length; i++) {
+				final OrderedSet<Entity> noLongerVisibleEntities = entities.getAt(noLongerVisibleLocations[i]);
+				for (int j = 0; j < noLongerVisibleEntities.size(); j++) {
+					final Entity e = noLongerVisibleEntities.getAt(j);
+					
+					if (!HAS_APPEARANCE.has(e) || !HAS_LOCATION.has(e))
+						continue;
+					
+					if (!HAS_GLYPH.has(e))
+						continue;
+					
+					final HasGlyph hg = HAS_GLYPH.get(e);
+					if (hg.isAwaitingCreation())
+						continue;
+					
+					final HasAppearance ha = HAS_APPEARANCE.get(e);
+					
+					final Color color = SColor.colorFromFloat(SColor.lerpFloatColors(ha.getColor().toFloatBits(),
+							ha.getGhostedColor().toFloatBits(), 0.75f));
+					
+					{
+						final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
+						upd.setGlyph(hg.getGlyph());
+						upd.setNewColor(color);
+						Context.getGameScreen().postGameScreenUpdate(upd);
+					}
+				}
 			}
 		}
 	}
