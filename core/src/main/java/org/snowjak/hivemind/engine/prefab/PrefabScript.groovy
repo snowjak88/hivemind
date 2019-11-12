@@ -3,7 +3,7 @@
  */
 package org.snowjak.hivemind.engine.prefab
 
-import java.nio.file.Path
+import java.util.logging.Logger
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
@@ -11,8 +11,8 @@ import org.snowjak.hivemind.Context
 import org.snowjak.hivemind.RNG
 import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
-import org.snowjak.hivemind.engine.systems.EntityRefManager
-import org.snowjak.hivemind.engine.systems.UniqueTagManager
+import org.snowjak.hivemind.engine.systems.manager.EntityRefManager
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager
 import org.snowjak.hivemind.util.ExtGreasedRegion
 
 import com.badlogic.ashley.core.Component
@@ -20,7 +20,6 @@ import com.badlogic.ashley.core.ComponentMapper
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.ai.btree.Task.Status
-import com.google.common.io.MoreFiles
 
 import io.github.classgraph.ClassGraph
 import squidpony.squidgrid.gui.gdx.SColor
@@ -32,19 +31,37 @@ import squidpony.squidmath.SquidID
  */
 public abstract class PrefabScript extends Script {
 	
+	private static final Logger LOG = Logger.getLogger(PrefabScript.class.name)
+	
 	private static final String ROOT_PATH = "data${File.separator}prefab${File.separator}"
 	private static final Map<String,PrefabScript> CACHED_SCRIPTS = new LinkedHashMap<>();
 	private static CompilerConfiguration COMPILER_CONFIG = null;
 	
+	/**
+	 * Load the given PrefabScript by name -- e.g.:
+	 * <pre>
+	 *   PrefabScript.byName("my-entity")
+	 *   
+	 * will evaluate to
+	 *   
+	 *   .../data/prefab/my-entity.groovy
+	 * </pre>
+	 * @param name
+	 * @return {@code null} if the given prefab cannot be loaded for any reason
+	 */
 	public static PrefabScript byName(String name) {
 		
 		if(!CACHED_SCRIPTS.containsKey(name)) {
 			
 			def f = Gdx.files.local(ROOT_PATH + name + ".groovy").file;
-			if(!f.exists())
-				throw new RuntimeException("Cannot load prefab-script [$name] -- does not exist at $f.path")
-			if(!f.isFile())
-				throw new RuntimeException("Cannot load prefab-script [$name] -- $f.path is not a file")
+			if(!f.exists()) {
+				LOG.severe "Cannot load prefab-script [$name] -- does not exist at $f.path"
+				return null
+			}
+			if(!f.isFile()) {
+				LOG.severe "Cannot load prefab-script [$name] -- $f.path is not a file"
+				return null
+			}
 			
 			if(COMPILER_CONFIG == null) {
 				def icz = new ImportCustomizer()
@@ -72,6 +89,12 @@ public abstract class PrefabScript extends Script {
 		CACHED_SCRIPTS.get(name);
 	}
 	
+	/**
+	 * Execute this PrefabScript. Creates a new {@link Entity} using the current
+	 * {@link org.snowjak.hivemind.engine.Engine}. Takes care of adding that Entity to the Engine.
+	 * 
+	 * @throws RuntimeException if the prefab-script cannot be executed
+	 */
 	@Override
 	public Entity run() {
 		

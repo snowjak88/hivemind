@@ -13,6 +13,7 @@ import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasGlyph;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 import org.snowjak.hivemind.gamescreen.updates.ClearMapUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
@@ -239,6 +240,7 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 		//
 		// * ADDED --> add a glyph for the entity
 		// * MOVED --> move the glyph (if visible)
+		// * REFRESH --> refresh the glyph's color and location, if present
 		// * REMOVED --> remove the glyph
 		//
 		// Complicating this is that the glyph's appearance will be altered
@@ -269,8 +271,8 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				hg.setY(knownLocation.y);
 				e.add(hg);
 				
-				final Color color = (isVisible && isLocationAccurate) ? ha.getColor()
-						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getColor().toFloatBits(),
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
+						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
 								ha.getGhostedColor().toFloatBits(), 0.5f));
 				
 				{
@@ -314,8 +316,8 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				final boolean isVisible = fov.getVisible().contains(knownLocation);
 				final HasAppearance ha = HAS_APPEARANCE.get(e);
 				
-				final Color color = (isVisible && isLocationAccurate) ? ha.getColor()
-						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getColor().toFloatBits(),
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
+						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
 								ha.getGhostedColor().toFloatBits(), 0.5f));
 				
 				{
@@ -334,6 +336,52 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				}
 				
 				entities.resetRecentlyUpdated(SpatialOperation.MOVED, e);
+			}
+		}
+		
+		{
+			final OrderedSet<Entity> refreshed = entities.getRecentlyUpdated(SpatialOperation.REFRESH);
+			for (int i = 0; i < refreshed.size(); i++) {
+				
+				final Entity e = refreshed.getAt(i);
+				
+				if (!HAS_APPEARANCE.has(e) || !HAS_LOCATION.has(e))
+					continue;
+				
+				if (!HAS_GLYPH.has(e))
+					continue;
+				
+				final HasGlyph hg = HAS_GLYPH.get(e);
+				
+				if (hg.isAwaitingCreation())
+					continue;
+				
+				final Coord trueLocation = HAS_LOCATION.get(e).getLocation();
+				final Coord knownLocation = entities.getLocation(e);
+				final boolean isLocationAccurate = trueLocation.equals(knownLocation);
+				final boolean isVisible = fov.getVisible().contains(knownLocation);
+				final HasAppearance ha = HAS_APPEARANCE.get(e);
+				
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
+						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
+								ha.getGhostedColor().toFloatBits(), 0.5f));
+				
+				{
+					final GlyphMovedUpdate upd = GameScreenUpdatePool.get().get(GlyphMovedUpdate.class);
+					upd.setToX(knownLocation.x);
+					upd.setToY(knownLocation.y);
+					upd.setGlyph(hg.getGlyph());
+					Context.getGameScreen().postGameScreenUpdate(upd);
+				}
+				
+				{
+					final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
+					upd.setGlyph(hg.getGlyph());
+					upd.setNewColor(color);
+					Context.getGameScreen().postGameScreenUpdate(upd);
+				}
+				
+				entities.resetRecentlyUpdated(SpatialOperation.REFRESH, e);
 			}
 		}
 		
@@ -387,8 +435,8 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				
 				final HasAppearance ha = HAS_APPEARANCE.get(e);
 				
-				final Color color = SColor.colorFromFloat(
-						SColor.lerpFloatColors(ha.getColor().toFloatBits(), ha.getGhostedColor().toFloatBits(), 0.75f));
+				final Color color = SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
+						ha.getGhostedColor().toFloatBits(), 0.75f));
 				
 				{
 					final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);

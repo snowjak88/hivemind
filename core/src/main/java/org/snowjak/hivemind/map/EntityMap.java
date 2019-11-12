@@ -6,7 +6,7 @@ package org.snowjak.hivemind.map;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.engine.systems.EntityMapMaintenanceSystem;
+import org.snowjak.hivemind.engine.systems.maintenance.EntityMapMaintenanceSystem;
 import org.snowjak.hivemind.util.SpatialMap;
 
 import com.badlogic.ashley.core.Component;

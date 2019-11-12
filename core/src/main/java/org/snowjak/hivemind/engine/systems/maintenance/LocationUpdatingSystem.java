@@ -1,13 +1,14 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.maintenance;
 
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasUpdatedLocation;
 import org.snowjak.hivemind.engine.components.NeedsUpdatedLocation;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 

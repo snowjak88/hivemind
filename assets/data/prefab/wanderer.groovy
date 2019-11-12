@@ -1,10 +1,6 @@
 label = "wanderer"
 prefab = {
 	
-	def loc = create(HasLocation)
-	def floors = new Region(worldMap().getMap().getSquidCharMap(), (char) '.')
-	loc.location = floors.singleRandom(RNG.get())
-	
 	def move = create(CanMove)
 	move.speed = 1.5
 	

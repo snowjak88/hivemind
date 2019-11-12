@@ -4,7 +4,7 @@
 package org.snowjak.hivemind.engine;
 
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 
 import com.badlogic.ashley.core.Entity;

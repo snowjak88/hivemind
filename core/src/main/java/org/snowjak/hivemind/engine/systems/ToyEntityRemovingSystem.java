@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;

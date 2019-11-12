@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.RNG;
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 
 import com.badlogic.ashley.core.Entity;
 import com.google.gson.JsonDeserializationContext;

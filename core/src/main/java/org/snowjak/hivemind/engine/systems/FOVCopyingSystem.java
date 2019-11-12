@@ -6,6 +6,7 @@ package org.snowjak.hivemind.engine.systems;
 import org.snowjak.hivemind.engine.components.CopiesFOVTo;
 import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 import org.snowjak.hivemind.util.ArrayUtil;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.Profiler;

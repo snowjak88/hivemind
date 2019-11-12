@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 import java.util.Map.Entry;
 
 import org.snowjak.hivemind.Context;
-import org.snowjak.hivemind.engine.systems.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 import org.snowjak.hivemind.map.EntityMap;
 
 import com.badlogic.ashley.core.Entity;

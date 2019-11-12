@@ -218,6 +218,37 @@ public class SpatialMap<T> {
 	}
 	
 	/**
+	 * Mark all values at the given location as "refresh" (i.e.,
+	 * {@link SpatialOperation#REFRESH}).
+	 * 
+	 * @param location
+	 */
+	public void markRefresh(Coord location) {
+		
+		synchronized (this) {
+			final OrderedSet<T> values = coordToObjects.get(location);
+			if (values == null)
+				return;
+			
+			for (int i = 0; i < values.size(); i++)
+				markRefresh(values.getAt(i));
+		}
+	}
+	
+	/**
+	 * Mark the given value as a "refresh" (i.e, {@link SpatialOperation#REFRESH}).
+	 * 
+	 * @param value
+	 */
+	public void markRefresh(T value) {
+		
+		synchronized (this) {
+			recentUpdates.computeIfAbsent(SpatialOperation.REFRESH, x -> new OrderedSet<>()).add(value);
+			recentlyUpdated.add(value);
+		}
+	}
+	
+	/**
 	 * Reset this map. Leaves no record behind for
 	 * {@link #getRecentlyUpdated(SpatialOperation) getRecentlyUpdated(REMOVE)}
 	 */
@@ -333,6 +364,7 @@ public class SpatialMap<T> {
 	public enum SpatialOperation {
 		ADDED,
 		MOVED,
-		REMOVED
+		REMOVED,
+		REFRESH
 	}
 }

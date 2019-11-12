@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.manager;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;

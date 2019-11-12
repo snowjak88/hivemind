@@ -13,7 +13,7 @@ import org.snowjak.hivemind.RNG
 import org.snowjak.hivemind.concurrent.Executor
 import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
-import org.snowjak.hivemind.engine.systems.UniqueTagManager
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager
 import org.snowjak.hivemind.util.ExtGreasedRegion
 
 import com.badlogic.ashley.core.Component

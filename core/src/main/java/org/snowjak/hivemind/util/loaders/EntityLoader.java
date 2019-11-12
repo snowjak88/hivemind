@@ -7,8 +7,8 @@ import java.lang.reflect.Type;
 
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.Engine;
-import org.snowjak.hivemind.engine.systems.EntityRefManager;
-import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;

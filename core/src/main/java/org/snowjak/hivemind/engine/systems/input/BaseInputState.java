@@ -4,7 +4,10 @@
 package org.snowjak.hivemind.engine.systems.input;
 
 import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.engine.Tags;
+import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.gamescreen.InputEventListener;
@@ -17,10 +20,14 @@ import org.snowjak.hivemind.gamescreen.updates.UnregisterInputEventListener;
 import org.snowjak.hivemind.util.Drawing;
 import org.snowjak.hivemind.util.Drawing.BoxStyle;
 
+import com.badlogic.ashley.core.Component;
+import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.ai.msg.Telegram;
 
 import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.OrderedSet;
 
 /**
  * Base state for the {@link InputEventProcessingSystem}. In this state, the
@@ -36,6 +43,8 @@ public class BaseInputState implements InputSystemState {
 	
 	private static final float SELECTION_BOX_COLOR_FLOAT = SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.5f);
 	private static final String SELECTION_LAYER_NAME = BaseInputState.class.getName();
+	
+	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	
 	private Coord beginSelection = null, endSelection = null;
 	private boolean updateSelectionBox = false;
@@ -86,8 +95,46 @@ public class BaseInputState implements InputSystemState {
 			//
 			// Identify which entities were selected.
 			//
-			// TODO
+			final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
+			final HasMap screenMap = HAS_MAP.get(screenMapEntity);
 			
+			final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
+			final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
+			final int endX = (beginSelection.x < endSelection.x) ? endSelection.x : beginSelection.x;
+			final int endY = (beginSelection.y < endSelection.y) ? endSelection.y : beginSelection.y;
+			
+			boolean printedHeader = false;
+			
+			for (int x = startX; x <= endX; x++)
+				for (int y = startY; y <= endY; y++) {
+					final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
+					if (entitiesAt == null || entitiesAt.isEmpty())
+						continue;
+					
+					if (!printedHeader) {
+						System.out.println("-=-=-=-=-=-=-=- SELECTION -=-=-=-=-=-=-=-");
+						printedHeader = true;
+					}
+					
+					for (int i = 0; i < entitiesAt.size(); i++) {
+						final Entity e = entitiesAt.getAt(i);
+						System.out.print("[" + screenMap.getEntities().getLocation(e).x + ","
+								+ screenMap.getEntities().getLocation(e).y + "]");
+						
+						if (entity.getEngine().getSystem(UniqueTagManager.class).has(e))
+							System.out.print(
+									"(tag: " + entity.getEngine().getSystem(UniqueTagManager.class).get(e) + ")");
+						
+						System.out.print(": ");
+						
+						for (Component c : e.getComponents())
+							System.out.print("[" + c.getClass().getSimpleName() + "]");
+					}
+				}
+			
+			if (printedHeader)
+				System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+				
 			//
 			// Flag the selected entities.
 			//

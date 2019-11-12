@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.maintenance;
 
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.HasMap;

@@ -8,7 +8,7 @@ import org.snowjak.hivemind.Materials;
 import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.prefab.PrefabScript;
-import org.snowjak.hivemind.engine.systems.UniqueTagManager;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.map.GameMap;
 
 import com.badlogic.ashley.core.Entity;
@@ -61,8 +61,15 @@ public class EnginePrefabs {
 		for (int i = 0; i < 16; i++) {
 			final PrefabScript ps = PrefabScript.byName("wanderer");
 			ps.run();
+			ps.include("mixin/at-random-floor");
 			if (i % 2 == 0)
 				ps.include("mixin/screen-fov-sharing");
+		}
+		
+		for (int i = 0; i < 4; i++) {
+			final PrefabScript ps = PrefabScript.byName("smoke-machine");
+			ps.run();
+			ps.include("mixin/at-random-floor");
 		}
 	}
 }

@@ -18,10 +18,12 @@ import squidpony.squidgrid.gui.gdx.SColor;
  */
 public class HasAppearance implements Component, Poolable {
 	
-	private static final float GHOST_COLOR = SColor.AURORA_CLOUD.cpy().mul(1f, 1f, 1f, 0.5f).toFloatBits();
+	public static final Color GHOST_COLOR = SColor.AURORA_CLOUD;
+	public static final float GHOST_COLOR_FLOAT = GHOST_COLOR.cpy().mul(1f, 1f, 1f, 0.5f).toFloatBits();
 	
 	private char ch;
-	private Color color = null, ghostedColor = null;
+	private Color color = null;
+	private transient Color modifiedColor = null, ghostedColor = null;
 	
 	public char getCh() {
 		
@@ -38,15 +40,25 @@ public class HasAppearance implements Component, Poolable {
 		return color;
 	}
 	
-	public Color getGhostedColor() {
-		
-		return ghostedColor;
-	}
-	
 	public void setColor(Color color) {
 		
 		this.color = color;
-		this.ghostedColor = SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR, 0.75f));
+	}
+	
+	public Color getModifiedColor() {
+		
+		return modifiedColor;
+	}
+	
+	public void setModifiedColor(Color modifiedColor) {
+		
+		this.modifiedColor = modifiedColor;
+		this.ghostedColor = ghostColor(this.modifiedColor);
+	}
+	
+	public Color getGhostedColor() {
+		
+		return ghostedColor;
 	}
 	
 	@Override
@@ -54,6 +66,15 @@ public class HasAppearance implements Component, Poolable {
 		
 		ch = 0;
 		color = null;
+		modifiedColor = null;
 		ghostedColor = null;
+	}
+	
+	public static Color ghostColor(Color color) {
+		
+		if (color == null)
+			return GHOST_COLOR;
+		
+		return SColor.colorFromFloat(SColor.lerpFloatColors(color.toFloatBits(), GHOST_COLOR_FLOAT, 0.75f));
 	}
 }
