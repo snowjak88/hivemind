@@ -21,9 +21,6 @@ public class IsMaterial implements Component, Poolable {
 	private transient short material = -1;
 	private String materialName = null;
 	
-	private int depth = 1;
-	private float flowTimeRemaining = 0f;
-	
 	public Material getMaterial() {
 		
 		if (material < 0 && materialName != null)
@@ -38,32 +35,10 @@ public class IsMaterial implements Component, Poolable {
 		materialName = (material == null) ? null : material.getName();
 	}
 	
-	public int getDepth() {
-		
-		return depth;
-	}
-	
-	public void setDepth(int depth) {
-		
-		this.depth = depth;
-	}
-	
-	public float getFlowTimeRemaining() {
-		
-		return flowTimeRemaining;
-	}
-	
-	public void setFlowTimeRemaining(float flowTimeRemaining) {
-		
-		this.flowTimeRemaining = flowTimeRemaining;
-	}
-	
 	@Override
 	public void reset() {
 		
 		material = -1;
 		materialName = null;
-		depth = 1;
-		flowTimeRemaining = 0f;
 	}
 }

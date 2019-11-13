@@ -12,8 +12,8 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
 /**
- * At the start of each tick, this sytem will remove {@link HasUpdatedLocation}
- * from all associated {@link Entity Entities}.
+ * At the start of each tick, this sytem will remove expired
+ * {@link HasUpdatedLocation} from all associated {@link Entity Entities}.
  * 
  * @author snowjak88
  *

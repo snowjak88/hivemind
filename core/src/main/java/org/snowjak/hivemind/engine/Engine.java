@@ -12,19 +12,19 @@ import java.util.function.Function;
 
 import org.snowjak.hivemind.App;
 import org.snowjak.hivemind.engine.systems.BehaviorProcessingSystem;
+import org.snowjak.hivemind.engine.systems.EntityDissipationSystem;
 import org.snowjak.hivemind.engine.systems.FOVCopyingSystem;
 import org.snowjak.hivemind.engine.systems.FOVUpdatingSystem;
-import org.snowjak.hivemind.engine.systems.FluidFlowSystem;
 import org.snowjak.hivemind.engine.systems.GameScreenUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.GeneratorUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
+import org.snowjak.hivemind.engine.systems.TrackLeavingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.AppearanceUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.EntityMapMaintenanceSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.FOVResettingSystem;
-import org.snowjak.hivemind.engine.systems.maintenance.FluidConsolidationSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.LocationUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.PathfinderUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.UpdatedLocationResettingSystem;
@@ -66,13 +66,13 @@ public class Engine {
 		this.engine.addSystem(new FOVResettingSystem());
 		this.engine.addSystem(new EntityMapMaintenanceSystem());
 		this.engine.addSystem(new AppearanceUpdatingSystem());
-		this.engine.addSystem(new FluidConsolidationSystem());
 		this.engine.addSystem(new LocationUpdatingSystem());
 		this.engine.addSystem(new RunnableExecutingSystem());
 		this.engine.addSystem(new InputEventProcessingSystem());
 		
 		this.engine.addSystem(new GeneratorUpdatingSystem());
-		this.engine.addSystem(new FluidFlowSystem());
+		this.engine.addSystem(new TrackLeavingSystem());
+		this.engine.addSystem(new EntityDissipationSystem());
 		this.engine.addSystem(new PathfinderUpdatingSystem());
 		this.engine.addSystem(new FOVUpdatingSystem());
 		this.engine.addSystem(new FOVCopyingSystem());

@@ -16,4 +16,7 @@ prefab = {
 	def behavior = create(HasBehavior)
 	behavior.behaviorName = "wander"
 	
+	def track = create(LeavesTrack)
+	track.prefabName = "smoke-cloud"
+	
 }

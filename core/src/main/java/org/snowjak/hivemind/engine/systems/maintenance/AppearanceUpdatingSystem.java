@@ -7,7 +7,9 @@ import org.snowjak.hivemind.engine.components.HasAppearance;
 import org.snowjak.hivemind.engine.components.IsMaterial;
 
 import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
+import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IntervalIteratingSystem;
 import com.badlogic.gdx.graphics.Color;
@@ -34,13 +36,51 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<IsMaterial> IS_MATERIAL = ComponentMapper.getFor(IsMaterial.class);
 	
+	private EntityListener appearanceAddedListener;
+	
 	public AppearanceUpdatingSystem() {
 		
 		super(Family.all(HasAppearance.class).get(), INTERVAL);
+		
+		appearanceAddedListener = new EntityListener() {
+			
+			@Override
+			public void entityAdded(Entity entity) {
+				
+				updateEntityAppearance(entity);
+			}
+			
+			@Override
+			public void entityRemoved(Entity entity) {
+				
+				// nothing to do
+			}
+		};
+	}
+	
+	@Override
+	public void addedToEngine(Engine engine) {
+		
+		super.addedToEngine(engine);
+		
+		engine.addEntityListener(Family.all(HasAppearance.class).get(), appearanceAddedListener);
+	}
+	
+	@Override
+	public void removedFromEngine(Engine engine) {
+		
+		engine.removeEntityListener(appearanceAddedListener);
+		
+		super.removedFromEngine(engine);
 	}
 	
 	@Override
 	protected void processEntity(Entity entity) {
+		
+		updateEntityAppearance(entity);
+	}
+	
+	public void updateEntityAppearance(Entity entity) {
 		
 		final HasAppearance appearance = HAS_APPEARANCE.get(entity);
 		final Color baseColor = appearance.getColor();
@@ -50,7 +90,7 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 		if (IS_MATERIAL.has(entity)) {
 			final IsMaterial mat = IS_MATERIAL.get(entity);
 			if (mat.getMaterial() != null && mat.getMaterial().getColor() != null)
-				appearance.setModifiedColor(mat.getMaterial().getColor().mul(1f, 1f, 1f, (float) mat.getDepth()));
+				appearance.setModifiedColor(mat.getMaterial().getColor());
 			
 		}
 	}

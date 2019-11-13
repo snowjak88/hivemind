@@ -58,18 +58,12 @@ public class EnginePrefabs {
 		eng.addEntity(screenMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
 		
-		for (int i = 0; i < 16; i++) {
+		for (int i = 0; i < 32; i++) {
 			final PrefabScript ps = PrefabScript.byName("wanderer");
 			ps.run();
 			ps.include("mixin/at-random-floor");
 			if (i % 2 == 0)
 				ps.include("mixin/screen-fov-sharing");
-		}
-		
-		for (int i = 0; i < 4; i++) {
-			final PrefabScript ps = PrefabScript.byName("smoke-machine");
-			ps.run();
-			ps.include("mixin/at-random-floor");
 		}
 	}
 }

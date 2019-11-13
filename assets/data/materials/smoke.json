@@ -1,8 +1,5 @@
 {
-	"name": "smoke", /*"color": "49494988",*/
-	"color": "49224988",
-	"visibility-resistance": 0.2,
-	"is-fluid": true,
-	"max-depth": 5,
-	"flow-speed": 0.5
+	"name": "smoke",
+	"color": "999999CC",
+	"visibility-resistance": 0.25
 }

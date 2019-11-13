@@ -106,20 +106,25 @@ public class LocationUpdatingSystem extends IteratingSystem implements EntityLis
 		
 		//
 		
-		final NeedsUpdatedLocation updatedLocation = NEED_UPDATED_LOC.get(entity);
+		final NeedsUpdatedLocation needsUpdate = NEED_UPDATED_LOC.get(entity);
 		final HasLocation location = ComponentMapper.getFor(HasLocation.class).get(entity);
 		
-		final Coord newLocation = updatedLocation.getNewLocation();
+		final Coord oldLocation = location.getLocation();
+		final Coord newLocation = needsUpdate.getNewLocation();
 		
 		location.setLocation(newLocation);
-		entity.add(getEngine().createComponent(HasUpdatedLocation.class));
+		
+		final HasUpdatedLocation hasUpdate = getEngine().createComponent(HasUpdatedLocation.class);
+		hasUpdate.setOldLocation(oldLocation);
+		hasUpdate.setNewLocation(newLocation);
+		entity.add(hasUpdate);
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
 		if (utm.has(Tags.WORLD_MAP)) {
 			final Entity worldMapEntity = utm.get(Tags.WORLD_MAP);
 			if (HAS_MAP.has(worldMapEntity)) {
 				final HasMap hm = HAS_MAP.get(worldMapEntity);
-				hm.getEntities().set(updatedLocation.getNewLocation(), entity);
+				hm.getEntities().set(needsUpdate.getNewLocation(), entity);
 			}
 		}
 	}

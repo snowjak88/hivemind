@@ -11,7 +11,6 @@ import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.IsMaterial;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
-import org.snowjak.hivemind.util.ArrayUtil;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
@@ -104,8 +103,7 @@ public class FOVUpdatingSystem extends IteratingSystem {
 					final IsMaterial material = IS_MATERIAL.get(e);
 					if (material.getMaterial() == null)
 						continue;
-					visibilityResistance[x][y] += material.getMaterial().getVisibilityResistance()
-							* (float) material.getDepth();
+					visibilityResistance[x][y] += material.getMaterial().getVisibilityResistance();
 				}
 				
 			}
