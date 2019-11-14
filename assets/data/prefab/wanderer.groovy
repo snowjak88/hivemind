@@ -1,15 +1,17 @@
 label = "wanderer"
 prefab = {
 	
+	faction "player"
+	
 	def move = create(CanMove)
-	move.speed = 1.5
+	move.speed = 2.5
 	
 	def see = create(CanSee)
-	see.radius = 6
+	see.radius = 8
 	
 	def appearance = create(HasAppearance)
 	appearance.ch = '@'
-	appearance.color = Color.AURORA_APRICOT
+	appearance.color = Color.PINK
 	
 	create(HasMap)
 	

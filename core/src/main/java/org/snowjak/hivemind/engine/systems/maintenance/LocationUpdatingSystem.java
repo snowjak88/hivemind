@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.engine.systems.maintenance;
 
+import org.snowjak.hivemind.concurrent.BatchedRunner;
 import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
@@ -43,6 +44,8 @@ public class LocationUpdatingSystem extends IteratingSystem implements EntityLis
 	private static final ComponentMapper<HasUpdatedLocation> HAS_UPDATED_LOC = ComponentMapper
 			.getFor(HasUpdatedLocation.class);
 	
+	private final BatchedRunner batched = new BatchedRunner();
+	
 	public LocationUpdatingSystem() {
 		
 		super(Family.all(HasLocation.class, NeedsUpdatedLocation.class).get());
@@ -76,20 +79,21 @@ public class LocationUpdatingSystem extends IteratingSystem implements EntityLis
 			return;
 		final HasMap worldMap = ComponentMapper.getFor(HasMap.class).get(worldMapEntity);
 		
-		worldMap.getEntities().set(loc.getLocation(), entity);
+		batched.add(() -> worldMap.getEntities().set(loc.getLocation(), entity));
 	}
 	
 	@Override
 	public void entityRemoved(Entity entity) {
 		
-		for (Entity mapEntity : getEngine().getEntitiesFor(Family.all(HasMap.class).get()))
-			HAS_MAP.get(mapEntity).getEntities().remove(entity);
+		// Do nothing
 	}
 	
 	@Override
 	public void update(float deltaTime) {
 		
 		final ProfilerTimer timer = Profiler.get().start("LocationUpdatingSystem (overall)");
+		
+		batched.runUpdates();
 		
 		super.update(deltaTime);
 		

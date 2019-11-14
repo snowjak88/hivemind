@@ -6,8 +6,10 @@ package org.snowjak.hivemind.util.loaders;
 import java.lang.reflect.Type;
 
 import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.Factions;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.manager.FactionManager;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 
 import com.badlogic.ashley.core.Component;
@@ -41,15 +43,17 @@ public class EntityLoader implements Loader<Entity> {
 		
 		final JsonObject obj = new JsonObject();
 		
-		Context.get();
 		final EntityRefManager ref = Context.getEngine().getSystem(EntityRefManager.class);
 		if (ref != null)
 			obj.add("id", context.serialize(ref.get(src), SquidID.class));
 		
-		Context.get();
 		final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
 		if (utm != null && utm.has(src))
 			obj.add("tag", new JsonPrimitive(utm.get(src)));
+		
+		final FactionManager fm = Context.getEngine().getSystem(FactionManager.class);
+		if (fm != null && fm.has(src))
+			obj.add("faction", new JsonPrimitive(fm.get(src).getName()));
 		
 		final JsonArray components = new JsonArray();
 		for (Component c : src.getComponents())
@@ -73,21 +77,24 @@ public class EntityLoader implements Loader<Entity> {
 		
 		final JsonObject obj = json.getAsJsonObject();
 		
-		Context.get();
 		final Entity e = Context.getEngine().createEntity();
 		
 		if (obj.has("id")) {
-			Context.get();
 			final EntityRefManager erm = Context.getEngine().getSystem(EntityRefManager.class);
 			if (erm != null)
 				erm.add(e, context.deserialize(obj.get("id"), SquidID.class));
 		}
 		
 		if (obj.has("tag")) {
-			Context.get();
 			final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
 			if (utm != null)
 				utm.set(obj.get("tag").getAsString(), e);
+		}
+		
+		if (obj.has("faction")) {
+			final FactionManager fm = Context.getEngine().getSystem(FactionManager.class);
+			if (fm != null)
+				fm.set(Factions.get().getBy(obj.get("faction").getAsString()), e);
 		}
 		
 		if (obj.has("components")) {

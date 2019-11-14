@@ -29,6 +29,7 @@ import org.snowjak.hivemind.engine.systems.maintenance.LocationUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.PathfinderUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.UpdatedLocationResettingSystem;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
+import org.snowjak.hivemind.engine.systems.manager.FactionManager;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.json.Json;
 
@@ -84,6 +85,7 @@ public class Engine {
 		
 		this.engine.addSystem(new UniqueTagManager());
 		this.engine.addSystem(new EntityRefManager());
+		this.engine.addSystem(new FactionManager());
 	}
 	
 	/**

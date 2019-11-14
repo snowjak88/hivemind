@@ -5,6 +5,7 @@ package org.snowjak.hivemind.engine.systems;
 
 import org.snowjak.hivemind.engine.components.CopiesFOVTo;
 import org.snowjak.hivemind.engine.components.HasFOV;
+import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 import org.snowjak.hivemind.util.ArrayUtil;
@@ -18,6 +19,8 @@ import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
+
+import squidpony.squidmath.Coord;
 
 /**
  * For any {@link Entity} that {@link CopiesFOVTo copies its FOV} to another
@@ -36,6 +39,7 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 	private final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
 	private final ComponentMapper<CopiesFOVTo> COPY_FOV = ComponentMapper.getFor(CopiesFOVTo.class);
 	private final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
+	private final ComponentMapper<HasLocation> HAS_LOCATION = ComponentMapper.getFor(HasLocation.class);
 	
 	public FOVCopyingSystem() {
 		
@@ -79,8 +83,6 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		copyToMap.getUpdatedLocations().or(fov.getVisible());
 	}
 	
-	
-	
 	@Override
 	public void update(float deltaTime) {
 		
@@ -90,7 +92,7 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		
 		timer.stop();
 	}
-
+	
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		
@@ -106,6 +108,14 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		final HasFOV source = HAS_FOV.get(entity);
 		if (source.getVisible() == null)
 			return;
+		
+		if (HAS_LOCATION.has(entity) && HAS_LOCATION.has(copyTo)) {
+			final Coord fromCoord = HAS_LOCATION.get(entity).getLocation();
+			final Coord toCoord = HAS_LOCATION.get(copyTo).getLocation();
+			
+			if (fromCoord.distance(toCoord) > COPY_FOV.get(entity).getRadius())
+				return;
+		}
 		
 		if (HAS_FOV.has(copyTo)) {
 			final HasFOV destination = HAS_FOV.get(copyTo);

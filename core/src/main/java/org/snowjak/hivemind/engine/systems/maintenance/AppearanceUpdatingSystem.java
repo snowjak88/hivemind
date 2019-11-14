@@ -3,8 +3,11 @@
  */
 package org.snowjak.hivemind.engine.systems.maintenance;
 
+import org.snowjak.hivemind.Factions.Faction;
 import org.snowjak.hivemind.engine.components.HasAppearance;
 import org.snowjak.hivemind.engine.components.IsMaterial;
+import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
+import org.snowjak.hivemind.engine.systems.manager.FactionManager;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
@@ -31,12 +34,12 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	/**
 	 * This system will execute every {@code INTERVAL} seconds.
 	 */
-	public static final float INTERVAL = 1f;
+	public static final float INTERVAL = 3f;
 	
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<IsMaterial> IS_MATERIAL = ComponentMapper.getFor(IsMaterial.class);
 	
-	private EntityListener appearanceAddedListener;
+	private final EntityListener appearanceAddedListener;
 	
 	public AppearanceUpdatingSystem() {
 		
@@ -47,7 +50,7 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 			@Override
 			public void entityAdded(Entity entity) {
 				
-				updateEntityAppearance(entity);
+				getEngine().getSystem(RunnableExecutingSystem.class).submit(() -> updateEntityAppearance(entity));
 			}
 			
 			@Override
@@ -75,12 +78,20 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	}
 	
 	@Override
+	protected void updateInterval() {
+		
+		super.updateInterval();
+	}
+	
+	@Override
 	protected void processEntity(Entity entity) {
 		
 		updateEntityAppearance(entity);
 	}
 	
 	public void updateEntityAppearance(Entity entity) {
+		
+		final FactionManager fm = getEngine().getSystem(FactionManager.class);
 		
 		final HasAppearance appearance = HAS_APPEARANCE.get(entity);
 		final Color baseColor = appearance.getColor();
@@ -92,6 +103,18 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 			if (mat.getMaterial() != null && mat.getMaterial().getColor() != null)
 				appearance.setModifiedColor(mat.getMaterial().getColor());
 			
+		}
+		
+		if (fm.has(entity)) {
+			final Faction f = fm.get(entity);
+			if (f.getColor() != null) {
+				final Color tintedColor;
+				if (appearance.getModifiedColor() != null)
+					tintedColor = appearance.getModifiedColor().cpy().lerp(f.getColor(), 0.5f);
+				else
+					tintedColor = f.getColor();
+				appearance.setModifiedColor(tintedColor);
+			}
 		}
 	}
 }

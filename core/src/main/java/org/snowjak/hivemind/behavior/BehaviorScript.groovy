@@ -1,27 +1,17 @@
 /**
  * 
  */
-package org.snowjak.hivemind.behavior.support
-
-import java.util.concurrent.Callable
-import java.util.concurrent.Future
+package org.snowjak.hivemind.behavior
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.snowjak.hivemind.Context
 import org.snowjak.hivemind.RNG
-import org.snowjak.hivemind.concurrent.Executor
-import org.snowjak.hivemind.engine.Tags
-import org.snowjak.hivemind.engine.components.HasMap
-import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager
 import org.snowjak.hivemind.util.ExtGreasedRegion
 
 import com.badlogic.ashley.core.Component
-import com.badlogic.ashley.core.ComponentMapper
 import com.badlogic.ashley.core.Entity
 import com.badlogic.ashley.core.Family
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.ai.btree.LeafTask
 import com.badlogic.gdx.ai.btree.Task
 import com.badlogic.gdx.ai.btree.Task.Status
 import com.badlogic.gdx.ai.btree.branch.Sequence
@@ -141,58 +131,6 @@ public abstract class BehaviorScript extends Script {
 	//
 	
 	public Task<Entity> task(Closure exec) {
-		new LeafTask<Entity>() {
-					
-					public prop = new HashMap<>();
-					
-					{
-						exec.delegate = this
-					}
-					
-					@Override
-					public Status execute() {
-						if(getObject() == null)
-							return Status.FAILED
-						exec(getObject())
-					}
-					
-					@Override
-					protected Task<Entity> copyTo(Task<Entity> task) {
-						task
-					}
-					
-					public <T extends Component> T create(Class<T> clazz) {
-						if(getObject() == null)
-							return null
-						
-						def c = Context.getEngine().createComponent(clazz)
-						getObject().add c
-						c
-					}
-					
-					public boolean has(Class<? extends Component> clazz) {
-						getObject() != null && ComponentMapper.getFor(clazz).has(getObject())
-					}
-					
-					public <T extends Component> T get(Class<T> clazz) {
-						(getObject() == null) ? null : ComponentMapper.getFor(clazz).get(getObject())
-					}
-					
-					public void remove(Class<? extends Component> clazz) {
-						if(getObject() != null)
-							getObject().remove clazz
-					}
-					
-					public HasMap worldMap() {
-						def worldEntity = Context.getEngine().getSystem(UniqueTagManager).get(Tags.WORLD_MAP)
-						if(worldEntity == null || !ComponentMapper.getFor(HasMap).has(worldEntity))
-							return null
-						ComponentMapper.getFor(HasMap).get(worldEntity)
-					}
-					
-					public Future<?> schedule(Closure task) {
-						Executor.get().submit(task as Callable<?>)
-					}
-				}
+		new BehaviorCustomLeafTask(exec)
 	}
 }

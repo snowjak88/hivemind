@@ -8,10 +8,14 @@ import java.util.logging.Logger
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.snowjak.hivemind.Context
+import org.snowjak.hivemind.Factions
 import org.snowjak.hivemind.RNG
+import org.snowjak.hivemind.Factions.Faction
 import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
+import org.snowjak.hivemind.engine.components.IsFromPrefab
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager
+import org.snowjak.hivemind.engine.systems.manager.FactionManager
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager
 import org.snowjak.hivemind.util.ExtGreasedRegion
 
@@ -20,6 +24,8 @@ import com.badlogic.ashley.core.ComponentMapper
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.ai.btree.Task.Status
+import com.google.common.collect.BiMap
+import com.google.common.collect.HashBiMap
 
 import io.github.classgraph.ClassGraph
 import squidpony.squidgrid.gui.gdx.SColor
@@ -34,7 +40,7 @@ public abstract class PrefabScript extends Script {
 	private static final Logger LOG = Logger.getLogger(PrefabScript.class.name)
 	
 	private static final String ROOT_PATH = "data${File.separator}prefab${File.separator}"
-	private static final Map<String,PrefabScript> CACHED_SCRIPTS = new LinkedHashMap<>();
+	private static final BiMap<String,PrefabScript> CACHED_SCRIPTS = HashBiMap.create();
 	private static CompilerConfiguration COMPILER_CONFIG = null;
 	
 	/**
@@ -83,10 +89,10 @@ public abstract class PrefabScript extends Script {
 			
 			def shell = new GroovyShell(this.class.classLoader, new Binding(), COMPILER_CONFIG)
 			
-			CACHED_SCRIPTS.put name, shell.parse(f)
+			CACHED_SCRIPTS[name] = shell.parse(f)
 		}
 		
-		CACHED_SCRIPTS.get(name);
+		CACHED_SCRIPTS[name];
 	}
 	
 	/**
@@ -98,6 +104,8 @@ public abstract class PrefabScript extends Script {
 	@Override
 	public Entity run() {
 		
+		def name = CACHED_SCRIPTS.inverse()[this]
+		
 		binding.variables["entity"] = Context.getEngine().createEntity()
 		
 		scriptBody()
@@ -106,14 +114,28 @@ public abstract class PrefabScript extends Script {
 		def prefab = binding.variables["prefab"]
 		
 		if(prefab == null)
-			throw new RuntimeException("Cannot execute prefab-script -- [prefab] is required!")
+			throw new RuntimeException("Cannot execute prefab-script [$name] -- [prefab] is required!")
 		if(!prefab instanceof Closure)
-			throw new RuntimeException("Cannot execute prefab-script -- [prefab] is not a closure!")
+			throw new RuntimeException("Cannot execute prefab-script [$name] -- [prefab] is not a closure!")
 		
-		prefab.delegate = this
-		prefab()
+		try {
+			
+			Context.getEngine().addEntity binding.variables["entity"]
+			
+			prefab.delegate = this
+			prefab()
+		} catch (Throwable t) {
+			throw new RuntimeException("Cannot execute prefab-script [$name] -- ${t.class.simpleName} : $t.message")
+		}
 		
-		Context.getEngine().addEntity binding.variables["entity"]
+		def isPrefab = create(IsFromPrefab)
+		isPrefab.name = name
+		
+		binding.variables["entity"].add isPrefab
+		
+		print "Inflating prefab \"$name\": "
+		binding.variables["entity"].getComponents().forEach { print "[${it.class.simpleName}]" }
+		println ""
 		
 		binding.variables["entity"]
 	}
@@ -141,6 +163,12 @@ public abstract class PrefabScript extends Script {
 		prefab()
 	}
 	
+	/**
+	 * Create a new instance of the given {@link Component}-type.
+	 * @param <T>
+	 * @param clazz
+	 * @return
+	 */
 	public <T extends Component> T create(Class<T> clazz) {
 		def component = Context.getEngine().createComponent(clazz)
 		if (binding.variables['entity'] != null)
@@ -162,28 +190,67 @@ public abstract class PrefabScript extends Script {
 		ComponentMapper.getFor(clazz).get(entity)
 	}
 	
+	/**
+	 * Tag this Entity with the given tag
+	 * @param tag
+	 */
 	public void tag(String tag) {
 		if(binding.variables['entity'] == null)
-			return null
+			return
 		Context.getEngine().getSystem(UniqueTagManager).set tag, binding.variables['entity']
 	}
 	
+	/**
+	 * Get the {@link Entity} associated with the given tag
+	 * @param tag
+	 * @return
+	 */
 	public Entity tagged(String tag) {
 		if(tag == null)
 			return null
 		Context.getEngine().getSystem(UniqueTagManager).get tag
 	}
 	
+	/**
+	 * Get the {@link SquidID ID} associated with this Entity
+	 * @param entity
+	 * @return
+	 */
 	public SquidID id(Entity entity) {
 		if(entity == null)
 			return null
 		Context.getEngine().getSystem(EntityRefManager).get entity
 	}
 	
+	/**
+	 * Get the {@link Entity} associated with the given {@link SquidID ID}
+	 * @param id
+	 * @return
+	 */
 	public Entity byID(SquidID id) {
 		if(id == null)
 			return null
 		Context.getEngine().getSystem(EntityRefManager).get id
+	}
+	
+	/**
+	 * Associate this {@link Entity} with the {@link Faction} denoted by the given name.
+	 * @param name
+	 */
+	public void faction(String name) {
+		if(binding.variables['entity'] == null)
+			return
+		Context.getEngine().getSystem(FactionManager).set Factions.get().getBy(name), binding.variables['entity']
+	}
+	
+	/**
+	 * Get the {@link Faction} with which this Entity is associated with.
+	 * @return
+	 */
+	public Faction faction() {
+		if(binding.variables['entity'] == null)
+			return null
+		Context.getEngine().getSystem(FactionManager).get binding.variables['entity']
 	}
 	
 	/**

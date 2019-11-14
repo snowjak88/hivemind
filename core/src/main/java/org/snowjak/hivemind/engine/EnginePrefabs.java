@@ -53,17 +53,16 @@ public class EnginePrefabs {
 		eng.addEntity(worldMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.WORLD_MAP, worldMapEntity);
 		
-		final Entity screenMapEntity = eng.createEntity();
-		screenMapEntity.add(eng.createComponent(HasMap.class));
-		eng.addEntity(screenMapEntity);
-		eng.getSystem(UniqueTagManager.class).set(Tags.SCREEN_MAP, screenMapEntity);
+		final PrefabScript screenEntityPrefab = PrefabScript.byName("wanderer");
+		screenEntityPrefab.run();
+		screenEntityPrefab.include("mixin/at-random-floor");
+		screenEntityPrefab.tag(Tags.SCREEN_MAP);
 		
-		for (int i = 0; i < 32; i++) {
+		for (int i = 0; i < 8; i++) {
 			final PrefabScript ps = PrefabScript.byName("wanderer");
 			ps.run();
 			ps.include("mixin/at-random-floor");
-			if (i % 2 == 0)
-				ps.include("mixin/screen-fov-sharing");
+			ps.include("mixin/screen-fov-sharing");
 		}
 	}
 }

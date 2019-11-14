@@ -80,9 +80,6 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 		if (hasMap.getMap() == null)
 			return;
 		
-		if (hasMap.getUpdatedLocations().isEmpty())
-			return;
-		
 		final HasPathfinder hasPathfinder;
 		if (!HAS_PATHFINDER.has(entity)) {
 			hasPathfinder = getEngine().createComponent(HasPathfinder.class);
@@ -90,8 +87,12 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 		} else
 			hasPathfinder = HAS_PATHFINDER.get(entity);
 		
-		if (hasPathfinder.getPathfinder() == null || hasPathfinder.getPathfinder().width != hasMap.getMap().getWidth()
-				|| hasPathfinder.getPathfinder().height != hasMap.getMap().getHeight())
+		final boolean hasUpdatedCells = !(hasMap.getUpdatedLocations().isEmpty());
+		final boolean pathfinderRequiresResize = (hasPathfinder.getPathfinder() == null
+				|| hasPathfinder.getPathfinder().width != hasMap.getMap().getWidth()
+				|| hasPathfinder.getPathfinder().height != hasMap.getMap().getHeight());
+		
+		if (hasUpdatedCells || pathfinderRequiresResize)
 			if (hasPathfinder.getLock().tryAcquire()) {
 				
 				if (hasPathfinder.getPathfinder() != null) {

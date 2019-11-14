@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.Factions;
 import org.snowjak.hivemind.RNG;
 import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
@@ -54,6 +55,8 @@ public class EngineLoader implements Loader<Engine> {
 		rng.add("b", new JsonPrimitive(RNG.get().getStateB()));
 		obj.add("rng", rng);
 		
+		obj.add("factions", context.serialize(Factions.get()));
+		
 		for (Entity e : src.getEntities()) {
 			
 			final EntityRefManager erm = src.getSystem(EntityRefManager.class);
@@ -93,11 +96,16 @@ public class EngineLoader implements Loader<Engine> {
 			}
 		}
 		
+		if (obj.has("factions") && obj.get("factions").isJsonObject())
+			Factions.get().updateFrom(context.deserialize(obj.getAsJsonObject("factions"), Factions.class));
+		
 		final EntityRefManager erm = Context.getEngine().getSystem(EntityRefManager.class);
 		
 		for (Entry<String, JsonElement> entry : obj.entrySet()) {
 			
 			if (entry.getKey().equalsIgnoreCase("rng"))
+				continue;
+			if (entry.getKey().equalsIgnoreCase("factions"))
 				continue;
 			
 			final SquidID id = context.deserialize(new JsonPrimitive(entry.getKey()), SquidID.class);

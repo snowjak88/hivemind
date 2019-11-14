@@ -92,58 +92,66 @@ public class BaseInputState implements InputSystemState {
 				Context.getGameScreen().postGameScreenUpdate(upd);
 			}
 			
-			//
-			// Identify which entities were selected.
-			//
-			final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-			final HasMap screenMap = HAS_MAP.get(screenMapEntity);
-			
-			final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
-			final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
-			final int endX = (beginSelection.x < endSelection.x) ? endSelection.x : beginSelection.x;
-			final int endY = (beginSelection.y < endSelection.y) ? endSelection.y : beginSelection.y;
-			
-			boolean printedHeader = false;
-			
-			for (int x = startX; x <= endX; x++)
-				for (int y = startY; y <= endY; y++) {
-					final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
-					if (entitiesAt == null || entitiesAt.isEmpty())
-						continue;
-					
-					if (!printedHeader) {
-						System.out.println("-=-=-=-=-=-=-=- SELECTION -=-=-=-=-=-=-=-");
-						printedHeader = true;
-					}
-					
-					for (int i = 0; i < entitiesAt.size(); i++) {
-						final Entity e = entitiesAt.getAt(i);
-						System.out.print("[" + screenMap.getEntities().getLocation(e).x + ","
-								+ screenMap.getEntities().getLocation(e).y + "]");
-						
-						if (entity.getEngine().getSystem(UniqueTagManager.class).has(e))
-							System.out.print(
-									"(tag: " + entity.getEngine().getSystem(UniqueTagManager.class).get(e) + ")");
-						
-						System.out.print(": ");
-						
-						for (Component c : e.getComponents())
-							System.out.print("[" + c.getClass().getSimpleName() + "]");
-					}
-				}
-			
-			if (printedHeader)
-				System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+			if (beginSelection != null && endSelection != null) {
 				
-			//
-			// Flag the selected entities.
-			//
-			// TODO
-			
-			//
-			// Change to the "active-selection" input-state.
-			//
-			// TODO
+				//
+				// Identify which entities were selected.
+				//
+				final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class)
+						.get(Tags.SCREEN_MAP);
+				final HasMap screenMap = HAS_MAP.get(screenMapEntity);
+				
+				final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
+				final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
+				final int endX = (beginSelection.x < endSelection.x) ? endSelection.x : beginSelection.x;
+				final int endY = (beginSelection.y < endSelection.y) ? endSelection.y : beginSelection.y;
+				
+				boolean printedHeader = false;
+				
+				for (int x = startX; x <= endX; x++)
+					for (int y = startY; y <= endY; y++) {
+						final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
+						if (entitiesAt == null || entitiesAt.isEmpty())
+							continue;
+						
+						if (!printedHeader) {
+							System.out.println("-=-=-=-=-=-=-=- SELECTION -=-=-=-=-=-=-=-");
+							printedHeader = true;
+						}
+						
+						for (int i = 0; i < entitiesAt.size(); i++) {
+							final Entity e = entitiesAt.getAt(i);
+							System.out.print("[" + screenMap.getEntities().getLocation(e).x + ","
+									+ screenMap.getEntities().getLocation(e).y + "]");
+							
+							if (entity.getEngine().getSystem(UniqueTagManager.class).has(e))
+								System.out.print(
+										": tag (" + entity.getEngine().getSystem(UniqueTagManager.class).get(e) + ")");
+							
+							System.out.print(": ");
+							
+							for (Component c : e.getComponents()) {
+								System.out.print("[" + c.getClass().getSimpleName() + "]");
+							}
+							
+							System.out.println();
+						}
+					}
+				
+				if (printedHeader)
+					System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+					
+				//
+				// Flag the selected entities.
+				//
+				// TODO
+				
+				//
+				// Change to the "active-selection" input-state.
+				//
+				// TODO
+				
+			}
 			
 			beginSelection = null;
 			endSelection = null;

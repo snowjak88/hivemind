@@ -1,0 +1,16 @@
+{
+	"factions": [
+		{
+			"name": "default"
+		},
+		{
+			"name": "player",
+			/* "color": "FFA53CFF" */
+			"color": "2288FFFF"
+		}
+	],
+	"relations": {
+		"default": { "default": 100.0, "player": 0.0   },
+		"player":  { "default": 0.0,   "player": 100.0 }
+	}
+}

@@ -117,6 +117,10 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
+		
+		ArrayUtil.fill(terrain, (short) -1);
+		ArrayUtil.fill(material, (short) -1);
+		
 		this.visibility = new double[width][height];
 		
 		for (int i = 0; i < chars.length; i++) {
@@ -158,13 +162,20 @@ public class GameMap {
 		
 		terrain = new short[width][height];
 		material = new short[width][height];
-		this.visibility = new double[width][height];
+		visibility = new double[width][height];
+		
+		ArrayUtil.fill(terrain, (short) -1);
+		ArrayUtil.fill(material, (short) -1);
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
 				throw new IllegalArgumentException("Jagged arrays are not supported as game-maps!");
 			
 			for (int j = 0; j < chars[i].length; j++) {
+				
+				if (!known.contains(i, j))
+					continue;
+				
 				final TerrainType tt = (useSquidMappings) ? TerrainTypes.get().getRandomForSquidChar(chars[i][j])
 						: TerrainTypes.get().getRandomForChar(chars[i][j]);
 				

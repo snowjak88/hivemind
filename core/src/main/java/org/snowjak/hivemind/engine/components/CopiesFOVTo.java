@@ -19,6 +19,7 @@ import squidpony.squidmath.SquidID;
 public class CopiesFOVTo implements Component, Poolable {
 	
 	private SquidID copyTo = null;
+	private int radius = 32767;
 	
 	public SquidID getCopyTo() {
 		
@@ -30,9 +31,20 @@ public class CopiesFOVTo implements Component, Poolable {
 		this.copyTo = copyTo;
 	}
 	
+	public int getRadius() {
+		
+		return radius;
+	}
+	
+	public void setRadius(int radius) {
+		
+		this.radius = radius;
+	}
+	
 	@Override
 	public void reset() {
 		
 		copyTo = null;
+		radius = 32767;
 	}
 }

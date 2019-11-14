@@ -3,7 +3,7 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
-import org.snowjak.hivemind.behavior.support.BehaviorScript;
+import org.snowjak.hivemind.behavior.BehaviorScript;
 import org.snowjak.hivemind.engine.components.HasBehavior;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;

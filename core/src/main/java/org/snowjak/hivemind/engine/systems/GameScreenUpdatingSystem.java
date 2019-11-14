@@ -39,7 +39,6 @@ import com.badlogic.ashley.core.EntitySystem;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.gdx.graphics.Color;
 
-import squidpony.squidgrid.gui.gdx.SColor;
 import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
 import squidpony.squidmath.Coord;
 import squidpony.squidmath.OrderedMap;
@@ -271,9 +270,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				hg.setY(knownLocation.y);
 				e.add(hg);
 				
-				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
-						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
-								ha.getGhostedColor().toFloatBits(), 0.5f));
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor() : ha.getGhostedColor();
+				if (color == null)
+					continue;
 				
 				{
 					final GlyphAddedUpdate upd = GameScreenUpdatePool.get().get(GlyphAddedUpdate.class);
@@ -316,9 +315,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				final boolean isVisible = fov.getVisible().contains(knownLocation);
 				final HasAppearance ha = HAS_APPEARANCE.get(e);
 				
-				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
-						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
-								ha.getGhostedColor().toFloatBits(), 0.5f));
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor() : ha.getGhostedColor();
+				if (color == null)
+					continue;
 				
 				{
 					final GlyphMovedUpdate upd = GameScreenUpdatePool.get().get(GlyphMovedUpdate.class);
@@ -362,9 +361,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				final boolean isVisible = fov.getVisible().contains(knownLocation);
 				final HasAppearance ha = HAS_APPEARANCE.get(e);
 				
-				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor()
-						: SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
-								ha.getGhostedColor().toFloatBits(), 0.5f));
+				final Color color = (isVisible && isLocationAccurate) ? ha.getModifiedColor() : ha.getGhostedColor();
+				if (color == null)
+					continue;
 				
 				{
 					final GlyphMovedUpdate upd = GameScreenUpdatePool.get().get(GlyphMovedUpdate.class);
@@ -435,13 +434,13 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 				
 				final HasAppearance ha = HAS_APPEARANCE.get(e);
 				
-				final Color color = SColor.colorFromFloat(SColor.lerpFloatColors(ha.getModifiedColor().toFloatBits(),
-						ha.getGhostedColor().toFloatBits(), 0.75f));
+				if (ha.getGhostedColor() == null)
+					continue;
 				
 				{
 					final GlyphColorChangeUpdate upd = GameScreenUpdatePool.get().get(GlyphColorChangeUpdate.class);
 					upd.setGlyph(hg.getGlyph());
-					upd.setNewColor(color);
+					upd.setNewColor(ha.getGhostedColor());
 					Context.getGameScreen().postGameScreenUpdate(upd);
 				}
 			}
