@@ -15,7 +15,11 @@ import com.badlogic.ashley.systems.IteratingSystem;
 
 /**
  * If an {@link Entity} has a {@link HasFOV pre-calculated FOV}, this system
- * will clear out that FOV (e.g., at the beginning of a new frame).
+ * will, every frame:
+ * <ul>
+ * <li>Copy the "current-FOV" into "previous-FOV"</li>
+ * <li>Clear the "current-FOV"</li>
+ * </ul>
  * 
  * @author snowjak88
  *
@@ -29,8 +33,6 @@ public class FOVResettingSystem extends IteratingSystem {
 		super(Family.all(HasFOV.class).get());
 	}
 	
-	
-	
 	@Override
 	public void update(float deltaTime) {
 		
@@ -40,13 +42,19 @@ public class FOVResettingSystem extends IteratingSystem {
 		
 		timer.stop();
 	}
-
-
-
+	
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
 		
-		HAS_FOV.get(entity).getVisible().clear();
-		ArrayUtil.fill(HAS_FOV.get(entity).getLightLevels(), 0d);
+		final HasFOV fov = HAS_FOV.get(entity);
+		
+		if (fov.getPrevVisible().width != fov.getVisible().width
+				|| fov.getPrevVisible().height != fov.getVisible().height)
+			fov.getPrevVisible().resizeAndEmpty(fov.getVisible().width, fov.getVisible().height);
+		
+		fov.getPrevVisible().remake(fov.getVisible());
+		fov.getVisible().clear();
+		
+		ArrayUtil.fill(fov.getLightLevels(), 0d);
 	}
 }

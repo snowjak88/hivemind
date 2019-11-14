@@ -15,18 +15,13 @@ import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
-import org.snowjak.hivemind.gamescreen.updates.ClearMapUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.gamescreen.updates.GlyphAddedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphColorChangeUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphMovedUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GlyphRemovedUpdate;
-import org.snowjak.hivemind.gamescreen.updates.MapDeltaUpdate;
-import org.snowjak.hivemind.gamescreen.updates.MapScreenSizeUpdate;
-import org.snowjak.hivemind.gamescreen.updates.MapUpdate;
 import org.snowjak.hivemind.map.EntityMap;
-import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 import org.snowjak.hivemind.util.SpatialMap.SpatialOperation;
@@ -45,24 +40,18 @@ import squidpony.squidmath.OrderedMap;
 import squidpony.squidmath.OrderedSet;
 
 /**
- * This system will send {@link GameScreenUpdate}s to the {@link GameScreen}, if
- * there is an {@link Entity} tagged with {@link Tags#SCREEN_MAP} that
- * {@link HasMap has an associated GameMap}.
+ * This system will send {@link GameScreenUpdate}s corresponding to those
+ * Entities represented by {@link Glyph}s to the {@link GameScreen}, if there is
+ * an {@link Entity} tagged with {@link Tags#SCREEN_MAP} that {@link HasMap has
+ * an associated GameMap}.
  * 
  * @author snowjak88
  *
  */
-public class GameScreenUpdatingSystem extends EntitySystem implements EntityListener {
+public class GlyphUpdatingSystem extends EntitySystem {
 	
 	@SuppressWarnings("unused")
-	private static final Logger LOG = Logger.getLogger(GameScreenUpdatingSystem.class.getName());
-	
-	/**
-	 * Ordinarily, this system issues {@link MapDeltaUpdate}s to the
-	 * {@link GameScreen}. However, periodically, this system will issue a (full)
-	 * {@link MapUpdate}, just in case of ... I know not what.
-	 */
-	private static final float INTERVAL_FULL_UPDATE = 5f;
+	private static final Logger LOG = Logger.getLogger(GlyphUpdatingSystem.class.getName());
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
@@ -70,51 +59,62 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMapper.getFor(HasGlyph.class);
 	
-	private static final ExtGreasedRegion emptyVisible = new ExtGreasedRegion(1, 1),
-			visibleDelta = new ExtGreasedRegion(1, 1), prevVisible = new ExtGreasedRegion(1, 1),
-			noLongerVisible = new ExtGreasedRegion(1, 1);
-	
 	private BatchedRunner batched = new BatchedRunner();
 	
 	private final OrderedMap<Entity, Glyph> entityToGlyph = new OrderedMap<>();
 	private final OrderedMap<Glyph, Entity> glyphToEntity = new OrderedMap<>();
-	private float fullUpdateRemainingInterval = 0f;
+	
+	/**
+	 * When an Entity which {@link HasGlyph has a Glyph} is removed from the Engine,
+	 * we need to ensure that we issue a Glyph-Removal update to the GameScreen.
+	 */
+	private final EntityListener glyphRemovingEntityListener;
+	
+	public GlyphUpdatingSystem() {
+		
+		super();
+		glyphRemovingEntityListener = new EntityListener() {
+			
+			@Override
+			public void entityAdded(Entity entity) {
+				
+				// Nothing to do
+			}
+			
+			@Override
+			public void entityRemoved(Entity entity) {
+				
+				if (Context.getGameScreen() == null)
+					return;
+				
+				if (entityToGlyph.containsKey(entity)) {
+					
+					final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
+					upd.setGlyph(entityToGlyph.get(entity));
+					Context.getGameScreen().postGameScreenUpdate(upd);
+				}
+			}
+		};
+	}
 	
 	@Override
 	public void addedToEngine(Engine engine) {
 		
 		super.addedToEngine(engine);
-		engine.addEntityListener(Family.all(HasGlyph.class).get(), this);
+		engine.addEntityListener(Family.all(HasGlyph.class).get(), glyphRemovingEntityListener);
 	}
 	
 	@Override
 	public void removedFromEngine(Engine engine) {
 		
-		engine.removeEntityListener(this);
+		engine.removeEntityListener(glyphRemovingEntityListener);
 		super.removedFromEngine(engine);
-	}
-	
-	@Override
-	public void entityAdded(Entity entity) {
-		
-		// Nothing to do
-	}
-	
-	@Override
-	public void entityRemoved(Entity entity) {
-		
-		if (entityToGlyph.containsKey(entity)) {
-			
-			final GlyphRemovedUpdate upd = GameScreenUpdatePool.get().get(GlyphRemovedUpdate.class);
-			upd.setGlyph(entityToGlyph.get(entity));
-			Context.getGameScreen().postGameScreenUpdate(upd);
-		}
 	}
 	
 	@Override
 	public void update(float deltaTime) {
 		
-		final ProfilerTimer timer = Profiler.get().start("GameScreenUpdatingSystem (overall)");
+		final ProfilerTimer timer = Profiler.get().start("MapUpdatingSystem (overall)");
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
@@ -123,99 +123,9 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 		
 		final Entity e = utm.get(Tags.SCREEN_MAP);
 		
-		updateMap(e, deltaTime);
 		updateEntities(e, deltaTime);
 		
 		timer.stop();
-	}
-	
-	private void updateMap(Entity screenMapEntity, float deltaTime) {
-		
-		final GameScreen gameScreen = Context.getGameScreen();
-		if (gameScreen == null)
-			return;
-		//
-		// If the tagged Entity has no associated map, then just clear the screen.
-		if (!HAS_MAP.has(screenMapEntity)) {
-			gameScreen.postGameScreenUpdate(GameScreenUpdatePool.get().get(ClearMapUpdate.class));
-			
-			return;
-		}
-		
-		final HasMap hm = HAS_MAP.get(screenMapEntity);
-		
-		//
-		// If the HasMap has no updated locations, then there's nothing to do.
-		if (hm.getUpdatedLocations() == null || hm.getUpdatedLocations().isEmpty())
-			return;
-			
-		//
-		// If the HasMap has no good GameMap, then there's nothing to do.
-		if (hm.getMap() == null)
-			return;
-			
-		//
-		// Now -- does the GameScreen need to be resized?
-		if (gameScreen.getMapGridWorldCellWidth() != hm.getMap().getWidth()
-				|| gameScreen.getMapGridWorldCellHeight() != hm.getMap().getHeight()) {
-			final MapScreenSizeUpdate upd = GameScreenUpdatePool.get().get(MapScreenSizeUpdate.class);
-			upd.setWidth(hm.getMap().getWidth());
-			upd.setHeight(hm.getMap().getHeight());
-			Context.getGameScreen().postGameScreenUpdate(upd);
-		}
-		
-		//
-		// Now -- compare the aggregate FOV (if available) against the previous FOV (if
-		// available)
-		final ExtGreasedRegion visible;
-		if (HAS_FOV.has(screenMapEntity))
-			visible = HAS_FOV.get(screenMapEntity).getVisible();
-		else
-			visible = emptyVisible;
-			
-		//
-		// Add updates for all recently-updated locations.
-		if ((fullUpdateRemainingInterval -= deltaTime) <= 0f) {
-			
-			//
-			// Time for a full-map update
-			//
-			
-			final MapUpdate upd = GameScreenUpdatePool.get().get(MapUpdate.class);
-			upd.setMap(hm.getMap(), visible);
-			gameScreen.postGameScreenUpdate(upd);
-			fullUpdateRemainingInterval = INTERVAL_FULL_UPDATE;
-			
-		} else {
-			
-			//
-			// Perform only a map-delta update, including only those portions of the FOV
-			// that have changed.
-			//
-			
-			if (prevVisible.width != visible.width || prevVisible.height != visible.height)
-				prevVisible.resizeAndEmpty(visible.width, visible.height);
-			
-			if (visibleDelta.width != visible.width || visibleDelta.height != visible.height)
-				visibleDelta.resizeAndEmpty(visible.width, visible.height);
-			
-			if (noLongerVisible.width != visible.width || noLongerVisible.height != visible.height)
-				noLongerVisible.resizeAndEmpty(visible.width, visible.height);
-			
-			visibleDelta.remake(visible).xor(prevVisible);
-			
-			noLongerVisible.remake(prevVisible).andNot(visible);
-			
-			prevVisible.remake(visible);
-			
-			final MapDeltaUpdate upd = GameScreenUpdatePool.get().get(MapDeltaUpdate.class);
-			upd.setMap(hm.getMap(), visible, visibleDelta.or(hm.getUpdatedLocations()));
-			gameScreen.postGameScreenUpdate(upd);
-		}
-		
-		//
-		// Now that we've queued up all updates, reset that list of updated locations.
-		hm.getUpdatedLocations().clear();
 	}
 	
 	private void updateEntities(Entity screenMapEntity, float deltaTime) {
@@ -417,7 +327,7 @@ public class GameScreenUpdatingSystem extends EntitySystem implements EntityList
 			// Finally -- check on entities which are in "previously-visible" and not in
 			// "visible". These entities should be drawn as "ghosted".
 			//
-			final OrderedSet<Entity> noLongerVisibleEntities = entities.getWithin(noLongerVisible);
+			final OrderedSet<Entity> noLongerVisibleEntities = entities.getWithin(fov.getNoLongerVisible());
 			
 			for (int i = 0; i < noLongerVisibleEntities.size(); i++) {
 				final Entity e = noLongerVisibleEntities.getAt(i);

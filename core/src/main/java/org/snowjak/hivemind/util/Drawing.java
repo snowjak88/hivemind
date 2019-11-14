@@ -4,7 +4,6 @@
 package org.snowjak.hivemind.util;
 
 import java.util.EnumSet;
-import java.util.function.Consumer;
 
 import org.eclipse.collections.api.map.primitive.MutableObjectCharMap;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectCharHashMap;
@@ -35,37 +34,10 @@ public class Drawing {
 	 */
 	public static void drawBox(BoxStyle style, SparseLayers surface, Coord from, Coord to, float color) {
 		
-		if (style == null)
-			return;
 		if (surface == null)
 			return;
-		if (from == null)
-			return;
-		if (to == null)
-			return;
 		
-		if (from.equals(to))
-			surface.put(from.x, from.y, '#', color);
-		
-		final int startX = (from.x < to.x) ? from.x : to.x;
-		final int startY = (from.y < to.y) ? from.y : to.y;
-		final int endX = (from.x > to.x) ? from.x : to.x;
-		final int endY = (from.y > to.y) ? from.y : to.y;
-		
-		surface.put(startX, startY, style.getCharFor(BoxComponent.TOP_LEFT), color);
-		surface.put(startX, endY, style.getCharFor(BoxComponent.BOTTOM_LEFT), color);
-		surface.put(endX, startY, style.getCharFor(BoxComponent.TOP_RIGHT), color);
-		surface.put(endX, endY, style.getCharFor(BoxComponent.BOTTOM_RIGHT), color);
-		
-		for (int x = startX + 1; x <= endX - 1; x++) {
-			surface.put(x, startY, style.getCharFor(BoxComponent.HORIZONTAL), color);
-			surface.put(x, endY, style.getCharFor(BoxComponent.HORIZONTAL), color);
-		}
-		
-		for (int y = startY + 1; y <= endY - 1; y++) {
-			surface.put(startX, y, style.getCharFor(BoxComponent.VERTICAL), color);
-			surface.put(endX, y, style.getCharFor(BoxComponent.VERTICAL), color);
-		}
+		drawBox(style, from, to, color, (loc, col, ch) -> surface.put(loc.x, loc.y, ch, col));
 	}
 	
 	/**
@@ -80,38 +52,53 @@ public class Drawing {
 	 */
 	public static void drawBox(BoxStyle style, SparseTextMap layer, Coord from, Coord to, float color) {
 		
-		if (style == null)
-			return;
 		if (layer == null)
+			return;
+		
+		drawBox(style, from, to, color, (loc, col, ch) -> layer.place(loc.x, loc.y, ch, col));
+	}
+	
+	/**
+	 * Draws a box using the given {@link DrawConsumer}.
+	 * 
+	 * @param style
+	 * @param from
+	 * @param to
+	 * @param color
+	 * @param drawer
+	 */
+	private static void drawBox(BoxStyle style, Coord from, Coord to, float color, DrawConsumer drawer) {
+		
+		if (style == null)
 			return;
 		if (from == null)
 			return;
 		if (to == null)
 			return;
-		
-		if (from.equals(to)) {
-			layer.place(from.x, from.y, '#', color);
+		if (drawer == null)
 			return;
-		}
+		
+		if (from.equals(to))
+			drawer.consume(from, color, '#');
 		
 		final int startX = (from.x < to.x) ? from.x : to.x;
 		final int startY = (from.y < to.y) ? from.y : to.y;
 		final int endX = (from.x > to.x) ? from.x : to.x;
 		final int endY = (from.y > to.y) ? from.y : to.y;
 		
-		layer.place(startX, startY, style.getCharFor(BoxComponent.TOP_LEFT), color);
-		layer.place(startX, endY, style.getCharFor(BoxComponent.BOTTOM_LEFT), color);
-		layer.place(endX, startY, style.getCharFor(BoxComponent.TOP_RIGHT), color);
-		layer.place(endX, endY, style.getCharFor(BoxComponent.BOTTOM_RIGHT), color);
+		drawer.consume(Coord.get(startX, startY), color, style.getCharFor(BoxComponent.TOP_LEFT));
+		drawer.consume(Coord.get(startX, endY), color, style.getCharFor(BoxComponent.BOTTOM_LEFT));
+		drawer.consume(Coord.get(endX, startY), color, style.getCharFor(BoxComponent.TOP_RIGHT));
+		drawer.consume(Coord.get(endX, endY), color, style.getCharFor(BoxComponent.BOTTOM_RIGHT));
 		
 		for (int x = startX + 1; x <= endX - 1; x++) {
-			layer.place(x, startY, style.getCharFor(BoxComponent.HORIZONTAL), color);
-			layer.place(x, endY, style.getCharFor(BoxComponent.HORIZONTAL), color);
+			drawer.consume(Coord.get(x, startY), color, style.getCharFor(BoxComponent.HORIZONTAL));
+			drawer.consume(Coord.get(x, endY), color, style.getCharFor(BoxComponent.HORIZONTAL));
 		}
 		
 		for (int y = startY + 1; y <= endY - 1; y++) {
-			layer.place(startX, y, style.getCharFor(BoxComponent.VERTICAL), color);
-			layer.place(endX, y, style.getCharFor(BoxComponent.VERTICAL), color);
+			drawer.consume(Coord.get(startX, y), color, style.getCharFor(BoxComponent.VERTICAL));
+			drawer.consume(Coord.get(endX, y), color, style.getCharFor(BoxComponent.VERTICAL));
 		}
 	}
 	
@@ -206,5 +193,18 @@ public class Drawing {
 				
 			return null;
 		}
+	}
+	
+	/**
+	 * Provides a mechanism for abstracting the method for drawing a single
+	 * character, in a foreground color, at a certain location.
+	 * 
+	 * @author snowjak88
+	 *
+	 */
+	@FunctionalInterface
+	private static interface DrawConsumer {
+		
+		public void consume(Coord location, float color, char ch);
 	}
 }

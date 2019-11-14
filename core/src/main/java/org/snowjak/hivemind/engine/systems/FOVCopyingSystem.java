@@ -119,7 +119,12 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		
 		if (HAS_FOV.has(copyTo)) {
 			final HasFOV destination = HAS_FOV.get(copyTo);
+			
 			destination.getVisible().or(source.getVisible());
+			destination.getPrevVisible().or(source.getPrevVisible());
+			
+			destination.getVisibleDelta().remake(destination.getVisible()).xor(destination.getPrevVisible());
+			destination.getNoLongerVisible().remake(destination.getPrevVisible()).andNot(destination.getVisible());
 			
 			if (destination.getLightLevels().length != source.getLightLevels().length
 					|| destination.getLightLevels()[0].length != source.getLightLevels()[0].length)
@@ -129,9 +134,16 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 			ArrayUtil.addInPlace(destination.getLightLevels(), source.getLightLevels());
 			
 		} else {
+			
 			final HasFOV destination = getEngine().createComponent(HasFOV.class);
+			
 			destination.setVisible(new ExtGreasedRegion(source.getVisible()));
+			destination.setPrevVisible(new ExtGreasedRegion(source.getPrevVisible()));
+			destination.setVisibleDelta(new ExtGreasedRegion(source.getVisibleDelta()));
+			destination.setNoLongerVisible(new ExtGreasedRegion(source.getNoLongerVisible()));
+			
 			destination.setLightLevels(source.getLightLevels());
+			
 			copyTo.add(destination);
 		}
 	}

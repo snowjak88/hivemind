@@ -27,4 +27,9 @@ public class Tags {
 	 * the {@link GameScreen}'s content.
 	 */
 	public static final String SCREEN_MAP = "SCREEN_MAP";
+	
+	/**
+	 * The {@link Entity} whose status is displayed on the sidebar.
+	 */
+	public static final String ACTIVE_INFO = "ACTIVE_INFO";
 }

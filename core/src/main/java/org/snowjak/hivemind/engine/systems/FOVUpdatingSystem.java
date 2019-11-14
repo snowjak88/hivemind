@@ -128,22 +128,36 @@ public class FOVUpdatingSystem extends IteratingSystem {
 			entity.add(fov);
 		}
 		
-		if (fov.getLightLevels() == null || fov.getLightLevels().length != worldMap.getMap().getWidth()
-				|| fov.getLightLevels()[0].length != worldMap.getMap().getHeight())
-			fov.setLightLevels(new double[worldMap.getMap().getWidth()][worldMap.getMap().getHeight()]);
+		final int width = worldMap.getMap().getWidth(), height = worldMap.getMap().getHeight();
 		
-		if (fov.getVisible() == null)
-			fov.setVisible(new ExtGreasedRegion(fov.getLightLevels().length, fov.getLightLevels()[0].length));
-		else if (fov.getLightLevels().length != fov.getVisible().width
-				|| fov.getLightLevels()[0].length != fov.getVisible().height)
-			fov.getVisible().resizeAndEmpty(fov.getLightLevels().length, fov.getLightLevels()[0].length);
+		if (fov.getLightLevels() == null || fov.getLightLevels().length != width
+				|| fov.getLightLevels()[0].length != height)
+			fov.setLightLevels(new double[width][height]);
+		
+		fov.setVisible(checkSize(fov.getVisible(), width, height));
+		fov.setPrevVisible(checkSize(fov.getPrevVisible(), width, height));
+		fov.setVisibleDelta(checkSize(fov.getVisibleDelta(), width, height));
+		fov.setNoLongerVisible(checkSize(fov.getNoLongerVisible(), width, height));
 		
 		parallel.add(() -> {
 			
 			FOV.reuseFOV(visibilityResistance, fov.getLightLevels(), location.getLocation().x, location.getLocation().y,
 					canSee.getRadius());
+			
 			fov.getVisible().refill(fov.getLightLevels(), 1e-4).not();
 			
+			fov.getVisibleDelta().remake(fov.getPrevVisible()).xor(fov.getVisible());
+			fov.getNoLongerVisible().remake(fov.getPrevVisible()).andNot(fov.getVisible());
+			
 		});
+	}
+	
+	private ExtGreasedRegion checkSize(ExtGreasedRegion region, int width, int height) {
+		
+		if (region == null)
+			return new ExtGreasedRegion(width, height);
+		if (region.width != width || region.height != height)
+			region.resizeAndEmpty(width, height);
+		return region;
 	}
 }
