@@ -4,8 +4,10 @@
 package org.snowjak.hivemind.engine.systems.input;
 
 import org.snowjak.hivemind.Context;
-import org.snowjak.hivemind.engine.Tags;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.components.IsSelectable;
+import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
@@ -15,12 +17,9 @@ import org.snowjak.hivemind.gamescreen.InputHandlers;
 import org.snowjak.hivemind.gamescreen.updates.FreeLayer;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.gamescreen.updates.LayerUpdate;
-import org.snowjak.hivemind.gamescreen.updates.RegisterInputEventListener;
-import org.snowjak.hivemind.gamescreen.updates.UnregisterInputEventListener;
 import org.snowjak.hivemind.util.Drawing;
 import org.snowjak.hivemind.util.Drawing.BoxStyle;
 
-import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.ai.msg.Telegram;
@@ -45,6 +44,7 @@ public class BaseInputState implements InputSystemState {
 	private static final String SELECTION_LAYER_NAME = BaseInputState.class.getName();
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
+	private static final ComponentMapper<IsSelectable> IS_SELECTABLE = ComponentMapper.getFor(IsSelectable.class);
 	
 	private Coord beginSelection = null, endSelection = null;
 	private boolean updateSelectionBox = false;
@@ -72,9 +72,7 @@ public class BaseInputState implements InputSystemState {
 							.get();
 		//@formatter:on
 		
-		final RegisterInputEventListener upd = GameScreenUpdatePool.get().get(RegisterInputEventListener.class);
-		upd.setListener(clickListener);
-		Context.getGameScreen().postGameScreenUpdate(upd);
+		entity.registerListener(clickListener);
 	}
 	
 	@Override
@@ -92,66 +90,40 @@ public class BaseInputState implements InputSystemState {
 				Context.getGameScreen().postGameScreenUpdate(upd);
 			}
 			
-			if (beginSelection != null && endSelection != null) {
-				
-				//
-				// Identify which entities were selected.
-				//
-				final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class)
-						.get(Tags.SCREEN_MAP);
-				final HasMap screenMap = HAS_MAP.get(screenMapEntity);
-				
-				final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
-				final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
-				final int endX = (beginSelection.x < endSelection.x) ? endSelection.x : beginSelection.x;
-				final int endY = (beginSelection.y < endSelection.y) ? endSelection.y : beginSelection.y;
-				
-				boolean printedHeader = false;
-				
-				for (int x = startX; x <= endX; x++)
-					for (int y = startY; y <= endY; y++) {
-						final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
-						if (entitiesAt == null || entitiesAt.isEmpty())
-							continue;
-						
-						if (!printedHeader) {
-							System.out.println("-=-=-=-=-=-=-=- SELECTION -=-=-=-=-=-=-=-");
-							printedHeader = true;
-						}
-						
-						for (int i = 0; i < entitiesAt.size(); i++) {
-							final Entity e = entitiesAt.getAt(i);
-							System.out.print("[" + screenMap.getEntities().getLocation(e).x + ","
-									+ screenMap.getEntities().getLocation(e).y + "]");
-							
-							if (entity.getEngine().getSystem(UniqueTagManager.class).has(e))
-								System.out.print(
-										": tag (" + entity.getEngine().getSystem(UniqueTagManager.class).get(e) + ")");
-							
-							System.out.print(": ");
-							
-							for (Component c : e.getComponents()) {
-								System.out.print("[" + c.getClass().getSimpleName() + "]");
-							}
-							
-							System.out.println();
+			//
+			// Identify which entities were selected.
+			//
+			final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
+			final HasMap screenMap = HAS_MAP.get(screenMapEntity);
+			
+			final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
+			final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
+			final int endX = (beginSelection.x < endSelection.x) ? endSelection.x : beginSelection.x;
+			final int endY = (beginSelection.y < endSelection.y) ? endSelection.y : beginSelection.y;
+			
+			final OrderedSet<Entity> selected = new OrderedSet<>((endX - startX + 1) * (endY - startY + 1));
+			
+			for (int x = startX; x <= endX; x++)
+				for (int y = startY; y <= endY; y++) {
+					
+					final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
+					if (entitiesAt == null || entitiesAt.isEmpty())
+						continue;
+					
+					for (int i = 0; i < entitiesAt.size(); i++) {
+						if (IS_SELECTABLE.has(entitiesAt.getAt(i))) {
+							entitiesAt.getAt(i).add(entity.getEngine().createComponent(IsSelected.class));
+							selected.add(entitiesAt.getAt(i));
 						}
 					}
+				}
 				
-				if (printedHeader)
-					System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-					
-				//
-				// Flag the selected entities.
-				//
-				// TODO
-				
-				//
-				// Change to the "active-selection" input-state.
-				//
-				// TODO
-				
-			}
+			//
+			// Change to the "active-selection" input-state if there is anything selected.
+			//
+			
+			if (!selected.isEmpty())
+				entity.getStateMachine().changeState(new ActiveSelectionState(selected));
 			
 			beginSelection = null;
 			endSelection = null;
@@ -196,9 +168,7 @@ public class BaseInputState implements InputSystemState {
 			// Get rid of the selection click-listener.
 			//
 			
-			final UnregisterInputEventListener upd = GameScreenUpdatePool.get().get(UnregisterInputEventListener.class);
-			upd.setListener(clickListener);
-			Context.getGameScreen().postGameScreenUpdate(upd);
+			entity.unregisterListener(clickListener);
 		}
 		
 		if (Context.getGameScreen() != null) {
@@ -218,5 +188,4 @@ public class BaseInputState implements InputSystemState {
 		
 		return false;
 	}
-	
 }

@@ -3,8 +3,8 @@
  */
 package org.snowjak.hivemind.engine.systems.maintenance;
 
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.concurrent.BatchedRunner;
-import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasUpdatedLocation;

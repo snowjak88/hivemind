@@ -7,6 +7,7 @@ import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.utils.Pool.Poolable;
 
+import squidpony.squidmath.OrderedSet;
 import squidpony.squidmath.SquidID;
 
 /**
@@ -18,15 +19,25 @@ import squidpony.squidmath.SquidID;
  */
 public class CopiesFOVTo implements Component, Poolable {
 	
-	private SquidID copyTo = null;
+	private OrderedSet<SquidID> copyTo = new OrderedSet<>();
 	private int radius = 32767;
 	
-	public SquidID getCopyTo() {
+	public OrderedSet<SquidID> getCopyTo() {
 		
 		return copyTo;
 	}
 	
-	public void setCopyTo(SquidID copyTo) {
+	public void addCopyTo(SquidID copyTo) {
+		
+		this.copyTo.add(copyTo);
+	}
+	
+	public void removeCopyTo(SquidID copyTo) {
+		
+		this.copyTo.remove(copyTo);
+	}
+	
+	public void setCopyTo(OrderedSet<SquidID> copyTo) {
 		
 		this.copyTo = copyTo;
 	}
@@ -44,7 +55,7 @@ public class CopiesFOVTo implements Component, Poolable {
 	@Override
 	public void reset() {
 		
-		copyTo = null;
+		copyTo.clear();
 		radius = 32767;
 	}
 }

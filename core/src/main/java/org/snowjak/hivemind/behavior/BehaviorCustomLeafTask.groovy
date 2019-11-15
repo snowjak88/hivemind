@@ -7,8 +7,8 @@ import java.util.concurrent.Callable
 import java.util.concurrent.Future
 
 import org.snowjak.hivemind.Context
+import org.snowjak.hivemind.Tags
 import org.snowjak.hivemind.concurrent.Executor
-import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager
 

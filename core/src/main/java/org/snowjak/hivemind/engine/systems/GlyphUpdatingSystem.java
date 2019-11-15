@@ -6,13 +6,14 @@ package org.snowjak.hivemind.engine.systems;
 import java.util.logging.Logger;
 
 import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.concurrent.BatchedRunner;
-import org.snowjak.hivemind.engine.Tags;
 import org.snowjak.hivemind.engine.components.HasAppearance;
 import org.snowjak.hivemind.engine.components.HasFOV;
 import org.snowjak.hivemind.engine.components.HasGlyph;
 import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
@@ -57,6 +58,7 @@ public class GlyphUpdatingSystem extends EntitySystem {
 	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
 	private static final ComponentMapper<HasLocation> HAS_LOCATION = ComponentMapper.getFor(HasLocation.class);
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
+	private static final ComponentMapper<IsSelected> IS_SELECTED = ComponentMapper.getFor(IsSelected.class);
 	private static final ComponentMapper<HasGlyph> HAS_GLYPH = ComponentMapper.getFor(HasGlyph.class);
 	
 	private BatchedRunner batched = new BatchedRunner();

@@ -21,7 +21,7 @@ import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.MapUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
-import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
+import org.snowjak.hivemind.engine.systems.SelectedGlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.TrackLeavingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.AppearanceUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.EntityMapMaintenanceSystem;
@@ -82,8 +82,7 @@ public class Engine {
 		this.engine.addSystem(new BehaviorProcessingSystem());
 		this.engine.addSystem(new MapUpdatingSystem());
 		this.engine.addSystem(new GlyphUpdatingSystem());
-		
-		this.engine.addSystem(new ToyEntityRemovingSystem());
+		this.engine.addSystem(new SelectedGlyphUpdatingSystem());
 		
 		this.engine.addSystem(new UniqueTagManager());
 		this.engine.addSystem(new EntityRefManager());

@@ -12,15 +12,12 @@ import org.eclipse.collections.api.set.primitive.MutableIntSet;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.snowjak.hivemind.App;
-import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.config.Config;
 import org.snowjak.hivemind.display.Fonts;
-import org.snowjak.hivemind.engine.systems.ToyEntityRemovingSystem;
 import org.snowjak.hivemind.events.EventBus;
 import org.snowjak.hivemind.events.game.ExitGameEvent;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent;
-import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.ui.MouseHoverListener;
@@ -305,13 +302,6 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				final float y = mapGrid.worldY(e.getMapCursor().y);
 				cursor.setPosition(x, y);
 			}).get());
-			
-			inputProcessor
-					.registerInputListener(
-							InputEventListener.build().button(MouseButton.LEFT_BUTTON)
-									.one(GameKey.ALT_LEFT, GameKey.ALT_RIGHT).onEvent((e) -> Context.getEngine()
-											.getSystem(ToyEntityRemovingSystem.class).postRequest(e.getMapCursor()))
-									.get());
 			
 			inputProcessor.registerInputListener(
 					InputEventListener.build().all(GameKey.UP).onEvent((e) -> doScroll(Direction.UP, 16f)).get());

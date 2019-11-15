@@ -10,8 +10,8 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.snowjak.hivemind.Context
 import org.snowjak.hivemind.Factions
 import org.snowjak.hivemind.RNG
+import org.snowjak.hivemind.Tags
 import org.snowjak.hivemind.Factions.Faction
-import org.snowjak.hivemind.engine.Tags
 import org.snowjak.hivemind.engine.components.HasMap
 import org.snowjak.hivemind.engine.components.IsFromPrefab
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager
@@ -23,7 +23,6 @@ import com.badlogic.ashley.core.Component
 import com.badlogic.ashley.core.ComponentMapper
 import com.badlogic.ashley.core.Entity
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.ai.btree.Task.Status
 import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 
@@ -39,7 +38,11 @@ public abstract class PrefabScript extends Script {
 	
 	private static final Logger LOG = Logger.getLogger(PrefabScript.class.name)
 	
-	private static final String ROOT_PATH = "data${File.separator}prefab${File.separator}"
+	/**
+	 * It is assumed that all prefab-scripts will be located within this directory.
+	 */
+	public static final String ROOT_PATH = "data${File.separator}prefab${File.separator}"
+	
 	private static final BiMap<String,PrefabScript> CACHED_SCRIPTS = HashBiMap.create();
 	private static CompilerConfiguration COMPILER_CONFIG = null;
 	
@@ -50,7 +53,7 @@ public abstract class PrefabScript extends Script {
 	 *   
 	 * will evaluate to
 	 *   
-	 *   .../data/prefab/my-entity.groovy
+	 *   ...{@link #ROOT_PATH}/my-entity.groovy
 	 * </pre>
 	 * @param name
 	 * @return {@code null} if the given prefab cannot be loaded for any reason
@@ -74,7 +77,6 @@ public abstract class PrefabScript extends Script {
 				icz.addImport "Color", SColor.class.name
 				icz.addImport "Region", ExtGreasedRegion.class.name
 				icz.addImport "RNG", RNG.class.name
-				icz.addImport "Status", Status.class.name
 				icz.addImport "Tags", Tags.class.name
 				def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
 				sr.getClassesImplementing(Component.class.name).filter({!it.isAbstract() && !it.isInterfaceOrAnnotation()}).forEach {
@@ -164,28 +166,51 @@ public abstract class PrefabScript extends Script {
 	}
 	
 	/**
-	 * Create a new instance of the given {@link Component}-type.
+	 * Create a new instance of the given {@link Component}-type on the
+	 * active {@link Entity}, or returns the existing instance if it already exists.
+	 * 
 	 * @param <T>
 	 * @param clazz
 	 * @return
 	 */
 	public <T extends Component> T create(Class<T> clazz) {
+		def existing = get(clazz)
+		if(existing != null)
+			return existing
+		
 		def component = Context.getEngine().createComponent(clazz)
 		if (binding.variables['entity'] != null)
 			binding.variables['entity'].add component
 		component
 	}
 	
+	/**
+	 * Get the current instance of the given {@link Component}-type as
+	 * associated with the current {@link Entity}, or {@code null} if no such
+	 * association exists.	
+	 * @param <T>
+	 * @param clazz
+	 * @return
+	 */
 	public <T extends Component> T get(Class<T> clazz) {
 		get(binding.variables['entity'], clazz)
 	}
 	
+	/**
+	 * Get the current instance of the given {@link Component}-type as
+	 * associated with the given {@link Entity}, or {@code null} if no such
+	 * association exists.
+	 * @param <T>
+	 * @param entity
+	 * @param clazz
+	 * @return
+	 */
 	public <T extends Component> T get(Entity entity, Class<T> clazz) {
 		if(clazz == null || entity == null)
 			return null
 		
 		if(!ComponentMapper.getFor(clazz).has(entity))
-			return create(clazz)
+			return null
 		
 		ComponentMapper.getFor(clazz).get(entity)
 	}

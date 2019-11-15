@@ -23,6 +23,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 
+import squidpony.squidmath.OrderedSet;
 import squidpony.squidmath.SquidID;
 
 /**
@@ -48,8 +49,13 @@ public class EntityLoader implements Loader<Entity> {
 			obj.add("id", context.serialize(ref.get(src), SquidID.class));
 		
 		final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
-		if (utm != null && utm.has(src))
-			obj.add("tag", new JsonPrimitive(utm.get(src)));
+		if (utm != null && utm.has(src)) {
+			final JsonArray tags = new JsonArray();
+			final OrderedSet<String> tagValues = utm.get(src);
+			for (int i = 0; i < tagValues.size(); i++)
+				tags.add(tagValues.getAt(i));
+			obj.add("tags", tags);
+		}
 		
 		final FactionManager fm = Context.getEngine().getSystem(FactionManager.class);
 		if (fm != null && fm.has(src))
@@ -85,10 +91,14 @@ public class EntityLoader implements Loader<Entity> {
 				erm.add(e, context.deserialize(obj.get("id"), SquidID.class));
 		}
 		
-		if (obj.has("tag")) {
+		if (obj.has("tags")) {
 			final UniqueTagManager utm = Context.getEngine().getSystem(UniqueTagManager.class);
-			if (utm != null)
-				utm.set(obj.get("tag").getAsString(), e);
+			if (utm != null) {
+				if (!obj.get("tags").isJsonArray())
+					throw new JsonParseException("Cannot parse Entity from JSON -- [tags] is not an array!");
+				final JsonArray tags = obj.getAsJsonArray("tags");
+				tags.forEach(je -> utm.set(je.getAsString(), e));
+			}
 		}
 		
 		if (obj.has("faction")) {

@@ -38,7 +38,7 @@ behavior = task {
 		
 		prop["pathfind-task"] = schedule({
 			pathfinder.lock.acquireUninterruptibly()
-			def result = pathfinder.pathfinder.findPath(3, 16, null, null, loc.location, moveTo.destination)
+			def result = pathfinder.pathfinder.findPath(128, -1, null, null, loc.location, moveTo.destination)
 			pathfinder.lock.release()
 			result
 		})

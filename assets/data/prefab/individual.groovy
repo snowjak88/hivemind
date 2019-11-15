@@ -1,7 +1,5 @@
-label = "wanderer"
+label = "an individual"
 prefab = {
-	
-	faction "player"
 	
 	def move = create(CanMove)
 	move.speed = 2.5
@@ -13,12 +11,11 @@ prefab = {
 	appearance.ch = '@'
 	appearance.color = Color.PINK
 	
-	create(HasMap)
-	
-	def behavior = create(HasBehavior)
-	behavior.behaviorName = "wander"
+	create HasMap
 	
 	def track = create(LeavesTrack)
 	track.prefabName = "smoke-cloud"
+	
+	create IsSelectable
 	
 }

@@ -21,6 +21,8 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
 import squidpony.squidmath.Coord;
+import squidpony.squidmath.OrderedSet;
+import squidpony.squidmath.SquidID;
 
 /**
  * For any {@link Entity} that {@link CopiesFOVTo copies its FOV} to another
@@ -73,14 +75,22 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		final CopiesFOVTo copyTo = COPY_FOV.get(entity);
 		final EntityRefManager erm = getEngine().getSystem(EntityRefManager.class);
 		
-		if (!erm.has(copyTo.getCopyTo()))
-			return;
-		final Entity copyToEntity = erm.get(copyTo.getCopyTo());
-		if (!HAS_MAP.has(copyToEntity))
-			return;
+		final OrderedSet<SquidID> copiesToIDs = copyTo.getCopyTo();
 		
-		final HasMap copyToMap = HAS_MAP.get(copyToEntity);
-		copyToMap.getUpdatedLocations().or(fov.getVisible());
+		for (int i = 0; i < copiesToIDs.size(); i++) {
+			
+			final SquidID copyToID = copiesToIDs.getAt(i);
+			
+			if (!erm.has(copyToID))
+				return;
+			final Entity copyToEntity = erm.get(copyToID);
+			if (!HAS_MAP.has(copyToEntity))
+				return;
+			
+			final HasMap copyToMap = HAS_MAP.get(copyToEntity);
+			copyToMap.getUpdatedLocations().or(fov.getVisible());
+			
+		}
 	}
 	
 	@Override
@@ -98,53 +108,60 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 		
 		final EntityRefManager erm = getEngine().getSystem(EntityRefManager.class);
 		
-		if (COPY_FOV.get(entity).getCopyTo() == null)
+		final CopiesFOVTo copiesFOVTo = COPY_FOV.get(entity);
+		if (copiesFOVTo.getCopyTo() == null || copiesFOVTo.getCopyTo().isEmpty())
 			return;
 		
-		final Entity copyTo = erm.get(COPY_FOV.get(entity).getCopyTo());
-		if (copyTo == null)
-			return;
-		
-		final HasFOV source = HAS_FOV.get(entity);
-		if (source.getVisible() == null)
-			return;
-		
-		if (HAS_LOCATION.has(entity) && HAS_LOCATION.has(copyTo)) {
-			final Coord fromCoord = HAS_LOCATION.get(entity).getLocation();
-			final Coord toCoord = HAS_LOCATION.get(copyTo).getLocation();
+		final OrderedSet<SquidID> copiesToIDs = copiesFOVTo.getCopyTo();
+		for (int i = 0; i < copiesToIDs.size(); i++) {
 			
-			if (fromCoord.distance(toCoord) > COPY_FOV.get(entity).getRadius())
+			final SquidID copyToID = copiesToIDs.getAt(i);
+			
+			final Entity copyTo = erm.get(copyToID);
+			if (copyTo == null)
 				return;
-		}
-		
-		if (HAS_FOV.has(copyTo)) {
-			final HasFOV destination = HAS_FOV.get(copyTo);
 			
-			destination.getVisible().or(source.getVisible());
-			destination.getPrevVisible().or(source.getPrevVisible());
+			final HasFOV source = HAS_FOV.get(entity);
+			if (source.getVisible() == null)
+				return;
 			
-			destination.getVisibleDelta().remake(destination.getVisible()).xor(destination.getPrevVisible());
-			destination.getNoLongerVisible().remake(destination.getPrevVisible()).andNot(destination.getVisible());
+			if (HAS_LOCATION.has(entity) && HAS_LOCATION.has(copyTo)) {
+				final Coord fromCoord = HAS_LOCATION.get(entity).getLocation();
+				final Coord toCoord = HAS_LOCATION.get(copyTo).getLocation();
+				
+				if (fromCoord.distance(toCoord) > COPY_FOV.get(entity).getRadius())
+					return;
+			}
 			
-			if (destination.getLightLevels().length != source.getLightLevels().length
-					|| destination.getLightLevels()[0].length != source.getLightLevels()[0].length)
-				destination
-						.setLightLevels(new double[source.getLightLevels().length][source.getLightLevels()[0].length]);
-			
-			ArrayUtil.addInPlace(destination.getLightLevels(), source.getLightLevels());
-			
-		} else {
-			
-			final HasFOV destination = getEngine().createComponent(HasFOV.class);
-			
-			destination.setVisible(new ExtGreasedRegion(source.getVisible()));
-			destination.setPrevVisible(new ExtGreasedRegion(source.getPrevVisible()));
-			destination.setVisibleDelta(new ExtGreasedRegion(source.getVisibleDelta()));
-			destination.setNoLongerVisible(new ExtGreasedRegion(source.getNoLongerVisible()));
-			
-			destination.setLightLevels(source.getLightLevels());
-			
-			copyTo.add(destination);
+			if (HAS_FOV.has(copyTo)) {
+				final HasFOV destination = HAS_FOV.get(copyTo);
+				
+				destination.getVisible().or(source.getVisible());
+				destination.getPrevVisible().or(source.getPrevVisible());
+				
+				destination.getVisibleDelta().remake(destination.getVisible()).xor(destination.getPrevVisible());
+				destination.getNoLongerVisible().remake(destination.getPrevVisible()).andNot(destination.getVisible());
+				
+				if (destination.getLightLevels().length != source.getLightLevels().length
+						|| destination.getLightLevels()[0].length != source.getLightLevels()[0].length)
+					destination.setLightLevels(
+							new double[source.getLightLevels().length][source.getLightLevels()[0].length]);
+				
+				ArrayUtil.addInPlace(destination.getLightLevels(), source.getLightLevels());
+				
+			} else {
+				
+				final HasFOV destination = getEngine().createComponent(HasFOV.class);
+				
+				destination.setVisible(new ExtGreasedRegion(source.getVisible()));
+				destination.setPrevVisible(new ExtGreasedRegion(source.getPrevVisible()));
+				destination.setVisibleDelta(new ExtGreasedRegion(source.getVisibleDelta()));
+				destination.setNoLongerVisible(new ExtGreasedRegion(source.getNoLongerVisible()));
+				
+				destination.setLightLevels(source.getLightLevels());
+				
+				copyTo.add(destination);
+			}
 		}
 	}
 }

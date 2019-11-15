@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine;
+package org.snowjak.hivemind;
 
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
@@ -27,6 +27,12 @@ public class Tags {
 	 * the {@link GameScreen}'s content.
 	 */
 	public static final String SCREEN_MAP = "SCREEN_MAP";
+	
+	/**
+	 * The {@link Entity} which represents the player, and which should be the
+	 * primary target of player-commands.
+	 */
+	public static final String PLAYER = "PLAYER";
 	
 	/**
 	 * The {@link Entity} whose status is displayed on the sidebar.

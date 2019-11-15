@@ -4,10 +4,14 @@
 package org.snowjak.hivemind.engine.systems.maintenance;
 
 import org.snowjak.hivemind.Factions.Faction;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasAppearance;
+import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.IsMaterial;
+import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.manager.FactionManager;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
@@ -31,21 +35,19 @@ import com.badlogic.gdx.graphics.Color;
  */
 public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	
-	/**
-	 * This system will execute every {@code INTERVAL} seconds.
-	 */
-	public static final float INTERVAL = 3f;
+	private static final float INTERVAL = 3f;
 	
 	private static final ComponentMapper<HasAppearance> HAS_APPEARANCE = ComponentMapper.getFor(HasAppearance.class);
 	private static final ComponentMapper<IsMaterial> IS_MATERIAL = ComponentMapper.getFor(IsMaterial.class);
+	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	
-	private final EntityListener appearanceAddedListener;
+	private final EntityListener appearanceUpdateListener, selectionChangeListener;
 	
 	public AppearanceUpdatingSystem() {
 		
 		super(Family.all(HasAppearance.class).get(), INTERVAL);
 		
-		appearanceAddedListener = new EntityListener() {
+		appearanceUpdateListener = new EntityListener() {
 			
 			@Override
 			public void entityAdded(Entity entity) {
@@ -59,6 +61,29 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 				// nothing to do
 			}
 		};
+		
+		selectionChangeListener = new EntityListener() {
+			
+			@Override
+			public void entityAdded(Entity entity) {
+				
+				getEngine().getSystem(RunnableExecutingSystem.class).submit(() -> {
+					updateEntityAppearance(entity);
+					final Entity screenMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
+					if (screenMapEntity != null && HAS_MAP.has(screenMapEntity))
+						HAS_MAP.get(screenMapEntity).getEntities().markRefresh(entity);
+				});
+			}
+			
+			@Override
+			public void entityRemoved(Entity entity) {
+				
+				updateEntityAppearance(entity);
+				final Entity screenMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
+				if (screenMapEntity != null && HAS_MAP.has(screenMapEntity))
+					HAS_MAP.get(screenMapEntity).getEntities().markRefresh(entity);
+			}
+		};
 	}
 	
 	@Override
@@ -66,21 +91,16 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 		
 		super.addedToEngine(engine);
 		
-		engine.addEntityListener(Family.all(HasAppearance.class).get(), appearanceAddedListener);
+		engine.addEntityListener(Family.all(HasAppearance.class).get(), appearanceUpdateListener);
+		engine.addEntityListener(Family.all(HasAppearance.class, IsSelected.class).get(), selectionChangeListener);
 	}
 	
 	@Override
 	public void removedFromEngine(Engine engine) {
 		
-		engine.removeEntityListener(appearanceAddedListener);
+		engine.removeEntityListener(appearanceUpdateListener);
 		
 		super.removedFromEngine(engine);
-	}
-	
-	@Override
-	protected void updateInterval() {
-		
-		super.updateInterval();
 	}
 	
 	@Override

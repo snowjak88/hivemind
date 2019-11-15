@@ -3,10 +3,14 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.engine.systems.input.BaseInputState;
 import org.snowjak.hivemind.engine.systems.input.InputSystemState;
 import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.gamescreen.InputEventListener;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
+import org.snowjak.hivemind.gamescreen.updates.RegisterInputEventListener;
+import org.snowjak.hivemind.gamescreen.updates.UnregisterInputEventListener;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
@@ -35,6 +39,7 @@ public class InputEventProcessingSystem extends EntitySystem {
 	
 	@Override
 	public void update(float deltaTime) {
+		
 		final ProfilerTimer timer = Profiler.get().start("InputEventProcessingSystem (overall)");
 		
 		super.update(deltaTime);
@@ -45,6 +50,26 @@ public class InputEventProcessingSystem extends EntitySystem {
 		stateMachine.update();
 		
 		timer.stop();
+	}
+	
+	public void registerListener(InputEventListener listener) {
+		
+		if (Context.getGameScreen() == null)
+			return;
+		
+		final RegisterInputEventListener upd = GameScreenUpdatePool.get().get(RegisterInputEventListener.class);
+		upd.setListener(listener);
+		Context.getGameScreen().postGameScreenUpdate(upd);
+	}
+	
+	public void unregisterListener(InputEventListener listener) {
+		
+		if (Context.getGameScreen() == null)
+			return;
+		
+		final UnregisterInputEventListener upd = GameScreenUpdatePool.get().get(UnregisterInputEventListener.class);
+		upd.setListener(listener);
+		Context.getGameScreen().postGameScreenUpdate(upd);
 	}
 	
 	public StackStateMachine<InputEventProcessingSystem, InputSystemState> getStateMachine() {

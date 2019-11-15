@@ -5,6 +5,7 @@ package org.snowjak.hivemind.engine;
 
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Materials;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.prefab.PrefabScript;
@@ -53,16 +54,18 @@ public class EnginePrefabs {
 		eng.addEntity(worldMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.WORLD_MAP, worldMapEntity);
 		
-		final PrefabScript screenEntityPrefab = PrefabScript.byName("wanderer");
+		final PrefabScript screenEntityPrefab = PrefabScript.byName("individual");
 		screenEntityPrefab.run();
+		screenEntityPrefab.faction("player");
 		screenEntityPrefab.include("mixin/at-random-floor");
 		screenEntityPrefab.tag(Tags.SCREEN_MAP);
 		
 		for (int i = 0; i < 8; i++) {
-			final PrefabScript ps = PrefabScript.byName("wanderer");
+			final PrefabScript ps = PrefabScript.byName("individual");
 			ps.run();
 			ps.include("mixin/at-random-floor");
 			ps.include("mixin/screen-fov-sharing");
+			ps.include("mixin/random-walker");
 		}
 	}
 }

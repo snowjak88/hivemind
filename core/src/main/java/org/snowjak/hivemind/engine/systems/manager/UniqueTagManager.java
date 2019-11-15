@@ -3,14 +3,15 @@
  */
 package org.snowjak.hivemind.engine.systems.manager;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Set;
 
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.EntitySystem;
+
+import squidpony.squidmath.OrderedMap;
+import squidpony.squidmath.OrderedSet;
 
 /**
  * A system which allows you to associate individual entities with tags, for
@@ -25,8 +26,8 @@ import com.badlogic.ashley.core.EntitySystem;
  */
 public class UniqueTagManager extends EntitySystem implements EntityListener {
 	
-	private final Map<String, Entity> tagToEntity = new LinkedHashMap<>();
-	private final Map<Entity, String> entityToTag = new LinkedHashMap<>();
+	private final OrderedMap<String, Entity> tagToEntity = new OrderedMap<>();
+	private final OrderedMap<Entity, OrderedSet<String>> entityToTag = new OrderedMap<>();
 	
 	@Override
 	public void addedToEngine(Engine engine) {
@@ -52,9 +53,11 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 	public void entityRemoved(Entity entity) {
 		
 		synchronized (this) {
-			final String tag = entityToTag.remove(entity);
-			if (tag != null)
-				tagToEntity.remove(tag);
+			final OrderedSet<String> tags = entityToTag.remove(entity);
+			if (tags == null || tags.isEmpty())
+				return;
+			for (int i = 0; i < tags.size(); i++)
+				tagToEntity.remove(tags.getAt(i));
 		}
 	}
 	
@@ -79,9 +82,8 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 		synchronized (this) {
 			if (tag != null && entity != null) {
 				tagToEntity.put(tag, entity);
-				entityToTag.put(entity, tag);
-			}
-			else if (tag != null)
+				entityToTag.computeIfAbsent(entity, x -> new OrderedSet<>()).add(tag);
+			} else if (tag != null)
 				unset(tag);
 			
 			else if (entity != null)
@@ -99,7 +101,7 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 		synchronized (this) {
 			final Entity e = tagToEntity.remove(tag);
 			if (e != null)
-				entityToTag.remove(e);
+				entityToTag.computeIfAbsent(e, x -> new OrderedSet<>()).remove(tag);
 		}
 	}
 	
@@ -111,9 +113,11 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 	public void unset(Entity entity) {
 		
 		synchronized (this) {
-			final String oldTag = entityToTag.remove(entity);
-			if (oldTag != null)
-				tagToEntity.remove(oldTag);
+			final OrderedSet<String> oldTags = entityToTag.remove(entity);
+			if (oldTags == null || oldTags.isEmpty())
+				return;
+			for (int i = 0; i < oldTags.size(); i++)
+				tagToEntity.remove(oldTags.getAt(i));
 		}
 	}
 	
@@ -154,16 +158,16 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 	}
 	
 	/**
-	 * Get the tag associated with the given {@link Entity}, or {@code null} if no
+	 * Get the tags associated with the given {@link Entity}, or {@code null} if no
 	 * such association has been created.
 	 * 
 	 * @param entity
 	 * @return
 	 */
-	public String get(Entity entity) {
+	public OrderedSet<String> get(Entity entity) {
 		
 		synchronized (this) {
-			return entityToTag.get(entity);
+			return entityToTag.computeIfAbsent(entity, x -> new OrderedSet<>());
 		}
 	}
 }
