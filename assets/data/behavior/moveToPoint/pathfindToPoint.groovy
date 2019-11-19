@@ -16,7 +16,7 @@ behavior = guarded(
 					def result = pathfindTask.get()
 					prop["pathfind-task"] = null
 					
-					if(result == null)
+					if(result == null || result.isEmpty())
 						return Status.FAILED
 					
 					def hml = create(HasMovementList)
