@@ -3,6 +3,8 @@
  */
 package org.snowjak.hivemind.display;
 
+import java.util.logging.Logger;
+
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.concurrent.PerFrameProcess;
 import org.snowjak.hivemind.engine.Engine;
@@ -30,6 +32,8 @@ import com.google.common.eventbus.Subscribe;
  */
 public class GameScreenDisplayState implements DisplayState {
 	
+	private static final Logger LOG = Logger.getLogger(GameScreenDisplayState.class.getName());
+	
 	private final PerFrameProcess engineUpdateProcess = new EngineUpdatePerFrameProcess();
 	private boolean exitGame = false;
 	
@@ -45,6 +49,11 @@ public class GameScreenDisplayState implements DisplayState {
 		entity.setRoot(gameScreen.getActor());
 		entity.setInput(gameScreen.getInputProcessor());
 		
+		engineUpdateProcess.setOnProcessCrash((t) -> {
+			LOG.severe("The game-world subsystem has crashed due to an unhandled exception: "
+					+ t.getClass().getSimpleName() + ": '" + t.getMessage() + "'");
+			exitGame = true;
+		});
 		engineUpdateProcess.start();
 		
 		exitGame = false;

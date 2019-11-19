@@ -50,7 +50,7 @@ public abstract class PerFrameProcess {
 	}
 	
 	private final BlockingQueue<Float> updateQueue = new ArrayBlockingQueue<>(1);
-	
+	private CrashHandler crashHandler = null;
 	private Status status = Status.FRESH;
 	
 	/**
@@ -90,7 +90,9 @@ public abstract class PerFrameProcess {
 					
 				} catch (Throwable t) {
 					LOG.severe("Unexpected exception! " + t.getClass().getSimpleName() + ": " + t.getMessage());
-					t.printStackTrace();
+					if (crashHandler != null)
+						crashHandler.handle(t);
+					
 				} finally {
 					
 					PerFrameProcess.unregister(this);
@@ -172,11 +174,30 @@ public abstract class PerFrameProcess {
 	 */
 	public abstract void stopping();
 	
+	/**
+	 * If this PerFrameProcess should crash (i.e., encounter an un-handled
+	 * Throwable), then the given {@link CrashHandler} will be executed. Your parent
+	 * code might use this to notify itself when its PerFrameProcess has died.
+	 * 
+	 * @param crashHandler
+	 *            {@code null} if no such "on-crash" process should run
+	 */
+	public void setOnProcessCrash(CrashHandler crashHandler) {
+		
+		this.crashHandler = crashHandler;
+	}
+	
 	public enum Status {
 		FRESH,
 		STARTED,
 		RUNNING,
 		STOPPED,
 		KILLED
+	}
+	
+	@FunctionalInterface
+	public interface CrashHandler {
+		
+		public void handle(Throwable t);
 	}
 }
