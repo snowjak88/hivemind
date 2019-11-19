@@ -3,6 +3,7 @@
  */
 package org.snowjak.hivemind.engine.systems;
 
+import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.concurrent.ParallelRunner;
 import org.snowjak.hivemind.engine.components.HasFOV;

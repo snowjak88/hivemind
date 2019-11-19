@@ -1,6 +1,6 @@
 label = "move to point"
 behavior = guarded(
-	has([CanMove,HasLocation,IsMovingTo],[],[]),
+	has([CanMove,HasLocation,IsMovingTo]),
 	untilFail(
 		sequence(
 			invert(from("moveToPoint/amAtPoint")),

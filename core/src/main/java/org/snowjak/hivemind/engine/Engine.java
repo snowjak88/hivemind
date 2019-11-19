@@ -75,10 +75,10 @@ public class Engine {
 		this.engine.addSystem(new GeneratorUpdatingSystem());
 		this.engine.addSystem(new TrackLeavingSystem());
 		this.engine.addSystem(new EntityDissipationSystem());
-		this.engine.addSystem(new PathfinderUpdatingSystem());
 		this.engine.addSystem(new FOVUpdatingSystem());
 		this.engine.addSystem(new FOVCopyingSystem());
 		this.engine.addSystem(new OwnMapFOVInsertingSystem());
+		this.engine.addSystem(new PathfinderUpdatingSystem());
 		this.engine.addSystem(new BehaviorProcessingSystem());
 		this.engine.addSystem(new MapUpdatingSystem());
 		this.engine.addSystem(new GlyphUpdatingSystem());

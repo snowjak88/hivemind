@@ -3,9 +3,16 @@
  */
 package org.snowjak.hivemind.engine.systems.maintenance;
 
+import java.util.logging.Logger;
+
+import org.checkerframework.common.aliasing.qual.Unique;
+import org.snowjak.hivemind.Context;
+import org.snowjak.hivemind.RNG;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.CanMove;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasPathfinder;
+import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 
@@ -14,9 +21,10 @@ import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
-import com.badlogic.ashley.systems.IteratingSystem;
+import com.badlogic.ashley.systems.IntervalIteratingSystem;
 
 import squidpony.squidai.DijkstraMap;
+import squidpony.squidgrid.Measurement;
 
 /**
  * For any {@link Entity Entities} that {@link CanMove} and {@link HasMap},
@@ -27,14 +35,17 @@ import squidpony.squidai.DijkstraMap;
  * @author snowjak88
  *
  */
-public class PathfinderUpdatingSystem extends IteratingSystem implements EntityListener {
+public class PathfinderUpdatingSystem extends IntervalIteratingSystem implements EntityListener {
+	
+	private static final Logger LOG = Logger.getLogger(PathfinderUpdatingSystem.class.getName());
+	private static final float INTERVAL = 1f;
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<HasPathfinder> HAS_PATHFINDER = ComponentMapper.getFor(HasPathfinder.class);
 	
 	public PathfinderUpdatingSystem() {
 		
-		super(Family.all(CanMove.class, HasMap.class).get());
+		super(Family.all(CanMove.class, HasMap.class).get(), INTERVAL);
 	}
 	
 	@Override
@@ -64,17 +75,17 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 	}
 	
 	@Override
-	public void update(float deltaTime) {
+	public void updateInterval() {
 		
 		final ProfilerTimer timer = Profiler.get().start("PathfinderUpdatingSystem (overall)");
 		
-		super.update(deltaTime);
+		super.updateInterval();
 		
 		timer.stop();
 	}
 	
 	@Override
-	protected void processEntity(Entity entity, float delta) {
+	protected void processEntity(Entity entity) {
 		
 		final HasMap hasMap = HAS_MAP.get(entity);
 		if (hasMap.getMap() == null)
@@ -92,25 +103,28 @@ public class PathfinderUpdatingSystem extends IteratingSystem implements EntityL
 				|| hasPathfinder.getPathfinder().width != hasMap.getMap().getWidth()
 				|| hasPathfinder.getPathfinder().height != hasMap.getMap().getHeight());
 		
-		if (hasUpdatedCells || pathfinderRequiresResize)
-			if (hasPathfinder.getLock().tryAcquire()) {
+		if (hasUpdatedCells || pathfinderRequiresResize) {
+			hasPathfinder.getLock().acquireUninterruptibly();
+			
+			if (hasPathfinder.getPathfinder() != null) {
 				
-				if (hasPathfinder.getPathfinder() != null) {
-					
-					//
-					// Reinitialize an existing pathfinder if width/height don't match OR if HasMap
-					// has any recently-updated cells
-					//
-					
-					final DijkstraMap pf = hasPathfinder.getPathfinder();
-					if (pf.width != hasMap.getMap().getWidth() || pf.height != hasMap.getMap().getHeight()
-							|| !hasMap.getUpdatedLocations().isEmpty())
-						pf.initialize(hasMap.getMap().getSquidCharMap());
-					
-				} else
-					hasPathfinder.setPathfinder(new DijkstraMap(hasMap.getMap().getSquidCharMap()));
+				//
+				// Reinitialize an existing pathfinder if width/height don't match OR if HasMap
+				// has any recently-updated cells
+				//
 				
-				hasPathfinder.getLock().release();
-			}
+				final DijkstraMap pf = hasPathfinder.getPathfinder();
+				if (pf.width != hasMap.getMap().getWidth() || pf.height != hasMap.getMap().getHeight()
+						|| !hasMap.getUpdatedLocations().isEmpty())
+					pf.initialize(hasMap.getMap().getSquidCharMap());
+				
+			} else
+				hasPathfinder.setPathfinder(
+						new DijkstraMap(hasMap.getMap().getSquidCharMap(), Measurement.EUCLIDEAN, RNG.get()));
+			
+			hasPathfinder.getLock().release();
+			
+		}
+		
 	}
 }

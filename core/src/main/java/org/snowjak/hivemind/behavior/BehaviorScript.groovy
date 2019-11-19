@@ -6,6 +6,7 @@ package org.snowjak.hivemind.behavior
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.snowjak.hivemind.RNG
+import org.snowjak.hivemind.Tags
 import org.snowjak.hivemind.util.ExtGreasedRegion
 
 import com.badlogic.ashley.core.Component
@@ -47,6 +48,7 @@ public abstract class BehaviorScript extends Script {
 				def icz = new ImportCustomizer()
 				icz.addImport "Region", ExtGreasedRegion.class.name
 				icz.addImport "Status", Status.class.name
+				icz.addImport "Tags", Tags.class.name
 				icz.addImport "RNG", RNG.class.name
 				def sr = new ClassGraph().enableClassInfo().whitelistPackages("org.snowjak.hivemind").scan()
 				sr.getClassesImplementing(Component.class.name).filter({!it.isAbstract() && !it.isInterfaceOrAnnotation()}).forEach {

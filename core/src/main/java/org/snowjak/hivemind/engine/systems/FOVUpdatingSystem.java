@@ -21,6 +21,7 @@ import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
 import squidpony.squidgrid.FOV;
+import squidpony.squidgrid.Radius;
 import squidpony.squidmath.Coord;
 import squidpony.squidmath.OrderedSet;
 
@@ -142,7 +143,7 @@ public class FOVUpdatingSystem extends IteratingSystem {
 		parallel.add(() -> {
 			
 			FOV.reuseFOV(visibilityResistance, fov.getLightLevels(), location.getLocation().x, location.getLocation().y,
-					canSee.getRadius());
+					canSee.getRadius(), Radius.CIRCLE);
 			
 			fov.getVisible().refill(fov.getLightLevels(), 1e-4).not();
 			

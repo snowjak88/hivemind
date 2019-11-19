@@ -5,8 +5,8 @@ package org.snowjak.hivemind.engine;
 
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Materials;
-import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.Materials.Material;
+import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.prefab.PrefabScript;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
@@ -59,6 +59,7 @@ public class EnginePrefabs {
 		screenEntityPrefab.faction("player");
 		screenEntityPrefab.include("mixin/at-random-floor");
 		screenEntityPrefab.tag(Tags.SCREEN_MAP);
+		screenEntityPrefab.tag(Tags.PLAYER);
 		
 		for (int i = 0; i < 8; i++) {
 			final PrefabScript ps = PrefabScript.byName("individual");

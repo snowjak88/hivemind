@@ -63,9 +63,10 @@ public class GameMap {
 			this.height = toCopy.height;
 			this.terrain = ArrayUtil.copy(toCopy.terrain);
 			this.material = ArrayUtil.copy(toCopy.material);
-			this.known.remake(toCopy.known);
-			
 			this.visibility = ArrayUtil.copy(toCopy.visibility);
+			this.known.remake(toCopy.known);
+			this.charMap = null;
+			this.squidCharMap = null;
 		}
 	}
 	
@@ -79,17 +80,8 @@ public class GameMap {
 	public GameMap(GameMap toCopy, ExtGreasedRegion onlyWithin) {
 		
 		synchronized (toCopy) {
-			this.width = toCopy.width;
-			this.height = toCopy.height;
-			this.terrain = new short[width][height];
-			this.material = new short[width][height];
+			resize(toCopy.width, toCopy.height);
 			
-			ArrayUtil.fill(terrain, (short) -1);
-			ArrayUtil.fill(material, (short) -1);
-			
-			this.known.resizeAndEmpty(width, height).or(onlyWithin);
-			
-			this.visibility = new double[width][height];
 			onlyWithin.inverseMask(toCopy.visibility, 0);
 			
 			this.insert(toCopy, onlyWithin);
@@ -112,16 +104,7 @@ public class GameMap {
 	 */
 	public GameMap(char[][] chars, Material[][] materials, boolean useSquidMappings) {
 		
-		this.width = chars.length;
-		this.height = chars[0].length;
-		
-		terrain = new short[width][height];
-		material = new short[width][height];
-		
-		ArrayUtil.fill(terrain, (short) -1);
-		ArrayUtil.fill(material, (short) -1);
-		
-		this.visibility = new double[width][height];
+		resize(chars.length, chars[0].length);
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -157,15 +140,7 @@ public class GameMap {
 		if (chars.length != known.width || chars[0].length != known.height)
 			throw new IllegalArgumentException("Cannot create a new GameMap -- given map-elements do not match sizes.");
 		
-		this.width = chars.length;
-		this.height = chars[0].length;
-		
-		terrain = new short[width][height];
-		material = new short[width][height];
-		visibility = new double[width][height];
-		
-		ArrayUtil.fill(terrain, (short) -1);
-		ArrayUtil.fill(material, (short) -1);
+		resize(chars.length, chars[0].length);
 		
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i].length != height)
@@ -201,26 +176,6 @@ public class GameMap {
 	 * @param height
 	 */
 	public void resize(int width, int height) {
-		
-		resize(width, height, true);
-	}
-	
-	/**
-	 * <p>
-	 * If this GameMap is already of the given size, this method does nothing.
-	 * </p>
-	 * <p>
-	 * If this GameMap is not already of the given size, this method will update
-	 * this GameMap's size. This method will completely erase the map's contents in
-	 * the process.
-	 * </p>
-	 * 
-	 * 
-	 * @param width
-	 * @param height
-	 * @param recalculate
-	 */
-	public void resize(int width, int height, boolean recalculate) {
 		
 		synchronized (this) {
 			if (this.width == width && this.height == height)
@@ -265,7 +220,7 @@ public class GameMap {
 		synchronized (this) {
 			synchronized (insertFrom) {
 				if (this.width != insertFrom.width || this.height != insertFrom.height)
-					resize(insertFrom.width, insertFrom.height, false);
+					resize(insertFrom.width, insertFrom.height);
 				
 				this.terrain = insertOnly.inverseMask(this.terrain, insertFrom.terrain);
 				this.material = insertOnly.inverseMask(this.material, insertFrom.material);
@@ -344,14 +299,17 @@ public class GameMap {
 			this.known.set((this.terrain[x][y] >= 0), x, y);
 			visibility[x][y] = TerrainTypes.get().getAt(this.terrain[x][y]).getVisibilityResistance()
 					* Materials.get().get(this.material[x][y]).getVisibilityResistance();
-			getSquidCharMap()[x][y] = (terrainType < 0) ? 0 : TerrainTypes.get().getAt(terrainType).getSquidChar();
+			getSquidCharMap()[x][y] = (terrainType >= 0 && isKnown(x, y))
+					? TerrainTypes.get().getAt(terrainType).getSquidChar()
+					: ' ';
 			charMap = null;
 		}
 	}
 	
 	/**
 	 * Compile a {@code char[][]} consisting of every map-cell's
-	 * {@link TerrainType#getSquidChar()}.
+	 * {@link TerrainType#getSquidChar()}, or {@code ' '} (space) wherever the cell
+	 * is unknown.
 	 * 
 	 * @return
 	 */
@@ -363,7 +321,7 @@ public class GameMap {
 				for (int i = 0; i < width; i++)
 					for (int j = 0; j < height; j++) {
 						final TerrainType tt = getTerrain(i, j);
-						squidCharMap[i][j] = (tt == null) ? 0 : tt.getSquidChar();
+						squidCharMap[i][j] = (tt != null && isKnown(i, j)) ? tt.getSquidChar() : ' ';
 					}
 			}
 			return squidCharMap;

@@ -117,6 +117,25 @@ class BehaviorCustomLeafTask extends LeafTask<Entity> {
 			getObject().remove clazz
 	}
 	
+	public OrderedSet<String> tags() {
+		(getObject() == null) ? new OrderedSet<>() : Context.getEngine().getSystem(UniqueTagManager).get(getObject())
+	}
+	
+	public boolean hasTag(String tag) {
+		def utm = Context.getEngine().getSystem(UniqueTagManager)
+		getObject() != null && utm.has(getObject()) && utm.get(getObject()).contains(tag)
+	}
+	
+	public void setTag(String tag) {
+		if(getObject() != null)
+			Context.getEngine().getSystem(UniqueTagManager).set tag, getObject()
+	}
+	
+	public void removeTag(String tag) {
+		if(getObject() != null)
+			Context.getEngine().getSystem(UniqueTagManager).unset(tag, getObject())
+	}
+	
 	public HasMap worldMap() {
 		def worldEntity = Context.getEngine().getSystem(UniqueTagManager).get(Tags.WORLD_MAP)
 		if(worldEntity == null || !ComponentMapper.getFor(HasMap).has(worldEntity))

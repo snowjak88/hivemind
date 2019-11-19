@@ -74,7 +74,6 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 	/**
 	 * Associate the given Entity with the given tag.
 	 * 
-	 * @param tag
 	 * @param entity
 	 */
 	public void set(String tag, Entity entity) {
@@ -83,11 +82,19 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 			if (tag != null && entity != null) {
 				tagToEntity.put(tag, entity);
 				entityToTag.computeIfAbsent(entity, x -> new OrderedSet<>()).add(tag);
-			} else if (tag != null)
-				unset(tag);
-			
-			else if (entity != null)
-				unset(entity);
+			}
+		}
+	}
+	
+	public void unset(String tag, Entity entity) {
+		
+		synchronized (this) {
+			if (tag != null && entity != null) {
+				if (tagToEntity.get(tag) == entity) {
+					tagToEntity.remove(tag);
+					entityToTag.get(entity).remove(tag);
+				}
+			}
 		}
 	}
 	
@@ -106,7 +113,8 @@ public class UniqueTagManager extends EntitySystem implements EntityListener {
 	}
 	
 	/**
-	 * Remove the association for the given Entity from this manager.
+	 * Disassociates the given Entity from all its tags and un-registers that Entity
+	 * from this manager.
 	 * 
 	 * @param entity
 	 */
