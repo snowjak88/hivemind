@@ -14,6 +14,7 @@ import com.badlogic.ashley.core.Family
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.ai.btree.Task
 import com.badlogic.gdx.ai.btree.Task.Status
+import com.badlogic.gdx.ai.btree.branch.DynamicGuardSelector
 import com.badlogic.gdx.ai.btree.branch.Sequence
 import com.badlogic.gdx.ai.btree.decorator.Invert
 import com.badlogic.gdx.ai.btree.decorator.Repeat
@@ -106,6 +107,11 @@ public abstract class BehaviorScript extends Script {
 		new Sequence(tasks)
 	}
 	
+	@SuppressWarnings("unchecked")
+	public Task<Entity> dynamic(Task<Entity>... tasks) {
+		new DynamicGuardSelector(tasks)
+	}
+	
 	public Task<Entity> untilFail(Task<Entity> task) {
 		new UntilFail(task)
 	}
@@ -131,6 +137,11 @@ public abstract class BehaviorScript extends Script {
 	//
 	
 	public Task<Entity> task(Closure exec) {
+		
 		new BehaviorCustomLeafTask(exec)
+	}
+	
+	public Task<Entity> task(Map taskSpec) {
+		new BehaviorCustomLeafTask(taskSpec['start'], taskSpec['exec'], taskSpec['end'])
 	}
 }

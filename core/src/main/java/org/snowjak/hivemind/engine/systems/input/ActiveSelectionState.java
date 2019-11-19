@@ -6,6 +6,7 @@ package org.snowjak.hivemind.engine.systems.input;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasMap;
+import org.snowjak.hivemind.engine.components.IsMovingTo;
 import org.snowjak.hivemind.engine.components.IsSelectable;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
@@ -23,7 +24,9 @@ import squidpony.squidmath.OrderedSet;
  * A possible state for the {@link InputEventProcessingSystem}. In this state,
  * the user has selected one or more entities. Possible transitions include:
  * <ul>
- * <li></li>
+ * <li>(right-click) -- selected Entities receive {@link IsMovingTo}
+ * (destination = map-cursor), potentially triggering pathfind-and-move
+ * behavior</li>
  * </ul>
  * 
  * @author snowjak88
@@ -34,7 +37,7 @@ public class ActiveSelectionState implements InputSystemState {
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<IsSelectable> IS_SELECTABLE = ComponentMapper.getFor(IsSelectable.class);
 	
-	private final OrderedSet<Entity> selected;
+	private final OrderedSet<Entity> selected = new OrderedSet<>();
 	
 	private final InputEventListener leftClickListener = InputEventListener.build()
 	//@formatter:off
@@ -59,14 +62,31 @@ public class ActiveSelectionState implements InputSystemState {
 			//@formatter:on
 			.get();
 	
+	private final InputEventListener rightClickListener = InputEventListener.build()
+	//@formatter:off
+					.button(MouseButton.RIGHT_BUTTON)
+					.onEvent(e -> {
+						synchronized(ActiveSelectionState.this) {
+							for(int i=0;i<selected.size();i++) {
+								final IsMovingTo moveTo = Context.getEngine().createComponent(IsMovingTo.class);
+								moveTo.setDestination(e.getMapCursor());
+								selected.getAt(i).add(moveTo);
+							}
+						}
+					})
+					//@formatter:on
+			.get();
+	
 	public ActiveSelectionState(OrderedSet<Entity> selected) {
 		
-		this.selected = selected;
+		this.selected.addAll(selected);
 	}
 	
 	@Override
 	public void enter(InputEventProcessingSystem entity) {
+		
 		entity.registerListener(leftClickListener);
+		entity.registerListener(rightClickListener);
 	}
 	
 	@Override
@@ -82,6 +102,7 @@ public class ActiveSelectionState implements InputSystemState {
 	public void exit(InputEventProcessingSystem entity) {
 		
 		entity.unregisterListener(leftClickListener);
+		entity.unregisterListener(rightClickListener);
 	}
 	
 	/**

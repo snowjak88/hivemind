@@ -135,10 +135,6 @@ public abstract class PrefabScript extends Script {
 		
 		binding.variables["entity"].add isPrefab
 		
-		print "Inflating prefab \"$name\": "
-		binding.variables["entity"].getComponents().forEach { print "[${it.class.simpleName}]" }
-		println ""
-		
 		binding.variables["entity"]
 	}
 	

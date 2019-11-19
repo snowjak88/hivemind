@@ -18,4 +18,7 @@ prefab = {
 	
 	create IsSelectable
 	
+	def behavior = create(HasBehavior)
+	behavior.behaviorName = "follow"
+	
 }

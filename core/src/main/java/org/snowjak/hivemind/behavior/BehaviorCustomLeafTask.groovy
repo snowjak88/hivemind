@@ -32,14 +32,40 @@ import squidpony.squidmath.OrderedSet
  */
 class BehaviorCustomLeafTask extends LeafTask<Entity> {
 	
-	private Closure exec
+	private Closure start, exec, end
 	public prop = new HashMap<>()
 	
 	public BehaviorCustomLeafTask(Closure exec) {
+		this(null, exec, null)
+	}
+	
+	public BehaviorCustomLeafTask(Closure start, Closure exec, Closure end) {
 		super()
 		
-		this.exec = exec
-		this.exec.delegate = this
+		if(start != null) {
+			this.start = start
+			this.start.delegate = this
+		}
+		
+		if(exec != null) {
+			this.exec = exec ?: this.exec
+			this.exec.delegate = this
+		}
+		
+		if(end != null) {
+			this.end = end ?: this.end
+			this.end.delegate = this
+		}
+	}
+	
+	
+	
+	@Override
+	public void start() {
+		
+		super.start()
+		if(this.start != null)
+			this.start.call()
 	}
 	
 	@Override
@@ -47,7 +73,16 @@ class BehaviorCustomLeafTask extends LeafTask<Entity> {
 		if(getObject() == null)
 			return Status.FAILED
 		
-		exec(getObject())
+		if(this.exec != null)
+			exec(getObject())
+	}
+	
+	@Override
+	public void end() {
+		
+		super.end()
+		if(this.end != null)
+			this.end.call()
 	}
 	
 	@Override

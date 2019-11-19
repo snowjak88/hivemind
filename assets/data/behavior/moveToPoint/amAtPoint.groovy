@@ -8,5 +8,10 @@ behavior = task {
 	def loc = get(HasLocation)
 	def moveTo = get(IsMovingTo)
 	
-	loc.location.equals(moveTo.destination) ? Status.SUCCEEDED : Status.FAILED
+	def amAtPoint = loc.location.equals(moveTo.destination)
+	
+	if(amAtPoint)
+		remove(IsMovingTo)
+	
+	(amAtPoint) ? Status.SUCCEEDED : Status.FAILED
 }
