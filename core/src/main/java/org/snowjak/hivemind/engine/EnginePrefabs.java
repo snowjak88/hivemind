@@ -7,6 +7,7 @@ import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Materials;
 import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.Tags;
+import org.snowjak.hivemind.engine.components.CanSensePsychicEnergy;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.prefab.PrefabScript;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
@@ -58,8 +59,11 @@ public class EnginePrefabs {
 		screenEntityPrefab.run();
 		screenEntityPrefab.faction("player");
 		screenEntityPrefab.include("mixin/at-random-floor");
-		screenEntityPrefab.tag(Tags.SCREEN_MAP);
+		screenEntityPrefab.tag(Tags.POV);
 		screenEntityPrefab.tag(Tags.PLAYER);
+		
+		final CanSensePsychicEnergy sense = screenEntityPrefab.create(CanSensePsychicEnergy.class);
+		sense.setRange(-1);
 		
 		for (int i = 0; i < 8; i++) {
 			final PrefabScript ps = PrefabScript.byName("individual");

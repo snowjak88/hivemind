@@ -21,4 +21,7 @@ prefab = {
 	def behavior = create(HasBehavior)
 	behavior.behaviorName = "follow"
 	
+	def resonance = create(HasPsychicResonance)
+	resonance.strength = 16
+	
 }

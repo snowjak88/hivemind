@@ -20,6 +20,8 @@ import org.snowjak.hivemind.engine.systems.GlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.MapUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
+import org.snowjak.hivemind.engine.systems.PsychicEnergyMapDrawingSystem;
+import org.snowjak.hivemind.engine.systems.PsychicResonanceMapUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.SelectedGlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.TrackLeavingSystem;
@@ -77,12 +79,14 @@ public class Engine {
 		this.engine.addSystem(new EntityDissipationSystem());
 		this.engine.addSystem(new FOVUpdatingSystem());
 		this.engine.addSystem(new FOVCopyingSystem());
+		this.engine.addSystem(new PsychicResonanceMapUpdatingSystem());
 		this.engine.addSystem(new OwnMapFOVInsertingSystem());
 		this.engine.addSystem(new PathfinderUpdatingSystem());
 		this.engine.addSystem(new BehaviorProcessingSystem());
 		this.engine.addSystem(new MapUpdatingSystem());
 		this.engine.addSystem(new GlyphUpdatingSystem());
 		this.engine.addSystem(new SelectedGlyphUpdatingSystem());
+		this.engine.addSystem(new PsychicEnergyMapDrawingSystem());
 		
 		this.engine.addSystem(new UniqueTagManager());
 		this.engine.addSystem(new EntityRefManager());

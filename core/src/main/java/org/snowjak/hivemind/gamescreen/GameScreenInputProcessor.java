@@ -341,6 +341,9 @@ public class GameScreenInputProcessor extends InputAdapter
 		final IntIterator activeIterator = activeInputListeners.intIterator();
 		while (activeIterator.hasNext()) {
 			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
+			if (listener == null)
+				continue;
+			
 			if (listener.isDiscrete()) {
 				listener.setRemainingInterval(listener.getRemainingInterval() - delta);
 				if (listener.getRemainingInterval() <= 0f) {
@@ -358,6 +361,9 @@ public class GameScreenInputProcessor extends InputAdapter
 		while (activeIterator.hasNext()) {
 			
 			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
+			
+			if (listener == null)
+				continue;
 			
 			if (!listener.isDiscrete())
 				listener.receive(event);

@@ -143,11 +143,11 @@ class BehaviorCustomLeafTask extends LeafTask<Entity> {
 		ComponentMapper.getFor(HasMap).get(worldEntity)
 	}
 	
-	public HasMap screenMap() {
-		def screenEntity = Context.getEngine().getSystem(UniqueTagManager).get(Tags.SCREEN_MAP)
-		if(screenEntity == null || !ComponentMapper.getFor(HasMap).has(screenEntity))
+	public HasMap povMap() {
+		def povEntity = Context.getEngine().getSystem(UniqueTagManager).get(Tags.POV)
+		if(povEntity == null || !ComponentMapper.getFor(HasMap).has(povEntity))
 			return null
-		ComponentMapper.getFor(HasMap).get(screenEntity)
+		ComponentMapper.getFor(HasMap).get(povEntity)
 	}
 	
 	public <T> OrderedSet<T> filterBy(OrderedSet<T> set, Closure filter) {
@@ -164,7 +164,7 @@ class BehaviorCustomLeafTask extends LeafTask<Entity> {
 	}
 	
 	public OrderedSet<Entity> entitiesIn(GreasedRegion region) {
-		screenMap()?.entities?.getWithin(region) ?: new OrderedSet<>()
+		povMap()?.entities?.getWithin(region) ?: new OrderedSet<>()
 	}
 	
 	public OrderedSet<Entity> entitiesIn(GreasedRegion region, Closure filter) {
@@ -172,7 +172,7 @@ class BehaviorCustomLeafTask extends LeafTask<Entity> {
 	}
 	
 	public OrderedSet<Entity> entitiesAt(Coord location) {
-		screenMap()?.entities?.getAt(location) ?: new OrderedSet<>()
+		povMap()?.entities?.getAt(location) ?: new OrderedSet<>()
 	}
 	
 	public OrderedSet<Entity> entitiesAt(Coord location, Closure filter) {

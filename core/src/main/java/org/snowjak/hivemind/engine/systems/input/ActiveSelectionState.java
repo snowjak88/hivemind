@@ -51,11 +51,11 @@ public class ActiveSelectionState implements InputSystemState {
 	//@formatter:off
 			.button(MouseButton.LEFT_BUTTON)
 			.onEvent(e -> {
-				final Entity screenMapEntity = Context.getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-				if(screenMapEntity == null || !HAS_MAP.has(screenMapEntity))
+				final Entity povEntity = Context.getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
+				if(povEntity == null || !HAS_MAP.has(povEntity))
 					return;
 				
-				final OrderedSet<Entity> clicked = HAS_MAP.get(screenMapEntity).getEntities().getAt(e.getMapCursor());
+				final OrderedSet<Entity> clicked = HAS_MAP.get(povEntity).getEntities().getAt(e.getMapCursor());
 				final OrderedSet<Entity> selected = new OrderedSet<>(clicked.size());
 				for(int i=0; i<clicked.size();i++)
 					if(IS_SELECTABLE.has(clicked.getAt(i)))

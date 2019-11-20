@@ -29,7 +29,7 @@ import com.badlogic.ashley.core.EntitySystem;
 /**
  * This system will send {@link GameScreenUpdate}s corresponding to all
  * (non-Entity) map-elements to the {@link GameScreen}, if there is an
- * {@link Entity} tagged with {@link Tags#SCREEN_MAP} that {@link HasMap has an
+ * {@link Entity} tagged with {@link Tags#POV} that {@link HasMap has an
  * associated GameMap}.
  * 
  * @author snowjak88
@@ -69,17 +69,17 @@ public class MapUpdatingSystem extends EntitySystem {
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
-		if (!utm.has(Tags.SCREEN_MAP))
+		if (!utm.has(Tags.POV))
 			return;
 		
-		final Entity e = utm.get(Tags.SCREEN_MAP);
+		final Entity e = utm.get(Tags.POV);
 		
 		updateMap(e, deltaTime);
 		
 		timer.stop();
 	}
 	
-	private void updateMap(Entity screenMapEntity, float deltaTime) {
+	private void updateMap(Entity povEntity, float deltaTime) {
 		
 		final GameScreen gameScreen = Context.getGameScreen();
 		if (gameScreen == null)
@@ -87,14 +87,14 @@ public class MapUpdatingSystem extends EntitySystem {
 		//
 		// If the tagged Entity has no associated map or FOV, then just clear the
 		// screen.
-		if (!HAS_MAP.has(screenMapEntity) || !HAS_FOV.has(screenMapEntity)) {
+		if (!HAS_MAP.has(povEntity) || !HAS_FOV.has(povEntity)) {
 			gameScreen.postGameScreenUpdate(GameScreenUpdatePool.get().get(ClearMapUpdate.class));
 			
 			return;
 		}
 		
-		final HasMap hm = HAS_MAP.get(screenMapEntity);
-		final HasFOV fov = HAS_FOV.get(screenMapEntity);
+		final HasMap hm = HAS_MAP.get(povEntity);
+		final HasFOV fov = HAS_FOV.get(povEntity);
 		
 		//
 		// If the HasMap has no updated locations, then there's nothing to do.
@@ -120,8 +120,8 @@ public class MapUpdatingSystem extends EntitySystem {
 		// Now -- compare the aggregate FOV (if available) against the previous FOV (if
 		// available)
 		final ExtGreasedRegion visible;
-		if (HAS_FOV.has(screenMapEntity))
-			visible = HAS_FOV.get(screenMapEntity).getVisible();
+		if (HAS_FOV.has(povEntity))
+			visible = HAS_FOV.get(povEntity).getVisible();
 		else
 			visible = EMPTY_REGION;
 			

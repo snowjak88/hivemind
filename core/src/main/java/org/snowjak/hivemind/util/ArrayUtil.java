@@ -288,6 +288,172 @@ public class ArrayUtil {
 	}
 	
 	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static void fill(char[][] array, char[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static void fill(short[][] array, short[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static void fill(int[][] array, int[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static void fill(float[][] array, float[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static void fill(double[][] array, double[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * <p>
+	 * Note that this function performs only a "shallow" copy, where
+	 * object-references are copied (instead of full-blown objects being copied).
+	 * </p>
+	 * 
+	 * @param array
+	 * @param values
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static <T> void fill(T[][] array, T[][] values) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				array[i][j] = values[i][j];
+		}
+	}
+	
+	/**
+	 * Fills the given {@code array} with values taken from {@code values}. You
+	 * might also describe this as "copying in place".
+	 * <p>
+	 * This function performs a "deep copy", using {@code copier} to make a copy of
+	 * each object in {@code values}.
+	 * </p>
+	 * 
+	 * @param array
+	 * @param values
+	 * @param copier
+	 * @throws IllegalArgumentException
+	 *             if the two arrays are not of the same size
+	 */
+	public static <T> void fill(T[][] array, T[][] values, Function<T, T> copier) {
+		
+		if (array.length != values.length)
+			throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+		
+		for (int i = 0; i < array.length; i++) {
+			if (array[i].length != values[i].length)
+				throw new IllegalArgumentException("Cannot fill-in-place: given arrays are of different sizes!");
+			for (int j = 0; j < array[i].length; j++)
+				if (values[i][j] == null)
+					array[i][j] = null;
+				else
+					array[i][j] = copier.apply(values[i][j]);
+		}
+	}
+	
+	/**
 	 * Adds the values in {@code addend} to {@code value}, storing the resulting
 	 * sums in {@code value}.
 	 * 

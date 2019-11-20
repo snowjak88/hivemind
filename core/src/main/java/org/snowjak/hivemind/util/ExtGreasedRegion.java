@@ -315,6 +315,56 @@ public class ExtGreasedRegion extends GreasedRegion {
 	}
 	
 	/**
+	 * Returns a copy of map where if a cell is "on" in this GreasedRegion, this
+	 * keeps the value in map intact, and where a cell is "off", it instead writes
+	 * the value filler.
+	 * 
+	 * @param map
+	 *            a 2D array that will not be modified
+	 * @param filler
+	 *            the value to use where this GreasedRegion stores an "off" cell
+	 * @return a masked copy of map
+	 */
+	public float[][] mask(float[][] map, float filler) {
+		
+		if (map == null || map.length == 0)
+			return new float[0][0];
+		int width2 = Math.min(width, map.length), height2 = Math.min(height, map[0].length);
+		float[][] values = new float[width2][height2];
+		for (int x = 0; x < width2; x++) {
+			for (int y = 0; y < height2; y++) {
+				values[x][y] = (data[x * getYSections() + (y >> 6)] & (1L << (y & 63))) != 0 ? map[x][y] : filler;
+			}
+		}
+		return values;
+	}
+	
+	/**
+	 * Returns a copy of map where if a cell is "on" in this GreasedRegion, this
+	 * keeps the value in map intact, and where a cell is "off", it instead writes
+	 * the value filler.
+	 * 
+	 * @param map
+	 *            a 2D array that will not be modified
+	 * @param filler
+	 *            the value to use where this GreasedRegion stores an "off" cell
+	 * @return a masked copy of map
+	 */
+	public double[][] mask(double[][] map, double filler) {
+		
+		if (map == null || map.length == 0)
+			return new double[0][0];
+		int width2 = Math.min(width, map.length), height2 = Math.min(height, map[0].length);
+		double[][] values = new double[width2][height2];
+		for (int x = 0; x < width2; x++) {
+			for (int y = 0; y < height2; y++) {
+				values[x][y] = (data[x * getYSections() + (y >> 6)] & (1L << (y & 63))) != 0 ? map[x][y] : filler;
+			}
+		}
+		return values;
+	}
+	
+	/**
 	 * Required because {@code ySections} is a private field.
 	 * 
 	 * @return

@@ -69,9 +69,9 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 				
 				getEngine().getSystem(RunnableExecutingSystem.class).submit(() -> {
 					updateEntityAppearance(entity);
-					final Entity screenMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-					if (screenMapEntity != null && HAS_MAP.has(screenMapEntity))
-						HAS_MAP.get(screenMapEntity).getEntities().markRefresh(entity);
+					final Entity povEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
+					if (povEntity != null && HAS_MAP.has(povEntity))
+						HAS_MAP.get(povEntity).getEntities().markRefresh(entity);
 				});
 			}
 			
@@ -79,9 +79,9 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 			public void entityRemoved(Entity entity) {
 				
 				updateEntityAppearance(entity);
-				final Entity screenMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-				if (screenMapEntity != null && HAS_MAP.has(screenMapEntity))
-					HAS_MAP.get(screenMapEntity).getEntities().markRefresh(entity);
+				final Entity povEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
+				if (povEntity != null && HAS_MAP.has(povEntity))
+					HAS_MAP.get(povEntity).getEntities().markRefresh(entity);
 			}
 		};
 	}

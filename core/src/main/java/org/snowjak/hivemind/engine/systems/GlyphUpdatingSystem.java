@@ -43,7 +43,7 @@ import squidpony.squidmath.OrderedSet;
 /**
  * This system will send {@link GameScreenUpdate}s corresponding to those
  * Entities represented by {@link Glyph}s to the {@link GameScreen}, if there is
- * an {@link Entity} tagged with {@link Tags#SCREEN_MAP} that {@link HasMap has
+ * an {@link Entity} tagged with {@link Tags#POV} that {@link HasMap has
  * an associated GameMap}.
  * 
  * @author snowjak88
@@ -120,31 +120,31 @@ public class GlyphUpdatingSystem extends EntitySystem {
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);
-		if (!utm.has(Tags.SCREEN_MAP))
+		if (!utm.has(Tags.POV))
 			return;
 		
-		final Entity e = utm.get(Tags.SCREEN_MAP);
+		final Entity e = utm.get(Tags.POV);
 		
 		updateEntities(e, deltaTime);
 		
 		timer.stop();
 	}
 	
-	private void updateEntities(Entity screenMapEntity, float deltaTime) {
+	private void updateEntities(Entity povEntity, float deltaTime) {
 		
 		final GameScreen gameScreen = Context.getGameScreen();
 		if (gameScreen == null)
 			return;
 		
-		if (!HAS_MAP.has(screenMapEntity) || !HAS_FOV.has(screenMapEntity))
+		if (!HAS_MAP.has(povEntity) || !HAS_FOV.has(povEntity))
 			return;
 		
-		final HasMap hasMap = HAS_MAP.get(screenMapEntity);
+		final HasMap hasMap = HAS_MAP.get(povEntity);
 		if (hasMap.getMap() == null)
 			return;
 		final EntityMap entities = hasMap.getEntities();
 		
-		final HasFOV fov = HAS_FOV.get(screenMapEntity);
+		final HasFOV fov = HAS_FOV.get(povEntity);
 		
 		//
 		// Process the recent updates in the screen-map's EntityMap.

@@ -9,6 +9,7 @@ import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.IsSelectable;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
+import org.snowjak.hivemind.engine.systems.PsychicEnergyMapDrawingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
@@ -51,6 +52,31 @@ public class BaseInputState implements InputSystemState {
 	private boolean clickComplete = false;
 	
 	private InputEventListener clickListener = null;
+	private InputEventListener backgroundListener_displayPsychic = null;
+	
+	{
+		//@formatter:off
+		backgroundListener_displayPsychic = InputEventListener.build()
+												.one(GameKey.CONTROL_LEFT, GameKey.CONTROL_RIGHT)
+												.onEvent(e -> {
+													if(Context.getEngine() == null)
+														return;
+													final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
+													if(sys == null)
+														return;
+													sys.activate();
+												})
+												.onEventEnd(e -> {
+													if(Context.getEngine() == null)
+														return;
+													final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
+													if(sys == null)
+														return;
+													sys.deactivate();
+												})
+												.get();
+		//@formatter:on
+	}
 	
 	@Override
 	public void enter(InputEventProcessingSystem entity) {
@@ -71,6 +97,8 @@ public class BaseInputState implements InputSystemState {
 							}))
 							.get();
 		//@formatter:on
+		
+		entity.registerListener(backgroundListener_displayPsychic);
 		
 		entity.registerListener(clickListener);
 	}
@@ -93,8 +121,8 @@ public class BaseInputState implements InputSystemState {
 			//
 			// Identify which entities were selected.
 			//
-			final Entity screenMapEntity = entity.getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-			final HasMap screenMap = HAS_MAP.get(screenMapEntity);
+			final Entity povEntity = entity.getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
+			final HasMap povMap = HAS_MAP.get(povEntity);
 			
 			final int startX = (beginSelection.x > endSelection.x) ? endSelection.x : beginSelection.x;
 			final int startY = (beginSelection.y > endSelection.y) ? endSelection.y : beginSelection.y;
@@ -106,7 +134,7 @@ public class BaseInputState implements InputSystemState {
 			for (int x = startX; x <= endX; x++)
 				for (int y = startY; y <= endY; y++) {
 					
-					final OrderedSet<Entity> entitiesAt = screenMap.getEntities().getAt(Coord.get(x, y));
+					final OrderedSet<Entity> entitiesAt = povMap.getEntities().getAt(Coord.get(x, y));
 					if (entitiesAt == null || entitiesAt.isEmpty())
 						continue;
 					

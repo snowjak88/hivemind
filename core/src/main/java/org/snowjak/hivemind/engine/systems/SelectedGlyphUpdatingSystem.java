@@ -69,7 +69,6 @@ public class SelectedGlyphUpdatingSystem extends IteratingSystem {
 				upd.setX(loc.x);
 				upd.setY(loc.y);
 				upd.setConsumer(g -> {
-					g.scaleBy(1.25f);
 					selectedGlyph.setGlyph(g);
 					selectedGlyph.setAwaitingCreation(false);
 				});
@@ -124,12 +123,12 @@ public class SelectedGlyphUpdatingSystem extends IteratingSystem {
 		if (sg.isAwaitingCreation() || sg.getGlyph() == null)
 			return;
 		
-		final Entity screenMapEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.SCREEN_MAP);
-		if (screenMapEntity == null || !HAS_MAP.has(screenMapEntity))
+		final Entity povEntity = getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
+		if (povEntity == null || !HAS_MAP.has(povEntity))
 			return;
-		final HasMap screenMap = HAS_MAP.get(screenMapEntity);
+		final HasMap povMap = HAS_MAP.get(povEntity);
 		
-		final Coord knownLocation = screenMap.getEntities().getLocation(entity);
+		final Coord knownLocation = povMap.getEntities().getLocation(entity);
 		if (knownLocation == null)
 			return;
 		

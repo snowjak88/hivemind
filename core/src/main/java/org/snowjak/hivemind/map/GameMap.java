@@ -82,7 +82,7 @@ public class GameMap {
 		synchronized (toCopy) {
 			resize(toCopy.width, toCopy.height);
 			
-			onlyWithin.inverseMask(toCopy.visibility, 0);
+			this.visibility = onlyWithin.inverseMask(toCopy.visibility, 0);
 			
 			this.insert(toCopy, onlyWithin);
 		}

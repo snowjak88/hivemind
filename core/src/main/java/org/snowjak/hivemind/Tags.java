@@ -3,7 +3,6 @@
  */
 package org.snowjak.hivemind;
 
-import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 
@@ -23,10 +22,9 @@ public class Tags {
 	public static final String WORLD_MAP = "WORLD_MAP";
 	
 	/**
-	 * The {@link Entity} whose {@link HasMap} (if it has one) will be used to drive
-	 * the {@link GameScreen}'s content.
+	 * The {@link Entity} which represents the {@link GameScreen}'s Point-of-View.
 	 */
-	public static final String SCREEN_MAP = "SCREEN_MAP";
+	public static final String POV = "POV";
 	
 	/**
 	 * The {@link Entity} which represents the player, and which should be the
