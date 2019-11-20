@@ -3,6 +3,8 @@
  */
 package org.snowjak.hivemind.engine.components;
 
+import org.snowjak.hivemind.util.loaders.IgnoreSerialization;
+
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.gdx.utils.Pool.Poolable;
@@ -13,6 +15,7 @@ import com.badlogic.gdx.utils.Pool.Poolable;
  * @author snowjak88
  *
  */
+@IgnoreSerialization
 public class IsSelected implements Component, Poolable {
 	
 	@Override

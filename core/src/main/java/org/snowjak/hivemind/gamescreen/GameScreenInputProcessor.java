@@ -5,7 +5,6 @@ package org.snowjak.hivemind.gamescreen;
 
 import java.util.EnumSet;
 
-import org.eclipse.collections.api.iterator.IntIterator;
 import org.eclipse.collections.api.iterator.MutableIntIterator;
 import org.eclipse.collections.api.list.primitive.MutableBooleanList;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
@@ -199,6 +198,11 @@ public class GameScreenInputProcessor extends InputAdapter
 			final InputEventListener listener = inputListeners.getAt(index);
 			final InputEvent event = getInputEvent();
 			
+			if (listener == null) {
+				activeIterator.remove();
+				continue;
+			}
+			
 			if (!listener.matches(event)) {
 				
 				listener.endReceive(event);
@@ -338,11 +342,14 @@ public class GameScreenInputProcessor extends InputAdapter
 	
 	protected void updateDiscreteListeners(float delta) {
 		
-		final IntIterator activeIterator = activeInputListeners.intIterator();
+		final MutableIntIterator activeIterator = activeInputListeners.intIterator();
 		while (activeIterator.hasNext()) {
 			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
-			if (listener == null)
+			
+			if (listener == null) {
+				activeIterator.remove();
 				continue;
+			}
 			
 			if (listener.isDiscrete()) {
 				listener.setRemainingInterval(listener.getRemainingInterval() - delta);
@@ -357,13 +364,15 @@ public class GameScreenInputProcessor extends InputAdapter
 	protected void updateContinuousListeners() {
 		
 		final InputEvent event = getInputEvent();
-		final IntIterator activeIterator = activeContinuousListeners.intIterator();
+		final MutableIntIterator activeIterator = activeContinuousListeners.intIterator();
 		while (activeIterator.hasNext()) {
 			
 			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
 			
-			if (listener == null)
+			if (listener == null) {
+				activeIterator.remove();
 				continue;
+			}
 			
 			if (!listener.isDiscrete())
 				listener.receive(event);

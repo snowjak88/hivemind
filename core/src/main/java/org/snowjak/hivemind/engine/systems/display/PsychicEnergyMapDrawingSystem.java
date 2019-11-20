@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.display;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -10,11 +10,13 @@ import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.CanSensePsychicEnergy;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
+import org.snowjak.hivemind.gamescreen.updates.FreeLayer;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.gamescreen.updates.LayerUpdate;
 
 import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntitySystem;
 
@@ -33,8 +35,9 @@ import squidpony.squidgrid.gui.gdx.SColor;
 public class PsychicEnergyMapDrawingSystem extends EntitySystem {
 	
 	private static final String LAYER_NAME = PsychicEnergyMapDrawingSystem.class.getSimpleName();
-	private static final float BLANK_COLOR_FLOAT = SColor.AURORA_TRANSPARENT.toFloatBits(),
-			ENERGETIC_COLOR_FLOAT = SColor.AURORA_CREAM.toFloatBits();
+	private static final float LAYER_ALPHA = 0.5f;
+	private static final float BLANK_COLOR_FLOAT = SColor.multiplyAlpha(SColor.AURORA_TRANSPARENT.toFloatBits(),
+			LAYER_ALPHA), ENERGETIC_COLOR_FLOAT = SColor.multiplyAlpha(SColor.AURORA_CREAM.toFloatBits(), LAYER_ALPHA);
 	
 	private static final ComponentMapper<CanSensePsychicEnergy> CAN_SENSE = ComponentMapper
 			.getFor(CanSensePsychicEnergy.class);
@@ -45,6 +48,18 @@ public class PsychicEnergyMapDrawingSystem extends EntitySystem {
 		
 		super();
 		this.setProcessing(false);
+	}
+	
+	@Override
+	public void removedFromEngine(Engine engine) {
+		
+		super.removedFromEngine(engine);
+		
+		if (Context.getGameScreen() != null) {
+			final FreeLayer upd = GameScreenUpdatePool.get().get(FreeLayer.class);
+			upd.setName(LAYER_NAME);
+			Context.getGameScreen().postGameScreenUpdate(upd);
+		}
 	}
 	
 	@Override

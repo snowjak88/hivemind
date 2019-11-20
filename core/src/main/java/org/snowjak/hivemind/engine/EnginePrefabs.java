@@ -33,7 +33,7 @@ public class EnginePrefabs {
 	
 	public static void loadTest() {
 		
-		final int width = 64, height = 64;
+		final int width = 128, height = 128;
 		
 		final Engine eng = Context.getEngine();
 		eng.clear();

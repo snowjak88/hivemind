@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.display;
 
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
@@ -51,6 +51,9 @@ public class SelectedGlyphUpdatingSystem extends IteratingSystem {
 		@Override
 		public void entityAdded(Entity entity) {
 			
+			if (Context.getGameScreen() == null)
+				return;
+			
 			final char selectionChar;
 			if (HAS_APPEARANCE.has(entity))
 				selectionChar = HAS_APPEARANCE.get(entity).getCh();
@@ -72,12 +75,16 @@ public class SelectedGlyphUpdatingSystem extends IteratingSystem {
 					selectedGlyph.setGlyph(g);
 					selectedGlyph.setAwaitingCreation(false);
 				});
+				
 				Context.getGameScreen().postGameScreenUpdate(upd);
 			}
 		}
 		
 		@Override
 		public void entityRemoved(Entity entity) {
+			
+			if (Context.getGameScreen() == null)
+				return;
 			
 			if (!SELECTED_GLYPH.has(entity))
 				return;
@@ -118,6 +125,9 @@ public class SelectedGlyphUpdatingSystem extends IteratingSystem {
 	
 	@Override
 	protected void processEntity(Entity entity, float deltaTime) {
+		
+		if (Context.getGameScreen() == null)
+			return;
 		
 		final HasSelectedGlyph sg = SELECTED_GLYPH.get(entity);
 		if (sg.isAwaitingCreation() || sg.getGlyph() == null)

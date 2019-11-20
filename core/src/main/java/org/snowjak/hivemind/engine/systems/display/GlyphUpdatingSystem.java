@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.snowjak.hivemind.engine.systems;
+package org.snowjak.hivemind.engine.systems.display;
 
 import java.util.logging.Logger;
 

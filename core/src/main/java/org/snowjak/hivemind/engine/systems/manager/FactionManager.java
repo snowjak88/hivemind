@@ -45,7 +45,8 @@ public class FactionManager extends EntitySystem {
 			public void entityAdded(Entity entity) {
 				
 				synchronized (FactionManager.this) {
-					set(Factions.get().getDefault(), entity);
+					if (!FactionManager.this.has(entity))
+						set(Factions.get().getDefault(), entity);
 				}
 			}
 			

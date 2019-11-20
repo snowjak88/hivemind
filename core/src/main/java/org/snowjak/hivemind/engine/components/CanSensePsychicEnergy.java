@@ -17,7 +17,7 @@ import com.badlogic.gdx.utils.Pool.Poolable;
 public class CanSensePsychicEnergy implements Component, Poolable {
 	
 	private int range = 0;
-	private double[][] map = new double[1][1];
+	private transient double[][] map = new double[1][1];
 	
 	public int getRange() {
 		

@@ -9,7 +9,7 @@ import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.IsSelectable;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
-import org.snowjak.hivemind.engine.systems.PsychicEnergyMapDrawingSystem;
+import org.snowjak.hivemind.engine.systems.display.PsychicEnergyMapDrawingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
