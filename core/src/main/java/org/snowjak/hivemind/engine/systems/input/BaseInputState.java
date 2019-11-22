@@ -9,8 +9,8 @@ import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.IsSelectableNow;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
-import org.snowjak.hivemind.engine.systems.display.PlayerCenteringSystem;
 import org.snowjak.hivemind.engine.systems.display.PsychicEnergyMapDrawingSystem;
+import org.snowjak.hivemind.engine.systems.display.ScreenCenteringSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
@@ -54,43 +54,38 @@ public class BaseInputState implements InputSystemState {
 	private boolean clickComplete = false;
 	
 	private InputEventListener clickListener = null;
-	private InputEventListener backgroundListener_displayPsychic = null;
-	private InputEventListener backgroundListener_centerScreenOnPlayer = null;
 	
-	{
-		//@formatter:off
-		backgroundListener_displayPsychic = InputEventListener.build()
-												.one(GameKey.CONTROL_LEFT, GameKey.CONTROL_RIGHT)
-												.onEvent(e -> {
-													if(Context.getEngine() == null)
-														return;
-													final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
-													if(sys == null)
-														return;
-													sys.activate();
-												})
-												.onEventEnd(e -> {
-													if(Context.getEngine() == null)
-														return;
-													final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
-													if(sys == null)
-														return;
-													sys.deactivate();
-												})
-												.get();
-		//@formatter:on
-		
-		//@formatter:off
-		backgroundListener_centerScreenOnPlayer = InputEventListener.build()
-												.all(GameKey.C)
-												.onEventEnd(e -> {
-													if(Context.getEngine() == null)
-														return;
-													Context.getEngine().getSystem(PlayerCenteringSystem.class).setProcessing(true);
-												})
-												.get();
-		//@formatter:on
-	}
+	//@formatter:off
+	private static final InputEventListener backgroundListener_displayPsychic =
+			InputEventListener.build()
+							.one(GameKey.CONTROL_LEFT, GameKey.CONTROL_RIGHT)
+							.onEvent(e -> {
+								if(Context.getEngine() == null)
+									return;
+								final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
+								if(sys == null)
+									return;
+								sys.activate();
+							})
+							.onEventEnd(e -> {
+								if(Context.getEngine() == null)
+									return;
+								final PsychicEnergyMapDrawingSystem sys = Context.getEngine().getSystem(PsychicEnergyMapDrawingSystem.class);
+								if(sys == null)
+									return;
+								sys.deactivate();
+							})
+							.get();
+	private static final InputEventListener backgroundListener_centerScreenOnPlayer =
+			InputEventListener.build()
+							.all(GameKey.C)
+							.onEventEnd(e -> {
+								if(Context.getEngine() == null)
+									return;
+								Context.getEngine().getSystem(ScreenCenteringSystem.class).centerOnPlayer();
+							})
+							.get();
+	//@formatter:on
 	
 	@Override
 	public void enter(InputEventProcessingSystem entity) {

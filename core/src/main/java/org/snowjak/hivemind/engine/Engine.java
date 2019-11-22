@@ -23,7 +23,7 @@ import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.TrackLeavingSystem;
 import org.snowjak.hivemind.engine.systems.display.DisplayedGlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.display.DisplayedMapUpdatingSystem;
-import org.snowjak.hivemind.engine.systems.display.PlayerCenteringSystem;
+import org.snowjak.hivemind.engine.systems.display.ScreenCenteringSystem;
 import org.snowjak.hivemind.engine.systems.display.PsychicEnergyMapDrawingSystem;
 import org.snowjak.hivemind.engine.systems.display.SelectedGlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.AppearanceUpdatingSystem;
@@ -112,7 +112,7 @@ public class Engine {
 		this.engine.addSystem(new SelectedGlyphUpdatingSystem());
 		this.engine.addSystem(new PsychicEnergyMapDrawingSystem());
 		
-		this.engine.addSystem(new PlayerCenteringSystem());
+		this.engine.addSystem(new ScreenCenteringSystem());
 		
 		//
 		// Managers. Don't perform any execution themselves, but are used to manage
