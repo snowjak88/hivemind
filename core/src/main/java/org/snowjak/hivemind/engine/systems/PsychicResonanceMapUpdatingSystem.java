@@ -10,6 +10,7 @@ import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasPsychicResonance;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.util.ArrayUtil;
+import org.snowjak.hivemind.util.EntitySubscription;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
@@ -17,13 +18,11 @@ import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
-import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
 import squidpony.squidgrid.FOV;
 import squidpony.squidmath.Coord;
-import squidpony.squidmath.OrderedSet;
 
 /**
  * For all {@link Entity Entities} that {@link CanSensePsychicEnergy}, updates
@@ -41,24 +40,9 @@ public class PsychicResonanceMapUpdatingSystem extends IteratingSystem {
 	private static final ComponentMapper<HasLocation> HAS_LOCATION = ComponentMapper.getFor(HasLocation.class);
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	
-	private final EntityListener energeticEntityListener = new EntityListener() {
-		
-		@Override
-		public void entityAdded(Entity entity) {
-			
-			if (entity != null)
-				energeticEntities.add(entity);
-		}
-		
-		@Override
-		public void entityRemoved(Entity entity) {
-			
-			if (entity != null)
-				energeticEntities.remove(entity);
-		}
-	};
+	private final EntitySubscription energetic = new EntitySubscription(
+			Family.all(HasPsychicResonance.class, HasLocation.class).get());
 	
-	private final OrderedSet<Entity> energeticEntities = new OrderedSet<>();
 	private double[][] psychicEnergy = null, zero = null, scratch = null;
 	private ExtGreasedRegion scratchRegion = null;
 	
@@ -71,15 +55,14 @@ public class PsychicResonanceMapUpdatingSystem extends IteratingSystem {
 	public void addedToEngine(Engine engine) {
 		
 		super.addedToEngine(engine);
-		engine.addEntityListener(Family.all(HasPsychicResonance.class, HasLocation.class).get(),
-				energeticEntityListener);
+		energetic.registerWith(engine);
 	}
 	
 	@Override
 	public void removedFromEngine(Engine engine) {
 		
+		energetic.unregisterWith(engine);
 		super.removedFromEngine(engine);
-		engine.addEntityListener(energeticEntityListener);
 	}
 	
 	@Override
@@ -115,8 +98,8 @@ public class PsychicResonanceMapUpdatingSystem extends IteratingSystem {
 		} else
 			ArrayUtil.fill(psychicEnergy, 0);
 		
-		for (int i = 0; i < energeticEntities.size(); i++) {
-			final Entity e = energeticEntities.getAt(i);
+		for (int i = 0; i < energetic.getEntities().size(); i++) {
+			final Entity e = energetic.getEntities().getAt(i);
 			final Coord loc = worldMap.getEntities().getLocation(e);
 			if (loc == null)
 				continue;

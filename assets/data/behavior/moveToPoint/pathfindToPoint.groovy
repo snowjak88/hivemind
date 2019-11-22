@@ -22,18 +22,15 @@ behavior = guarded(
 					def hml = create(HasMovementList)
 					hml.setMovementList result
 					
-					if(hasTag(Tags.PLAYER)) {
-						print "Has path:"
-						result.forEach { print " [${it.x},${it.y}]"  }
-						println ""
-					}
-					
 					return Status.SUCCEEDED
 				}
 				
 				def loc = get(HasLocation)
 				def moveTo = get(IsMovingTo)
 				def map = get(HasMap)
+				
+				if(moveTo.destination == null)
+					return Status.FAILED
 				
 				def pathfinder = get(HasPathfinder)
 				if(pathfinder.pathfinder == null)
@@ -49,15 +46,17 @@ behavior = guarded(
 				prop['unknown'] = unknown
 				
 				prop["pathfind-task"] = schedule({
-					pathfinder.lock.acquireUninterruptibly()
-					def result = pathfinder.pathfinder.findPath(8, -1, unknown, null, loc.location, moveTo.destination)
-					pathfinder.lock.release()
+					pathfinder.lock.lock()
+					def result = pathfinder.pathfinder.findPath(3, -1, unknown, null, loc.location, moveTo.destination)
+					pathfinder.lock.unlock()
 					result
 				})
 				
-				return Status.RUNNING;
+				return Status.RUNNING
+				
 			} catch(Throwable t) {
 				println "Exception while pathfinding -- ${t.class.simpleName} -- ${t.getMessage()}"
+				t.printStackTrace()
 				return Status.FAILED
 			}
 		}))

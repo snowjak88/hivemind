@@ -3,7 +3,7 @@
  */
 package org.snowjak.hivemind.engine.components;
 
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.snowjak.hivemind.util.loaders.IgnoreSerialization;
 
@@ -24,7 +24,7 @@ import squidpony.squidai.DijkstraMap;
 public class HasPathfinder implements Component, Poolable {
 	
 	private DijkstraMap pathfinder;
-	private Semaphore lock = new Semaphore(1);
+	private final ReentrantLock lock = new ReentrantLock();
 	
 	public DijkstraMap getPathfinder() {
 		
@@ -36,7 +36,7 @@ public class HasPathfinder implements Component, Poolable {
 		this.pathfinder = pathfinder;
 	}
 	
-	public Semaphore getLock() {
+	public ReentrantLock getLock() {
 		
 		return lock;
 	}
@@ -44,7 +44,9 @@ public class HasPathfinder implements Component, Poolable {
 	@Override
 	public void reset() {
 		
+		if (lock.isLocked())
+			throw new IllegalStateException(
+					"You cannot retire a HasPathfinder component before ensuring that its lock is released!");
 		pathfinder = null;
-		lock = new Semaphore(1);
 	}
 }

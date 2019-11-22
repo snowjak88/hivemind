@@ -20,7 +20,6 @@ import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdate;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
-import org.snowjak.hivemind.ui.MouseHoverListener;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -38,6 +37,7 @@ import squidpony.squidgrid.gui.gdx.SparseTextMap;
 import squidpony.squidgrid.gui.gdx.SquidInput;
 import squidpony.squidgrid.gui.gdx.TextCellFactory;
 import squidpony.squidgrid.gui.gdx.TextCellFactory.Glyph;
+import squidpony.squidmath.Coord;
 
 /**
  * Encapsulates logic surrounding the game-map display. Doesn't act as an
@@ -102,7 +102,10 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			 */
 			cameraY = 0;
 	
-	private MouseHoverListener scrollLeftListener, scrollRightListener, scrollUpListener, scrollDownListener;
+	private boolean isActiveScrollTo = false;
+	private float scrollToX = 0, scrollToY = 0;
+	
+	private InputEventListener scrollLeftListener, scrollRightListener, scrollUpListener, scrollDownListener;
 	
 	public GameScreen() {
 		
@@ -170,6 +173,36 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 				queuedUpdate.execute(this);
 				GameScreenUpdatePool.get().retire(queuedUpdate);
 			}
+		}
+		
+		//
+		// If there is an active "scroll-to", then do that scrolling now.
+		//
+		if (isActiveScrollTo) {
+			
+			final float dx = (cameraX - scrollToX) / 3f;
+			final float dy = (cameraY - scrollToY) / 3f;
+			final float smallestDx = getCellWidth() * 8f, smallestDy = getCellHeight() * 8f;
+			final float clampedDx = Math.max(Math.abs(dx), smallestDx) * Math.signum(dx);
+			final float clampedDy = Math.max(Math.abs(dy), smallestDy) * Math.signum(dy);
+			
+			cameraX -= clampedDx * delta;
+			cameraY -= clampedDy * delta;
+			
+			boolean dxDone = false, dyDone = false;
+			
+			if (Math.abs(dx) < getCellWidth() / 2f) {
+				cameraX = scrollToX;
+				dxDone = true;
+			}
+			
+			if (Math.abs(dy) < getCellHeight() / 2f) {
+				cameraY = scrollToY;
+				dyDone = true;
+			}
+			
+			if (dxDone && dyDone)
+				isActiveScrollTo = false;
 		}
 	}
 	
@@ -271,7 +304,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		}
 		
 		cameraX = (width * getCellWidth()) / 2f;
-		cameraY = (width * getCellWidth()) / 2f;
+		cameraY = (height * getCellHeight()) / 2f;
 	}
 	
 	/**
@@ -354,6 +387,35 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 	}
 	
 	/**
+	 * Set's the map-screen's "active-scroll-to" -- i.e., the map will automatically
+	 * scroll every frame, eventually placing the given map-cell in the center of
+	 * the display.
+	 * 
+	 * @param mapLocation
+	 */
+	public void setActiveScrollTo(Coord mapLocation) {
+		
+		if (getMapSurface() == null)
+			return;
+		final float centerOnPixelX = mapLocation.x * getCellWidth();
+		final float centerOnPixelY = (getMapGridWorldCellHeight() - mapLocation.y) * getCellHeight();
+		
+		final float worldWidthPixels = getMapGridWorldCellWidth() * getCellWidth();
+		final float worldHeightPixels = getMapGridWorldCellHeight() * getCellHeight();
+		
+		final float minX = 0 + (getMapGridOnscreenPixelWidth() / 2f), minY = 0 + (getMapGridOnscreenPixelHeight() / 2f);
+		final float maxX = worldWidthPixels - (getMapGridOnscreenPixelWidth() / 2f),
+				maxY = worldHeightPixels - (getMapGridOnscreenPixelHeight() / 2f);
+		
+		final float clampedCornerPixelX = Math.max(Math.min(centerOnPixelX, maxX), minX);
+		final float clampedCornerPixelY = Math.max(Math.min(centerOnPixelY, maxY), minY);
+		
+		this.scrollToX = clampedCornerPixelX;
+		this.scrollToY = clampedCornerPixelY;
+		this.isActiveScrollTo = true;
+	}
+	
+	/**
 	 * Un-register any previously-registered and, if enabled in configuration,
 	 * re-creates the scrolling {@link MouseHoverListener}s.
 	 */
@@ -363,29 +425,52 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		final int onscreenGridHeight = (int) (getWindowPixelHeight() / getCellHeight());
 		
 		if (scrollLeftListener != null)
-			getInputProcessor().unregisterHoverListener(scrollLeftListener);
+			getInputProcessor().unregisterInputListener(scrollLeftListener);
 		if (scrollRightListener != null)
-			getInputProcessor().unregisterHoverListener(scrollRightListener);
+			getInputProcessor().unregisterInputListener(scrollRightListener);
 		if (scrollUpListener != null)
-			getInputProcessor().unregisterHoverListener(scrollUpListener);
+			getInputProcessor().unregisterInputListener(scrollUpListener);
 		if (scrollDownListener != null)
-			getInputProcessor().unregisterHoverListener(scrollDownListener);
+			getInputProcessor().unregisterInputListener(scrollDownListener);
 		
 		if (Config.get().getBoolean(PREFERENCE_MOUSE_SCROLL)) {
 			
 			final int bufferWidth = onscreenGridWidth / 8;
 			final int bufferHeight = onscreenGridHeight / 8;
 			
-			scrollLeftListener = getInputProcessor().registerHoverListener(0, 0, bufferWidth, onscreenGridHeight,
-					(x, y) -> doScroll(Direction.LEFT, bufferWidth - x));
-			scrollRightListener = getInputProcessor().registerHoverListener(onscreenGridWidth - bufferWidth, 0,
-					onscreenGridWidth, onscreenGridHeight,
-					(x, y) -> doScroll(Direction.RIGHT, x - (onscreenGridWidth - bufferWidth) + 1));
-			scrollUpListener = getInputProcessor().registerHoverListener(0, 0, onscreenGridWidth, bufferHeight,
-					(x, y) -> doScroll(Direction.UP, bufferHeight - y));
-			scrollDownListener = getInputProcessor().registerHoverListener(0, onscreenGridHeight - bufferHeight,
-					onscreenGridWidth, onscreenGridHeight,
-					(x, y) -> doScroll(Direction.DOWN, y - (onscreenGridHeight - bufferHeight) + 1));
+			scrollLeftListener = InputEventListener.build()
+			//@formatter:off
+							.continuous()
+							.inWindow(Coord.get(0,0), Coord.get(bufferWidth,onscreenGridHeight))
+							.onEvent(e -> doScroll(Direction.LEFT, bufferWidth - e.getScreenCursor().x))
+					//@formatter:on
+					.get();
+			scrollRightListener = InputEventListener.build()
+			//@formatter:off
+							.continuous()
+							.inWindow(Coord.get(onscreenGridWidth-bufferWidth,0), Coord.get(onscreenGridWidth,onscreenGridHeight))
+							.onEvent(e -> doScroll(Direction.RIGHT, e.getScreenCursor().x - (onscreenGridWidth - bufferWidth) + 1))
+					//@formatter:on
+					.get();
+			scrollUpListener = InputEventListener.build()
+			//@formatter:off
+							.continuous()
+							.inWindow(Coord.get(0,0), Coord.get(onscreenGridWidth,bufferHeight))
+							.onEvent(e -> doScroll(Direction.UP, bufferHeight - e.getScreenCursor().y))
+					//@formatter:on
+					.get();
+			scrollDownListener = InputEventListener.build()
+			//@formatter:off
+							.continuous()
+							.inWindow(Coord.get(0,onscreenGridHeight-bufferHeight), Coord.get(onscreenGridWidth,onscreenGridHeight))
+							.onEvent(e -> doScroll(Direction.DOWN, e.getScreenCursor().y - (onscreenGridHeight - bufferHeight) + 1))
+					//@formatter:on
+					.get();
+			
+			getInputProcessor().registerInputListener(scrollLeftListener);
+			getInputProcessor().registerInputListener(scrollRightListener);
+			getInputProcessor().registerInputListener(scrollUpListener);
+			getInputProcessor().registerInputListener(scrollDownListener);
 		}
 	}
 	

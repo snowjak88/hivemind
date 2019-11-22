@@ -35,10 +35,10 @@ import com.badlogic.ashley.core.EntitySystem;
  * @author snowjak88
  *
  */
-public class MapUpdatingSystem extends EntitySystem {
+public class DisplayedMapUpdatingSystem extends EntitySystem {
 	
 	@SuppressWarnings("unused")
-	private static final Logger LOG = Logger.getLogger(MapUpdatingSystem.class.getName());
+	private static final Logger LOG = Logger.getLogger(DisplayedMapUpdatingSystem.class.getName());
 	
 	/**
 	 * Ordinarily, this system issues {@link MapDeltaUpdate}s to the
@@ -65,7 +65,7 @@ public class MapUpdatingSystem extends EntitySystem {
 	@Override
 	public void update(float deltaTime) {
 		
-		final ProfilerTimer timer = Profiler.get().start("MapUpdatingSystem (overall)");
+		final ProfilerTimer timer = Profiler.get().start("DisplayedMapUpdatingSystem (overall)");
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);

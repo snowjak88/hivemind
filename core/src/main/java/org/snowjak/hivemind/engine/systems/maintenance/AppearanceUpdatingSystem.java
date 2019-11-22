@@ -99,6 +99,7 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	public void removedFromEngine(Engine engine) {
 		
 		engine.removeEntityListener(appearanceUpdateListener);
+		engine.removeEntityListener(selectionChangeListener);
 		
 		super.removedFromEngine(engine);
 	}
@@ -112,6 +113,9 @@ public class AppearanceUpdatingSystem extends IntervalIteratingSystem {
 	public void updateEntityAppearance(Entity entity) {
 		
 		final FactionManager fm = getEngine().getSystem(FactionManager.class);
+		
+		if (!HAS_APPEARANCE.has(entity))
+			return;
 		
 		final HasAppearance appearance = HAS_APPEARANCE.get(entity);
 		final Color baseColor = appearance.getColor();

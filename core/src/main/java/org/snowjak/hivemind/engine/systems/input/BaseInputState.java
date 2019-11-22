@@ -6,9 +6,10 @@ package org.snowjak.hivemind.engine.systems.input;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasMap;
-import org.snowjak.hivemind.engine.components.IsSelectable;
+import org.snowjak.hivemind.engine.components.IsSelectableNow;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
+import org.snowjak.hivemind.engine.systems.display.PlayerCenteringSystem;
 import org.snowjak.hivemind.engine.systems.display.PsychicEnergyMapDrawingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.events.input.GameKey;
@@ -45,7 +46,8 @@ public class BaseInputState implements InputSystemState {
 	private static final String SELECTION_LAYER_NAME = BaseInputState.class.getName();
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
-	private static final ComponentMapper<IsSelectable> IS_SELECTABLE = ComponentMapper.getFor(IsSelectable.class);
+	private static final ComponentMapper<IsSelectableNow> IS_SELECTABLE_NOW = ComponentMapper
+			.getFor(IsSelectableNow.class);
 	
 	private Coord beginSelection = null, endSelection = null;
 	private boolean updateSelectionBox = false;
@@ -53,6 +55,7 @@ public class BaseInputState implements InputSystemState {
 	
 	private InputEventListener clickListener = null;
 	private InputEventListener backgroundListener_displayPsychic = null;
+	private InputEventListener backgroundListener_centerScreenOnPlayer = null;
 	
 	{
 		//@formatter:off
@@ -73,6 +76,17 @@ public class BaseInputState implements InputSystemState {
 													if(sys == null)
 														return;
 													sys.deactivate();
+												})
+												.get();
+		//@formatter:on
+		
+		//@formatter:off
+		backgroundListener_centerScreenOnPlayer = InputEventListener.build()
+												.all(GameKey.C)
+												.onEventEnd(e -> {
+													if(Context.getEngine() == null)
+														return;
+													Context.getEngine().getSystem(PlayerCenteringSystem.class).setProcessing(true);
 												})
 												.get();
 		//@formatter:on
@@ -99,6 +113,7 @@ public class BaseInputState implements InputSystemState {
 		//@formatter:on
 		
 		entity.registerListener(backgroundListener_displayPsychic);
+		entity.registerListener(backgroundListener_centerScreenOnPlayer);
 		
 		entity.registerListener(clickListener);
 	}
@@ -139,7 +154,7 @@ public class BaseInputState implements InputSystemState {
 						continue;
 					
 					for (int i = 0; i < entitiesAt.size(); i++) {
-						if (IS_SELECTABLE.has(entitiesAt.getAt(i))) {
+						if (IS_SELECTABLE_NOW.has(entitiesAt.getAt(i))) {
 							entitiesAt.getAt(i).add(entity.getEngine().createComponent(IsSelected.class));
 							selected.add(entitiesAt.getAt(i));
 						}

@@ -52,6 +52,7 @@ public class GameScreenDisplayState implements DisplayState {
 		engineUpdateProcess.setOnProcessCrash((t) -> {
 			LOG.severe("The game-world subsystem has crashed due to an unhandled exception: "
 					+ t.getClass().getSimpleName() + ": '" + t.getMessage() + "'");
+			t.printStackTrace(System.err);
 			exitGame = true;
 		});
 		engineUpdateProcess.start();

@@ -49,10 +49,10 @@ import squidpony.squidmath.OrderedSet;
  * @author snowjak88
  *
  */
-public class GlyphUpdatingSystem extends EntitySystem {
+public class DisplayedGlyphUpdatingSystem extends EntitySystem {
 	
 	@SuppressWarnings("unused")
-	private static final Logger LOG = Logger.getLogger(GlyphUpdatingSystem.class.getName());
+	private static final Logger LOG = Logger.getLogger(DisplayedGlyphUpdatingSystem.class.getName());
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private static final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
@@ -72,7 +72,7 @@ public class GlyphUpdatingSystem extends EntitySystem {
 	 */
 	private final EntityListener glyphRemovingEntityListener;
 	
-	public GlyphUpdatingSystem() {
+	public DisplayedGlyphUpdatingSystem() {
 		
 		super();
 		glyphRemovingEntityListener = new EntityListener() {
@@ -116,7 +116,7 @@ public class GlyphUpdatingSystem extends EntitySystem {
 	@Override
 	public void update(float deltaTime) {
 		
-		final ProfilerTimer timer = Profiler.get().start("MapUpdatingSystem (overall)");
+		final ProfilerTimer timer = Profiler.get().start("DisplayedMapUpdatingSystem (overall)");
 		batched.runUpdates();
 		
 		final UniqueTagManager utm = getEngine().getSystem(UniqueTagManager.class);

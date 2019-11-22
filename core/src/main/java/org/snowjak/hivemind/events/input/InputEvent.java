@@ -22,8 +22,8 @@ public class InputEvent implements Event {
 	
 	private Coord screenCursor;
 	private Coord mapCursor;
-	private EnumSet<MouseButton> buttons = EnumSet.noneOf(MouseButton.class);
-	private Bits keys;
+	private final EnumSet<MouseButton> buttons = EnumSet.noneOf(MouseButton.class);
+	private final Bits keys = new Bits(GameKey.MAX_BIT_INDEX + 1);
 	
 	public Coord getScreenCursor() {
 		
@@ -73,7 +73,8 @@ public class InputEvent implements Event {
 	
 	public void setKeys(Bits keys) {
 		
-		this.keys = keys;
+		this.keys.clear();
+		this.keys.or(keys);
 	}
 	
 	@Override
@@ -81,7 +82,7 @@ public class InputEvent implements Event {
 		
 		screenCursor = null;
 		mapCursor = null;
-		buttons = null;
+		buttons.clear();
 		keys.clear();
 	}
 	

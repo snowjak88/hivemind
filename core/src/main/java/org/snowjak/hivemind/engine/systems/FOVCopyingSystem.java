@@ -9,6 +9,7 @@ import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 import org.snowjak.hivemind.util.ArrayUtil;
+import org.snowjak.hivemind.util.EntitySubscription;
 import org.snowjak.hivemind.util.ExtGreasedRegion;
 import org.snowjak.hivemind.util.Profiler;
 import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
@@ -16,7 +17,6 @@ import org.snowjak.hivemind.util.Profiler.ProfilerTimer;
 import com.badlogic.ashley.core.ComponentMapper;
 import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
-import com.badlogic.ashley.core.EntityListener;
 import com.badlogic.ashley.core.Family;
 import com.badlogic.ashley.systems.IteratingSystem;
 
@@ -36,12 +36,15 @@ import squidpony.squidmath.SquidID;
  * @author snowjak88
  *
  */
-public class FOVCopyingSystem extends IteratingSystem implements EntityListener {
+public class FOVCopyingSystem extends IteratingSystem {
 	
 	private final ComponentMapper<HasFOV> HAS_FOV = ComponentMapper.getFor(HasFOV.class);
 	private final ComponentMapper<CopiesFOVTo> COPY_FOV = ComponentMapper.getFor(CopiesFOVTo.class);
 	private final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
 	private final ComponentMapper<HasLocation> HAS_LOCATION = ComponentMapper.getFor(HasLocation.class);
+	
+	private final EntitySubscription fovCopiers = new EntitySubscription(
+			Family.all(CopiesFOVTo.class, HasFOV.class).get(), null, this::processRemovedFovCopier);
 	
 	public FOVCopyingSystem() {
 		
@@ -52,24 +55,25 @@ public class FOVCopyingSystem extends IteratingSystem implements EntityListener 
 	public void addedToEngine(Engine engine) {
 		
 		super.addedToEngine(engine);
-		engine.addEntityListener(Family.all(CopiesFOVTo.class, HasFOV.class).get(), this);
+		fovCopiers.registerWith(engine);
 	}
 	
 	@Override
 	public void removedFromEngine(Engine engine) {
 		
-		engine.removeEntityListener(this);
+		fovCopiers.unregisterWith(engine);
 		super.removedFromEngine(engine);
 	}
 	
-	@Override
-	public void entityAdded(Entity entity) {
-		
-		// Nothing to do.
-	}
-	
-	@Override
-	public void entityRemoved(Entity entity) {
+	/**
+	 * Given 2 entities -- entity A that copies its FOV to entity B -- when entity A
+	 * <em>stops</em> copying its FOV to entity B, entity B must ensure that it's
+	 * aware of that change. Here, that is communicated by ensuring that all the
+	 * A-visible cells are marked on B's map as "updated".
+	 * 
+	 * @param entity
+	 */
+	private void processRemovedFovCopier(Entity entity) {
 		
 		final HasFOV fov = HAS_FOV.get(entity);
 		final CopiesFOVTo copyTo = COPY_FOV.get(entity);

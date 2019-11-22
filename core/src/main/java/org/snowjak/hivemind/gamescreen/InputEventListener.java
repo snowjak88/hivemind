@@ -140,12 +140,17 @@ public class InputEventListener {
 	public boolean matches(InputEvent event) {
 		
 		//@formatter:off
-		return ((this.button == null || event.getButtons().contains(this.button))
-			&& (this.windowStart == null || (event.getScreenCursor().x >= this.windowStart.x && event.getScreenCursor().y >= this.windowStart.y))
-			&& (this.windowEnd == null || (event.getScreenCursor().x <= this.windowEnd.x && event.getScreenCursor().y <= this.windowEnd.y))
-			&& (this.allKeys.isEmpty() || event.getKeys().containsAll(this.allKeys))
-			&& (this.oneOfKeys.isEmpty() || event.getKeys().intersects(oneOfKeys))
-			&& (this.excludeKeys.isEmpty() || !event.getKeys().intersects(excludeKeys)));
+		final boolean buttonsMatch =
+						(this.button == null || event.getButtons().contains(this.button));
+		final boolean withinWindow =
+						(this.windowStart == null || (event.getScreenCursor().x >= this.windowStart.x && event.getScreenCursor().y >= this.windowStart.y))
+						&& (this.windowEnd == null || (event.getScreenCursor().x <= this.windowEnd.x && event.getScreenCursor().y <= this.windowEnd.y));
+		final boolean keysMatch =
+						(this.allKeys.isEmpty() || event.getKeys().containsAll(this.allKeys))
+						&& (this.oneOfKeys.isEmpty() || event.getKeys().intersects(oneOfKeys))
+						&& (this.excludeKeys.isEmpty() || !event.getKeys().intersects(excludeKeys));
+		
+		return (buttonsMatch && withinWindow && keysMatch);
 		//@formatter:on
 	}
 	

@@ -6,16 +6,12 @@ package org.snowjak.hivemind.gamescreen;
 import java.util.EnumSet;
 
 import org.eclipse.collections.api.iterator.MutableIntIterator;
-import org.eclipse.collections.api.list.primitive.MutableBooleanList;
 import org.eclipse.collections.api.set.primitive.MutableIntSet;
-import org.eclipse.collections.impl.list.mutable.primitive.BooleanArrayList;
 import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.snowjak.hivemind.events.EventPool;
 import org.snowjak.hivemind.events.input.GameKey;
 import org.snowjak.hivemind.events.input.InputEvent;
 import org.snowjak.hivemind.events.input.InputEvent.MouseButton;
-import org.snowjak.hivemind.ui.MouseHoverListener;
-import org.snowjak.hivemind.ui.MouseHoverListener.MouseHoverListenerRegistrar;
 
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
@@ -31,8 +27,7 @@ import squidpony.squidmath.OrderedSet;
  * @author snowjak88
  *
  */
-public class GameScreenInputProcessor extends InputAdapter
-		implements UpdateableInputProcessor, MouseHoverListenerRegistrar {
+public class GameScreenInputProcessor extends InputAdapter implements UpdateableInputProcessor {
 	
 	/**
 	 * Discrete {@link InputEventListener}s will be repeatedly fired every {@code N}
@@ -50,10 +45,7 @@ public class GameScreenInputProcessor extends InputAdapter
 	private Bits activeKeys = new Bits(GameKey.MAX_BIT_INDEX);
 	
 	private final OrderedSet<InputEventListener> inputListeners = new OrderedSet<>();
-	private final MutableIntSet activeInputListeners = new IntHashSet(), activeContinuousListeners = new IntHashSet();
-	
-	private final OrderedSet<MouseHoverListener> hoverListeners = new OrderedSet<>();
-	private final MutableBooleanList activeHoverListeners = new BooleanArrayList();
+	private final MutableIntSet activeInputListeners = new IntHashSet();
 	
 	public GameScreenInputProcessor(int offsetX, int offsetY, float cellWidth, float cellHeight, float gridWidth,
 			float gridHeight, ScreenMapTranslator gridTranslator) {
@@ -87,7 +79,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeKeys.set(key.getBitIndex());
 			
-			activateListeners(false);
+			checkListeners();
 			
 			return true;
 		}
@@ -103,7 +95,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeKeys.clear(key.getBitIndex());
 			
-			deactivateListeners();
+			checkListeners();
 			
 			return true;
 		}
@@ -119,7 +111,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeButtons.add(button);
 			
-			activateListeners(false);
+			checkListeners();
 			
 			return true;
 		}
@@ -135,7 +127,7 @@ public class GameScreenInputProcessor extends InputAdapter
 			
 			activeButtons.remove(button);
 			
-			deactivateListeners();
+			checkListeners();
 			
 			return true;
 		}
@@ -158,60 +150,67 @@ public class GameScreenInputProcessor extends InputAdapter
 			mouseY = toGridY(screenY);
 			
 			if (mouseX != prevMouseX || mouseY != prevMouseY)
-				updateContinuousListeners();
+				checkListeners();
 			
 			return true;
 		}
 	}
 	
-	protected void activateListeners(boolean onlyContinuous) {
+	/**
+	 * Check all registered {@link InputEventListener}s against the current
+	 * input-state. Activate all listeners that match the current input-state,
+	 * deactivate all listeners that don't, and dispatch the current
+	 * {@link InputEvent} to {@link InputEventListener#receive(InputEvent)
+	 * receive(...)} and {@link InputEventListener#endReceive(InputEvent)
+	 * endReceive(...)}, as appropriate.
+	 */
+	protected void checkListeners() {
 		
+		final InputEvent event = getInputEvent();
 		for (int i = 0; i < inputListeners.size(); i++) {
 			
-			if (activeInputListeners.contains(i))
-				continue;
-			
 			final InputEventListener listener = inputListeners.getAt(i);
-			if (onlyContinuous && listener.isDiscrete())
-				continue;
 			
-			final InputEvent event = getInputEvent();
-			if (listener.matches(event)) {
-				
-				activeInputListeners.add(i);
-				
-				if (listener.isDiscrete()) {
-					listener.setRemainingInterval(REPEAT_INTERVAL);
-					listener.receive(event);
-				} else
-					activeContinuousListeners.add(i);
-			}
+			checkListener(i, listener, event);
 		}
+		
+		EventPool.get().retire(event);
 	}
 	
-	protected void deactivateListeners() {
+	protected void checkListener(InputEventListener listener, InputEvent event) {
 		
-		final MutableIntIterator activeIterator = activeInputListeners.intIterator();
-		while (activeIterator.hasNext()) {
+		final int idx = inputListeners.indexOf(listener);
+		if (idx > -1)
+			checkListener(idx, listener, event);
+	}
+	
+	protected void checkListener(int index, InputEventListener listener, InputEvent event) {
+		
+		final boolean isAlreadyActive = activeInputListeners.contains(index);
+		final boolean matches = listener.matches(event);
+		
+		if (matches && !isAlreadyActive) {
+			//
+			// Activate this listener
+			//
 			
-			final int index = activeIterator.next();
-			final InputEventListener listener = inputListeners.getAt(index);
-			final InputEvent event = getInputEvent();
+			activeInputListeners.add(index);
+			listener.setActive(true);
+			listener.receive(event);
 			
-			if (listener == null) {
-				activeIterator.remove();
-				continue;
-			}
+			if (listener.isDiscrete())
+				listener.setRemainingInterval(REPEAT_INTERVAL);
 			
-			if (!listener.matches(event)) {
-				
-				listener.endReceive(event);
-				
-				activeContinuousListeners.remove(index);
-				activeIterator.remove();
-			}
+		} else if (!matches && isAlreadyActive) {
+			//
+			// Deactivate this listener
+			//
+			
+			listener.endReceive(event);
+			
+			listener.setActive(false);
+			activeInputListeners.remove(index);
 		}
-		
 	}
 	
 	/**
@@ -254,7 +253,9 @@ public class GameScreenInputProcessor extends InputAdapter
 		synchronized (this) {
 			inputListeners.add(listener);
 			
-			activateListeners(false);
+			final InputEvent event = getInputEvent();
+			checkListener(listener, event);
+			EventPool.get().retire(event);
 		}
 	}
 	
@@ -269,46 +270,9 @@ public class GameScreenInputProcessor extends InputAdapter
 			final int index = inputListeners.indexOf(listener);
 			if (index < 0)
 				return;
-			activeInputListeners.remove(index);
-			activeContinuousListeners.remove(index);
-			inputListeners.removeAt(index);
-		}
-	}
-	
-	@Override
-	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY,
-			MouseHoverListener.MouseHoverReceiver receiver) {
-		
-		synchronized (this) {
-			final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, receiver);
-			hoverListeners.add(listener);
-			activeHoverListeners.add(false);
-			return listener;
-		}
-	}
-	
-	@Override
-	public MouseHoverListener registerHoverListener(int startX, int startY, int endX, int endY, float duration,
-			MouseHoverListener.MouseHoverReceiver receiver) {
-		
-		synchronized (this) {
-			final MouseHoverListener listener = new MouseHoverListener(startX, startY, endX, endY, duration, receiver);
-			hoverListeners.add(listener);
-			activeHoverListeners.add(false);
-			return listener;
-		}
-	}
-	
-	@Override
-	public void unregisterHoverListener(MouseHoverListener listener) {
-		
-		synchronized (this) {
-			final int index = hoverListeners.indexOf(listener);
-			if (index < 0)
-				return;
 			
-			hoverListeners.removeAt(index);
-			activeHoverListeners.removeAtIndex(index);
+			activeInputListeners.remove(index);
+			inputListeners.removeAt(index);
 		}
 	}
 	
@@ -316,31 +280,13 @@ public class GameScreenInputProcessor extends InputAdapter
 	public void update(float delta) {
 		
 		synchronized (this) {
-			updateHoverListeners(delta);
-			updateDiscreteListeners(delta);
-			updateContinuousListeners();
+			updateListeners(delta);
 		}
 	}
 	
-	protected void updateHoverListeners(float delta) {
+	protected void updateListeners(float delta) {
 		
-		for (int i = 0; i < hoverListeners.size(); i++) {
-			final MouseHoverListener hover = hoverListeners.getAt(i);
-			
-			final boolean isActive = hover.isActive(mouseX, mouseY);
-			final boolean prevActive = activeHoverListeners.get(i);
-			if (prevActive ^ isActive) {
-				hover.reset();
-				activeHoverListeners.set(i, isActive);
-			}
-			
-			if (isActive)
-				if (hover.isSatisfied(mouseX, mouseY, delta))
-					hover.call(mouseX, mouseY);
-		}
-	}
-	
-	protected void updateDiscreteListeners(float delta) {
+		final InputEvent event = getInputEvent();
 		
 		final MutableIntIterator activeIterator = activeInputListeners.intIterator();
 		while (activeIterator.hasNext()) {
@@ -355,28 +301,13 @@ public class GameScreenInputProcessor extends InputAdapter
 				listener.setRemainingInterval(listener.getRemainingInterval() - delta);
 				if (listener.getRemainingInterval() <= 0f) {
 					listener.setRemainingInterval(REPEAT_INTERVAL);
-					listener.receive(getInputEvent());
+					listener.receive(event);
 				}
-			}
-		}
-	}
-	
-	protected void updateContinuousListeners() {
-		
-		final InputEvent event = getInputEvent();
-		final MutableIntIterator activeIterator = activeContinuousListeners.intIterator();
-		while (activeIterator.hasNext()) {
-			
-			final InputEventListener listener = inputListeners.getAt(activeIterator.next());
-			
-			if (listener == null) {
-				activeIterator.remove();
-				continue;
-			}
-			
-			if (!listener.isDiscrete())
+				
+			} else
 				listener.receive(event);
-			
 		}
+		
+		EventPool.get().retire(event);
 	}
 }

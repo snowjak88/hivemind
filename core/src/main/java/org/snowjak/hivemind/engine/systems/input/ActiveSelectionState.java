@@ -9,7 +9,7 @@ import org.snowjak.hivemind.engine.Engine;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.components.HasPathfinder;
 import org.snowjak.hivemind.engine.components.IsMovingTo;
-import org.snowjak.hivemind.engine.components.IsSelectable;
+import org.snowjak.hivemind.engine.components.IsSelectableNow;
 import org.snowjak.hivemind.engine.components.IsSelected;
 import org.snowjak.hivemind.engine.systems.InputEventProcessingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
@@ -43,30 +43,15 @@ import squidpony.squidmath.OrderedSet;
 public class ActiveSelectionState implements InputSystemState {
 	
 	private static final ComponentMapper<HasMap> HAS_MAP = ComponentMapper.getFor(HasMap.class);
-	private static final ComponentMapper<IsSelectable> IS_SELECTABLE = ComponentMapper.getFor(IsSelectable.class);
+	private static final ComponentMapper<IsSelectableNow> IS_SELECTABLE_NOW = ComponentMapper
+			.getFor(IsSelectableNow.class);
 	
 	private final OrderedSet<Entity> selected = new OrderedSet<>();
 	
 	private final InputEventListener leftClickListener = InputEventListener.build()
 	//@formatter:off
 			.button(MouseButton.LEFT_BUTTON)
-			.onEvent(e -> {
-				final Entity povEntity = Context.getEngine().getSystem(UniqueTagManager.class).get(Tags.POV);
-				if(povEntity == null || !HAS_MAP.has(povEntity))
-					return;
-				
-				final OrderedSet<Entity> clicked = HAS_MAP.get(povEntity).getEntities().getAt(e.getMapCursor());
-				final OrderedSet<Entity> selected = new OrderedSet<>(clicked.size());
-				for(int i=0; i<clicked.size();i++)
-					if(IS_SELECTABLE.has(clicked.getAt(i)))
-						selected.add(clicked.getAt(i));
-				
-				if(selected.isEmpty())
-					removeSelection();
-				else
-					redoSelection(selected);
-				
-			})
+			.onEvent(e -> removeSelection())
 			//@formatter:on
 			.get();
 	
@@ -76,13 +61,17 @@ public class ActiveSelectionState implements InputSystemState {
 					.onEvent(e -> {
 				//@formatter:on
 				synchronized (ActiveSelectionState.this) {
+					
 					final Engine eng = Context.getEngine();
 					final RunnableExecutingSystem res = eng.getSystem(RunnableExecutingSystem.class);
+					
 					for (int i = 0; i < selected.size(); i++) {
 						final Entity entity = selected.getAt(i);
+						final Coord destination = e.getMapCursor();
+						
 						res.submit(() -> {
 							final IsMovingTo moveTo = Context.getEngine().createComponent(IsMovingTo.class);
-							moveTo.setDestination(e.getMapCursor());
+							moveTo.setDestination(destination);
 							entity.add(moveTo);
 						});
 					}
@@ -107,11 +96,12 @@ public class ActiveSelectionState implements InputSystemState {
 								if(playerEntity != null)
 									if(ComponentMapper.getFor(HasPathfinder.class).has(playerEntity)) {
 										final HasPathfinder hpf = ComponentMapper.getFor(HasPathfinder.class).get(playerEntity);
-										hpf.getLock().acquireUninterruptibly();
-										final DijkstraMap pf = hpf.getPathfinder();
-										if(pf != null && pf.physicalMap.length > loc.x && pf.physicalMap[loc.x].length > loc.y)
-											cost = pf.physicalMap[loc.x][loc.y];
-										hpf.getLock().release();
+										if (hpf.getLock().tryLock()) {
+											final DijkstraMap pf = hpf.getPathfinder();
+											if (pf != null && pf.physicalMap.length > loc.x && pf.physicalMap[loc.x].length > loc.y)
+												cost = pf.physicalMap[loc.x][loc.y];
+											hpf.getLock().unlock();
+										}
 									}
 								
 								{

@@ -21,8 +21,9 @@ import org.snowjak.hivemind.engine.systems.OwnMapFOVInsertingSystem;
 import org.snowjak.hivemind.engine.systems.PsychicResonanceMapUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.TrackLeavingSystem;
-import org.snowjak.hivemind.engine.systems.display.GlyphUpdatingSystem;
-import org.snowjak.hivemind.engine.systems.display.MapUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.display.DisplayedGlyphUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.display.DisplayedMapUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.display.PlayerCenteringSystem;
 import org.snowjak.hivemind.engine.systems.display.PsychicEnergyMapDrawingSystem;
 import org.snowjak.hivemind.engine.systems.display.SelectedGlyphUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.AppearanceUpdatingSystem;
@@ -30,11 +31,13 @@ import org.snowjak.hivemind.engine.systems.maintenance.EntityMapMaintenanceSyste
 import org.snowjak.hivemind.engine.systems.maintenance.FOVResettingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.LocationUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.PathfinderUpdatingSystem;
+import org.snowjak.hivemind.engine.systems.maintenance.SelectabilityUpdatingSystem;
 import org.snowjak.hivemind.engine.systems.maintenance.UpdatedLocationResettingSystem;
 import org.snowjak.hivemind.engine.systems.manager.EntityRefManager;
 import org.snowjak.hivemind.engine.systems.manager.FactionManager;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.json.Json;
+import org.snowjak.hivemind.util.EntitySubscription;
 
 import com.badlogic.ashley.core.Component;
 import com.badlogic.ashley.core.Entity;
@@ -66,28 +69,54 @@ public class Engine {
 		
 		this.engine = new PooledEngine();
 		
+		//
+		// Initial maintenance systems.
 		this.engine.addSystem(new UpdatedLocationResettingSystem());
 		this.engine.addSystem(new FOVResettingSystem());
 		this.engine.addSystem(new EntityMapMaintenanceSystem());
 		this.engine.addSystem(new AppearanceUpdatingSystem());
 		this.engine.addSystem(new LocationUpdatingSystem());
 		this.engine.addSystem(new RunnableExecutingSystem());
-		this.engine.addSystem(new InputEventProcessingSystem());
-		
 		this.engine.addSystem(new GeneratorUpdatingSystem());
 		this.engine.addSystem(new TrackLeavingSystem());
 		this.engine.addSystem(new EntityDissipationSystem());
+		
+		this.engine.addSystem(new InputEventProcessingSystem());
+		
+		//
+		// FOV updating
 		this.engine.addSystem(new FOVUpdatingSystem());
 		this.engine.addSystem(new FOVCopyingSystem());
-		this.engine.addSystem(new PsychicResonanceMapUpdatingSystem());
+		
+		//
+		// Update map based on FOV
 		this.engine.addSystem(new OwnMapFOVInsertingSystem());
+		
+		//
+		// Psychic updating
+		this.engine.addSystem(new PsychicResonanceMapUpdatingSystem());
+		
+		//
+		// Updating other values based on map + FOV
 		this.engine.addSystem(new PathfinderUpdatingSystem());
+		this.engine.addSystem(new SelectabilityUpdatingSystem());
+		
+		//
+		// Behaviors
 		this.engine.addSystem(new BehaviorProcessingSystem());
-		this.engine.addSystem(new MapUpdatingSystem());
-		this.engine.addSystem(new GlyphUpdatingSystem());
+		
+		//
+		// Update the display based on game-state
+		this.engine.addSystem(new DisplayedMapUpdatingSystem());
+		this.engine.addSystem(new DisplayedGlyphUpdatingSystem());
 		this.engine.addSystem(new SelectedGlyphUpdatingSystem());
 		this.engine.addSystem(new PsychicEnergyMapDrawingSystem());
 		
+		this.engine.addSystem(new PlayerCenteringSystem());
+		
+		//
+		// Managers. Don't perform any execution themselves, but are used to manage
+		// Entities in different ways.
 		this.engine.addSystem(new UniqueTagManager());
 		this.engine.addSystem(new EntityRefManager());
 		this.engine.addSystem(new FactionManager());
@@ -323,4 +352,26 @@ public class Engine {
 		engine.update(deltaTime);
 	}
 	
+	/**
+	 * Register the given {@link EntitySubscription} with this Engine. The given
+	 * EntitySubscription will receive updates until it is
+	 * {@link #unregisterSubscription(EntitySubscription) unregistered}.
+	 * 
+	 * @param subscription
+	 */
+	public void registerSubscription(EntitySubscription subscription) {
+		
+		addEntityListener(subscription.getFamily(), subscription);
+	}
+	
+	/**
+	 * Un-register the given {@link EntitySubscription} from this Engine. The given
+	 * EntitySubscription will no longer receive updates.
+	 * 
+	 * @param subscription
+	 */
+	public void unregisterSubscription(EntitySubscription subscription) {
+		
+		removeEntityListener(subscription);
+	}
 }

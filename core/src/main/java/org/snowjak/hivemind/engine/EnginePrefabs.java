@@ -8,9 +8,13 @@ import org.snowjak.hivemind.Materials;
 import org.snowjak.hivemind.Materials.Material;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.CanSensePsychicEnergy;
+import org.snowjak.hivemind.engine.components.HasLocation;
 import org.snowjak.hivemind.engine.components.HasMap;
 import org.snowjak.hivemind.engine.prefab.PrefabScript;
+import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
+import org.snowjak.hivemind.gamescreen.updates.CenterScreenScrollAt;
+import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 import org.snowjak.hivemind.map.GameMap;
 
 import com.badlogic.ashley.core.Entity;
@@ -55,14 +59,14 @@ public class EnginePrefabs {
 		eng.addEntity(worldMapEntity);
 		eng.getSystem(UniqueTagManager.class).set(Tags.WORLD_MAP, worldMapEntity);
 		
-		final PrefabScript screenEntityPrefab = PrefabScript.byName("individual");
-		screenEntityPrefab.run();
-		screenEntityPrefab.faction("player");
-		screenEntityPrefab.include("mixin/at-random-floor");
-		screenEntityPrefab.tag(Tags.POV);
-		screenEntityPrefab.tag(Tags.PLAYER);
+		final PrefabScript player = PrefabScript.byName("individual");
+		player.run();
+		player.faction("player");
+		player.include("mixin/at-random-floor");
+		player.tag(Tags.POV);
+		player.tag(Tags.PLAYER);
 		
-		final CanSensePsychicEnergy sense = screenEntityPrefab.create(CanSensePsychicEnergy.class);
+		final CanSensePsychicEnergy sense = player.create(CanSensePsychicEnergy.class);
 		sense.setRange(-1);
 		
 		for (int i = 0; i < 8; i++) {
