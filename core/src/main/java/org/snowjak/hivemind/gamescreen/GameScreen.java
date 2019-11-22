@@ -180,8 +180,8 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 		//
 		if (isActiveScrollTo) {
 			
-			final float dx = (cameraX - scrollToX) / 3f;
-			final float dy = (cameraY - scrollToY) / 3f;
+			final float dx = (cameraX - scrollToX);
+			final float dy = (cameraY - scrollToY);
 			final float smallestDx = getCellWidth() * 8f, smallestDy = getCellHeight() * 8f;
 			final float clampedDx = Math.max(Math.abs(dx), smallestDx) * Math.signum(dx);
 			final float clampedDy = Math.max(Math.abs(dy), smallestDy) * Math.signum(dy);
@@ -297,7 +297,7 @@ public class GameScreen implements Disposable, ScreenMapTranslator {
 			mapViewport.setScreenBounds(0, 0, (int) getMapGridOnscreenPixelWidth(),
 					(int) getMapGridOnscreenPixelHeight());
 			
-			cursor = mapGrid.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.25f), 0, 0);
+			cursor = mapGrid.glyph('\u2588', SColor.multiplyAlpha(SColor.AURORA_CLOUD, 0.5f), 0, 0);
 			
 			getInputProcessor().resize(getCellWidth(), getCellHeight(), getMapGridWorldCellWidth(),
 					getMapGridWorldCellHeight(), 0, 0);

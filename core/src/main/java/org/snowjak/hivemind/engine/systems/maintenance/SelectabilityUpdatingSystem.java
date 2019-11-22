@@ -40,8 +40,8 @@ public class SelectabilityUpdatingSystem extends IteratingSystem {
 		super(Family.all(IsSelectable.class, HasLocation.class).get());
 	}
 	
-	private final EntitySubscription selectable = new EntitySubscription(Family.all(IsSelectable.class).get(), null,
-			(e) -> {
+	private final EntitySubscription selectable = new EntitySubscription(
+			Family.one(IsSelectable.class, IsSelectableNow.class).get(), null, (e) -> {
 				e.remove(IsSelectableNow.class);
 				e.remove(IsSelected.class);
 			});

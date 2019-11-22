@@ -6,12 +6,14 @@ package org.snowjak.hivemind.engine.systems.display;
 import org.snowjak.hivemind.Context;
 import org.snowjak.hivemind.Tags;
 import org.snowjak.hivemind.engine.components.HasLocation;
+import org.snowjak.hivemind.engine.systems.RunnableExecutingSystem;
 import org.snowjak.hivemind.engine.systems.manager.UniqueTagManager;
 import org.snowjak.hivemind.gamescreen.GameScreen;
 import org.snowjak.hivemind.gamescreen.updates.CenterScreenScrollAt;
 import org.snowjak.hivemind.gamescreen.updates.GameScreenUpdatePool;
 
 import com.badlogic.ashley.core.ComponentMapper;
+import com.badlogic.ashley.core.Engine;
 import com.badlogic.ashley.core.Entity;
 import com.badlogic.ashley.core.EntitySystem;
 
@@ -42,14 +44,20 @@ public class ScreenCenteringSystem extends EntitySystem {
 	private Coord location = null;
 	
 	@Override
+	public void addedToEngine(Engine engine) {
+		
+		super.addedToEngine(engine);
+		
+		engine.getSystem(RunnableExecutingSystem.class).submit(() -> centerOnPlayer());
+	}
+	
+	@Override
 	public void update(float deltaTime) {
 		
 		super.update(deltaTime);
 		
 		if (Context.getGameScreen() == null || Context.getGameScreen().getMapSurface() == null)
 			return;
-		
-		System.out.println("Issuing center-screen-scroll-at update to " + location.toString());
 		
 		{
 			final CenterScreenScrollAt upd = GameScreenUpdatePool.get().get(CenterScreenScrollAt.class);
